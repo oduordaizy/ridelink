@@ -54,30 +54,30 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 'user_type', 'is_verified', 'driver_profile', 'passenger_profile']
-        read_only_fields = ['id', 'is_verified']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 'user_type', 'driver_profile', 'passenger_profile']
+        read_only_fields = ['id']
 
-        def get_driver_profile(self, obj):
-            if hasattr(obj, 'driver_profile'):
-                return {
-                    'license_number': obj.driver_profile.license_number,
-                    'license_expiry_date': obj.driver_profile.license_expiry_date,
-                    'vehicle_type': obj.driver_profile.vehicle_type,
-                    'vehicle_number': obj.driver_profile.vehicle_number,
-                    'vehicle_model': obj.driver_profile.vehicle_model,
-                    'vehicle_color': obj.driver_profile.vehicle_color,
-                    'vehicle_image': obj.driver_profile.vehicle_image.url if obj.driver_profile.vehicle_image else None,
-                    'rating': obj.driver_profile.rating,
-                }
-            return None
+    def get_driver_profile(self, obj):
+        if hasattr(obj, 'driver_profile'):
+            return {
+                'license_number': obj.driver_profile.license_number,
+                # 'license_expiry_date': obj.driver_profile.license_expiry_date,
+                'vehicle_type': obj.driver_profile.vehicle_type,
+                'vehicle_number': obj.driver_profile.vehicle_number,
+                'vehicle_model': obj.driver_profile.vehicle_model,
+                'vehicle_color': obj.driver_profile.vehicle_color,
+                # 'vehicle_image': obj.driver_profile.vehicle_image.url if obj.driver_profile.vehicle_image else None,
+                'rating': obj.driver_profile.rating,
+            }
+        return None
 
 
-        def get_passenger_profile(self, obj):
-            if hasattr(obj, 'passenger_profile'):
-                return {
-                    'emergency_contact': obj.passenger_profile.emergency_contact,
-                    'preferred_payment_method': obj.passenger_profile.preferred_payment_method,
-                }
-            return None
+    def get_passenger_profile(self, obj):
+        if hasattr(obj, 'passenger_profile'):
+            return {
+                'emergency_contact': obj.passenger_profile.emergency_contact,
+                'preferred_payment_method': obj.passenger_profile.preferred_payment_method,
+            }
+        return None
         
         

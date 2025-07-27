@@ -9,7 +9,6 @@ class User(AbstractUser):
     )
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default='passenger')
     phone_number = models.CharField(max_length=15, unique=True, validators=[RegexValidator(r'^\+?1?\d{9,15}$')])
-    is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -19,7 +18,7 @@ class User(AbstractUser):
 class Driver(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='driver_profile')
     license_number = models.CharField(max_length=20, unique=True)
-    license_expiry_date = models.DateField()
+    # license_expiry_date = models.DateField()
     vehicle_type = models.CharField(max_length=20)
     vehicle_number = models.CharField(max_length=20)
     vehicle_model = models.CharField(max_length=20)
@@ -34,7 +33,7 @@ class Driver(models.Model):
 class Passenger(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='passenger_profile')
     emergency_contact = models.CharField(max_length=15, validators=[RegexValidator(r'^\+?1?\d{9,15}$')])
-    preferred_payment_method = models.CharField(max_length=20, default='cash')
+    preferred_payment_method = models.CharField(max_length=20, default='Mpesa')
 
     class Meta:
         db_table = 'passengers'
