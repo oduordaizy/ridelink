@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 from django.core.validators import RegexValidator
 
 class User(AbstractUser):
@@ -7,8 +7,12 @@ class User(AbstractUser):
         ('driver', 'Driver'),
         ('passenger', 'Passenger'),
     )
-    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default='passenger')
-    phone_number = models.CharField(max_length=15, unique=True, validators=[RegexValidator(r'^\+?1?\d{9,15}$')])
+    
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
+    phone_number = models.CharField(max_length=15, validators=[
+        RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    ])
+    # is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -17,23 +21,22 @@ class User(AbstractUser):
 
 class Driver(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='driver_profile')
-    license_number = models.CharField(max_length=20, unique=True)
-    # license_expiry_date = models.DateField()
-    vehicle_type = models.CharField(max_length=20)
-    vehicle_number = models.CharField(max_length=20)
-    vehicle_model = models.CharField(max_length=20)
-    vehicle_color = models.CharField(max_length=20)
-    # vehicle_image = models.ImageField(upload_to='vehicle_images/', null=True, blank=True)
-    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
+    license_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    vehicle_model = models.CharField(max_length=100, blank=True, null=True)
+    vehicle_color = models.CharField(max_length=50, blank=True, null=True)
+    vehicle_plate = models.CharField(max_length=20, blank=True, null=True)
+    # is_available = models.BooleanField(default=True)
+    rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     
-
     class Meta:
-        db_table = 'drivers'
+        db_table = 'driver_profiles'
 
 class Passenger(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='passenger_profile')
-    emergency_contact = models.CharField(max_length=15, validators=[RegexValidator(r'^\+?1?\d{9,15}$')])
-    preferred_payment_method = models.CharField(max_length=20, default='Mpesa')
-
+    emergency_contact = models.CharField(max_length=15, blank=True)
+    preferred_payment_method = models.CharField(max_length=50, default='wallet')
+    # rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
+    # total_rides = models.IntegerField(default=0)
+    
     class Meta:
-        db_table = 'passengers'
+        db_table = 'passenger_profiles'
