@@ -26,7 +26,7 @@ export default function Navbar() {
                 </svg>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                RideLink
+                Travas
               </span>
             </div>
           </div>
@@ -53,6 +53,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
+                <Link href="/dashboard" className="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg font-medium transition-colors">
+                 My Dashboard
+                </Link>
                 <span className="text-gray-700 text-sm">
                   Welcome, {user.first_name}!
                 </span>
@@ -117,6 +120,9 @@ export default function Navbar() {
             <div className="flex flex-col space-y-2 px-3">
               {user ? (
                 <>
+                  <Link href="/dashboard" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg font-medium transition-colors text-left">
+                    My Dashboard
+                  </Link>
                   <span className="text-gray-700 px-3 py-2 text-sm">
                     Welcome, {user.first_name}!
                   </span>

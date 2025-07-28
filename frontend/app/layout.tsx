@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ridelink",
-  description: "Ridelink, platform for finding and sharing rides, travel",
+  title: "Travas",
+  description: "Travas, platform for finding and sharing rides, travel",
 };
 
 export default function RootLayout({

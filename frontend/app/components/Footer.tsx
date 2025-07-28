@@ -2,11 +2,11 @@ import React from 'react'
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-r from-blue-50 via-indigo-100 to-white border-t border-gray-100 py-8 mt-12">
+    <footer className="bg-gradient-to-r from-blue-50 via-indigo-100 to-white border-t border-gray-100 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
         {/* Left: Copyright */}
         <div className="text-indigo-700 font-semibold text-sm text-center md:text-left">
-          &copy; {new Date().getFullYear()} RideLink. All rights reserved.
+          &copy; {new Date().getFullYear()} Travas. All rights reserved.
         </div>
        
         {/* Right: Social Icons */}
