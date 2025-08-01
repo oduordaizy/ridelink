@@ -73,14 +73,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    // Clear stored data
+  setToken(null);
+  setUser(null);
+  
+  // Delay clearing storage (optional)
+  setTimeout(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
-    
-    setToken(null);
-    setUser(null);
-  };
+  }, 50);
+};
 
   const value = {
     user,
