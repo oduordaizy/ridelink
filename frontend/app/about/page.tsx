@@ -92,7 +92,7 @@ export default function About() {
         {/* Community CTA Section */}
         <section className="w-full max-w-2xl text-center mb-20">
           <h2 className="text-3xl font-bold text-indigo-800 mb-4">Join the Travas Community</h2>
-          <p className="text-indigo-700 mb-6">Whether you're a driver or a passenger, Travas is here to make your journey better. Sign up today and be part of a smarter, friendlier way to travel.</p>
+          <p className="text-indigo-700 mb-6">Whether you `&apos;` are a driver or a passenger, Travas is here to make your journey better. Sign up today and be part of a smarter, friendlier way to travel.</p>
           <a href="#" className="inline-block px-10 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-lg shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Get Started</a>
         </section>
       </main>

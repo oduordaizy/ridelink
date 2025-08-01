@@ -11,7 +11,6 @@ const Page = () => {
   const router = useRouter()
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [activeSidebar, setActiveSidebar] = useState('find');
 
    useEffect(()=>{
       if(!isLoading && !user){
@@ -19,18 +18,7 @@ const Page = () => {
       }
     }, [user, isLoading, router]);
   
-     if (isLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-        </div>
-      );
-    }
-  
-    if (!user) {
-      return null;
-    }
-  
+    
     // Close dropdown on outside click
     useEffect(() => {
       function handleClickOutside(event: MouseEvent) {
@@ -56,6 +44,18 @@ const Page = () => {
         : parts[0][0].toUpperCase();
     };
   
+     if (isLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        </div>
+      );
+    }
+  
+    if (!user) {
+      return null;
+    }
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,10 +74,7 @@ const Page = () => {
 
         <div className="flex items-center space-x-4">
           <IoNotifications className="text-2xl text-gray-600 hover:text-[#023E8A]  cursor-pointer" />
-          {/* Replace this with an avatar or profile dropdown */}
-          {/* <div className="w-8 h-8 rounded-full bg-gray-300" /> */}
-
-          
+                   
           <div className="flex items-center space-x-4">
             <span className="font-medium text-gray-900">{user.first_name} {user.last_name}</span>
             <div className="relative" ref={dropdownRef}>
@@ -94,7 +91,6 @@ const Page = () => {
                     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                     onClick={() => {
                       setDropdownOpen(false);
-                      setActiveSidebar('profile');
                     }}
                   >
                     Profile

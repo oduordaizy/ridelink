@@ -2,67 +2,6 @@
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
-const driverSteps = [
-  {
-    title: 'Sign Up',
-    desc: 'Create your free Travas account and set up your digital wallet.',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#6366F1" fillOpacity="0.12"/><path d="M32 36c-6.627 0-12 2.686-12 6v2h24v-2c0-3.314-5.373-6-12-6z" fill="#2563EB"/><circle cx="32" cy="24" r="8" fill="#6366F1"/></svg>
-    )
-  },
-  {
-    title: 'Post a Ride',
-    desc: 'Enter your trip details—origin, destination, time, and seats. Pay a small platform fee to post.',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><rect x="8" y="24" width="48" height="24" rx="12" fill="#2563EB" fillOpacity="0.12"/><rect x="16" y="32" width="32" height="8" rx="4" fill="#2563EB"/><circle cx="20" cy="48" r="4" fill="#6366F1"/><circle cx="44" cy="48" r="4" fill="#6366F1"/></svg>
-    )
-  },
-  {
-    title: 'Get Booked',
-    desc: 'Passengers discover your ride and book seats in real time. You earn directly to your wallet.',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#6366F1" fillOpacity="0.12"/><rect x="20" y="28" width="24" height="8" rx="4" fill="#2563EB"/><circle cx="32" cy="40" r="4" fill="#6366F1"/></svg>
-    )
-  },
-  {
-    title: 'Connect & Go',
-    desc: 'After payment, passengers get your contact info. Enjoy the journey together!',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#6366F1" fillOpacity="0.12"/><path d="M24 32h16M32 24v16" stroke="#2563EB" strokeWidth="3" strokeLinecap="round"/></svg>
-    )
-  }
-];
-
-const passengerSteps = [
-  {
-    title: 'Sign Up',
-    desc: 'Create your free account and top up your wallet securely.',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#6366F1" fillOpacity="0.12"/><path d="M32 36c-6.627 0-12 2.686-12 6v2h24v-2c0-3.314-5.373-6-12-6z" fill="#2563EB"/><circle cx="32" cy="24" r="8" fill="#6366F1"/></svg>
-    )
-  },
-  {
-    title: 'Find a Ride',
-    desc: 'Search for available rides by location, date, and time. View trip details and seat availability instantly.',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><rect x="8" y="24" width="48" height="24" rx="12" fill="#2563EB" fillOpacity="0.12"/><rect x="16" y="32" width="32" height="8" rx="4" fill="#2563EB"/><circle cx="20" cy="48" r="4" fill="#6366F1"/><circle cx="44" cy="48" r="4" fill="#6366F1"/></svg>
-    )
-  },
-  {
-    title: 'Book & Pay',
-    desc: 'Reserve your seat and pay securely through the app. Your payment is safe and transparent.',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#6366F1" fillOpacity="0.12"/><rect x="20" y="28" width="24" height="8" rx="4" fill="#2563EB"/><circle cx="32" cy="40" r="4" fill="#6366F1"/></svg>
-    )
-  },
-  {
-    title: 'Contact & Travel',
-    desc: 'Get the driver’s contact info after payment. Meet up and enjoy your ride!',
-    img: (
-      <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#6366F1" fillOpacity="0.12"/><path d="M24 32h16M32 24v16" stroke="#2563EB" strokeWidth="3" strokeLinecap="round"/></svg>
-    )
-  }
-];
 
 export default function HowItWorks() {
   return (
@@ -88,38 +27,35 @@ export default function HowItWorks() {
         </section>
 
         {/* Steps Section */}
-        <section className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-12 mb-20">
-          {/* For Drivers */}
-          <div className="bg-white/90 rounded-3xl shadow-2xl p-10 flex flex-col items-center">
-            <h2 className="text-3xl font-bold text-blue-700 mb-8">For Drivers</h2>
-            <ol className="space-y-8 w-full">
-              {driverSteps.map((step, idx) => (
-                <li key={idx} className="flex flex-col items-center text-center group">
-                  <div className="mb-2 group-hover:scale-110 transition-transform duration-300">{step.img}</div>
-                  <h3 className="text-xl font-semibold text-blue-700 mb-1">{step.title}</h3>
-                  <p className="text-indigo-700 text-base">{step.desc}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-          {/* For Passengers */}
-          <div className="bg-white/90 rounded-3xl shadow-2xl p-10 flex flex-col items-center">
-            <h2 className="text-3xl font-bold text-indigo-700 mb-8">For Passengers</h2>
-            <ol className="space-y-8 w-full">
-              {passengerSteps.map((step, idx) => (
-                <li key={idx} className="flex flex-col items-center text-center group">
-                  <div className="mb-2 group-hover:scale-110 transition-transform duration-300">{step.img}</div>
-                  <h3 className="text-xl font-semibold text-blue-700 mb-1">{step.title}</h3>
-                  <p className="text-indigo-700 text-base">{step.desc}</p>
-                </li>
-              ))}
-            </ol>
+        <section className="w-full max-w-5xl mb-20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+              <div className="w-12 h-12 mb-4 flex items-center justify-center bg-blue-100 rounded-full">
+                <span className="text-2xl font-bold text-blue-600">1</span>
+              </div>
+              <h3 className="text-lg font-semibold text-indigo-700 mb-2">Sign Up</h3>
+              <p className="text-indigo-600">Create your free account as a driver or passenger in seconds.</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+              <div className="w-12 h-12 mb-4 flex items-center justify-center bg-blue-100 rounded-full">
+                <span className="text-2xl font-bold text-blue-600">2</span>
+              </div>
+              <h3 className="text-lg font-semibold text-indigo-700 mb-2">Post or Find a Ride</h3>
+              <p className="text-indigo-600">Drivers post trip details. Passengers search and book available seats in real time.</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+              <div className="w-12 h-12 mb-4 flex items-center justify-center bg-blue-100 rounded-full">
+                <span className="text-2xl font-bold text-blue-600">3</span>
+              </div>
+              <h3 className="text-lg font-semibold text-indigo-700 mb-2">Travel & Connect</h3>
+              <p className="text-indigo-600">Enjoy your journey, connect with others, and track your wallet and bookings easily.</p>
+            </div>
           </div>
         </section>
 
         {/* Call to Action */}
         <section className="max-w-2xl w-full text-center mb-20">
-          <h2 className="text-3xl font-bold text-indigo-800 mb-4">Ready to Get Started?</h2>
+          <h2 className="text-3xl font-bold text-[#00204a] mb-4">Ready to Get Started?</h2>
           <p className="text-indigo-700 mb-6">Join Travas today and experience a smarter, friendlier way to travel—whether you’re behind the wheel or along for the ride.</p>
           <a href="#" className="inline-block px-10 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-lg shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Sign Up Now</a>
         </section>

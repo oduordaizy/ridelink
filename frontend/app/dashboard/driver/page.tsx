@@ -14,8 +14,6 @@ const Page = () => {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [activeSidebar, setActiveSidebar] = useState('find');
-  
   
   useEffect(()=>{
     if(!isLoading && !user){
@@ -23,17 +21,7 @@ const Page = () => {
     }
   }, [user, isLoading, router]);
 
-   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
+    
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -60,6 +48,17 @@ const Page = () => {
       : parts[0][0].toUpperCase();
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-blue-50">
@@ -98,7 +97,6 @@ const Page = () => {
                     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                     onClick={() => {
                       setDropdownOpen(false);
-                      setActiveSidebar('profile');
                     }}
                   >
                     Profile

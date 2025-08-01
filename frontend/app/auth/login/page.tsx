@@ -43,7 +43,7 @@ export default function Login() {
       <Navbar />
       <main className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-100 to-white flex flex-col items-center justify-center py-12 px-4">
         <div className="w-full max-w-md bg-white/90 rounded-2xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-indigo-800 mb-6 text-center">Sign In to Travas</h1>
+          <h1 className="text-3xl font-bold text-indigo-800 mb-6 text-center">Welcome to Travas</h1>
           
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
