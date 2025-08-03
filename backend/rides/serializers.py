@@ -27,7 +27,7 @@ class RideListSerializer(serializers.ModelSerializer):
 
 class RideDetailSerializer(serializers.ModelSerializer):
     driver = UserSerializer(read_only=True)
-    available_seats = serializers.IntegerField(read_only=True)
+    available_seats = serializers.IntegerField()
     is_available = serializers.SerializerMethodField()
 
     class Meta:

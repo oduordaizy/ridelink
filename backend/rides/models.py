@@ -8,7 +8,7 @@ class Ride(models.Model):
     destination = models.CharField(max_length=100)
     departure_time = models.DateTimeField()
     driver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='driven_rides')
-    available_seats = models.PositiveIntegerField()
+    available_seats = models.IntegerField(null=False, default=1)
     additional_info = models.TextField(blank=True, null=True)
     platform_fee = models.DecimalField(max_digits=6, decimal_places=2, default=100)
     

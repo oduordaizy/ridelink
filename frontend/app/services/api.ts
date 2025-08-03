@@ -265,3 +265,18 @@ export const rideBookingAPI = {
     return response.json();
   },
 }; 
+
+//Get rides
+export const getAllRides = async ()=>{
+  const res = await fetch('http://127.0.0.1:8000/api/rides/')
+  return res.json();
+}
+
+export const getMyRides = async () =>{
+   const res = await fetch('http://127.0.0.1:8000/api/rides/', {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  });
+  return res.json();
+}
