@@ -68,8 +68,9 @@ const Page = () => {
 
         <div className="hidden md:flex items-center space-x-6 text-gray-700 text-sm font-medium">
           <Link href="#" className="hover:text-[#023E8A]  transition">Find Rides</Link>
-          <Link href="#" className="hover:text-[#023E8A]  transition">My Bookings</Link>
-          <Link href="#" className="hover:text-[#023E8A]  transition">Help</Link>
+          <Link href="/dashboard/passenger/bookings" className="hover:text-[#023E8A]  transition">My Bookings</Link>
+          <Link href="/dashboard/passenger/profile" className="hover:text-[#023E8A]  transition">Profile</Link>
+          <Link href="#" className="hover:text-[#023E8A]  transition">Settings</Link>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -113,7 +114,7 @@ const Page = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="px-6 py-16 text-center bg-[#CAF0F8]">
+      <section className="px-6 py-16 text-center bg-blue-50">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Find your perfect ride</h1>
         <p className="text-lg md:text-xl text-gray-600">Search, book, and travel with trusted drivers around you</p>
 

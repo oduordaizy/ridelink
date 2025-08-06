@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  updateUser: (userData: AuthResponse['user']) => void;
   isLoading: boolean;
 }
 
@@ -73,16 +74,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-  setToken(null);
-  setUser(null);
+    setToken(null);
+    setUser(null);
   
-  // Delay clearing storage (optional)
-  setTimeout(() => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-  }, 50);
-};
+    // Delay clearing storage (optional)
+    setTimeout(() => {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+    }, 50);
+  };
+
+  const updateUser = (userData: AuthResponse['user']) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
 
   const value = {
     user,
@@ -90,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     logout,
+    updateUser,
     isLoading,
   };
 

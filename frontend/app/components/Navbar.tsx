@@ -34,16 +34,16 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-[#005792] px-3 py-2 rounded-md text-sm hover:font-bold font-medium transition-colors">
+              <Link href="/" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm  font-medium transition-colors">
                 Home
               </Link>
-              <Link href="/how-it-works" className="text-gray-700 hover:text-[#005792] px-3 py-2 rounded-md hover:font-bold text-sm font-medium transition-colors">
+              <Link href="/how-it-works" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                 How it Works
               </Link>
-              <Link href="/about" className="text-gray-700 hover:text-[#005792] px-3 py-2 rounded-md text-sm hover:font-bold font-medium transition-colors">
+              <Link href="/about" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm  font-medium transition-colors">
                 About
               </Link>
-              <Link href="/contact" className="text-gray-700 hover:text-[#005792] px-3 py-2 rounded-md text-sm hover:font-bold font-medium transition-colors">
+              <Link href="/contact" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                 Contact
               </Link>
             </div>

@@ -48,33 +48,47 @@ class UserLoginSerializer(serializers.Serializer):
         return attrs
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    driver_profile = serializers.SerializerMethodField()
-    passenger_profile = serializers.SerializerMethodField()
+    license_number = serializers.CharField(source='driver_profile.license_number', required=False, allow_blank=True, allow_null=True)
+    vehicle_model = serializers.CharField(source='driver_profile.vehicle_model', required=False, allow_blank=True, allow_null=True)
+    vehicle_color = serializers.CharField(source='driver_profile.vehicle_color', required=False, allow_blank=True, allow_null=True)
+    vehicle_plate = serializers.CharField(source='driver_profile.vehicle_plate', required=False, allow_blank=True, allow_null=True)
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 'user_type', 'driver_profile', 'passenger_profile']
-        read_only_fields = ['id']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'phone_number', 'user_type', 'license_number', 'vehicle_model',
+            'vehicle_color', 'vehicle_plate', 'created_at'
+        ]
+        read_only_fields = ['id', 'username', 'email', 'user_type', 'created_at']
     
-    def get_driver_profile(self, obj):
-        if hasattr(obj, 'driver'):
-            return {
-                'license_number': obj.driver.license_number,
-                'vehicle_model': obj.driver.vehicle_model,
-                'vehicle_color': obj.driver.vehicle_color,
-                'vehicle_plate': obj.driver.vehicle_plate,
-                'rating': obj.driver.rating,
-                
-            }
-        return None
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Add driver profile data to the response
+        if hasattr(instance, 'driver_profile'):
+            representation.update({
+                'license_number': instance.driver_profile.license_number,
+                'vehicle_model': instance.driver_profile.vehicle_model,
+                'vehicle_color': instance.driver_profile.vehicle_color,
+                'vehicle_plate': instance.driver_profile.vehicle_plate,
+                'rating': float(instance.driver_profile.rating)
+            })
+        return representation
     
-    def get_passenger_profile(self, obj):
-        if hasattr(obj, 'passenger'):
-            return {
-                'emergency_contact': obj.passenger.emergency_contact,
-                'preferred_payment_method': obj.passenger.preferred_payment_method,
-                
-            }
-        return None
+    def update(self, instance, validated_data):
+        # Handle driver profile data if it exists
+        driver_data = {}
+        if 'driver_profile' in validated_data:
+            driver_data = validated_data.pop('driver_profile')
         
+        # Update user fields
+        user = super().update(instance, validated_data)
         
+        # Update or create driver profile if user is a driver
+        if hasattr(user, 'driver_profile') and driver_data:
+            driver = user.driver_profile
+            for key, value in driver_data.items():
+                setattr(driver, key, value)
+            driver.save()
+        
+        return user

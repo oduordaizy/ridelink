@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-[#d9faff] flex flex-col items-center py-12 px-4 w-full">
+      <main className="min-h-screen bg-blue-50 flex flex-col items-center py-12 px-4 w-full">
         {/* Hero Section */}
         <section className="w-full max-w-5xl flex flex-col md:flex-row items-center justify-between gap-12 mb-20">
           <div className="flex-1 text-center md:text-left">
