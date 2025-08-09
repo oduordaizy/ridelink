@@ -60,10 +60,10 @@ class Booking(models.Model):
         if self.is_paid:
             raise ValueError("Already paid.")
 
-        if self.seats_booked > self.ride.available_seats:
+        if self.no_of_seats > self.ride.available_seats:
             raise ValueError("Not enough available seats.")
-
-        self.ride.available_seats -= self.seats_booked
+        self.ride.available_seats -= self.no_of_seats
+        
         if self.ride.available_seats == 0:
             self.ride.status = 'fully_booked'
         self.ride.save()

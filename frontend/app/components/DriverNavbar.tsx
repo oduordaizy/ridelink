@@ -46,12 +46,13 @@ const DriverNavbar = () => {
       </div>
 
       {/* Links */}
-      <div className="hidden md:flex items-center space-x-6 text-gray-700 text-sm font-medium">
+      {/* <div className="hidden md:flex items-center space-x-6 text-gray-700 text-sm font-medium">
         <Link href="/dashboard/driver" className="hover:text-blue-700 transition">Dashboard</Link>
         <Link href="/dashboard/driver/myrides" className="hover:text-blue-700 transition">My Rides</Link>
         <Link href="/dashboard/driver/wallet" className="hover:text-blue-700 transition">Wallet</Link>
         <Link href="/dashboard/driver/profile" className="hover:text-blue-700 transition">Profile</Link>
-      </div>
+        <Link href="/dashboard/driver/settings" className="hover:text-blue-700 transition">Settings</Link>
+      </div> */}
 
       {/* Right section */}
       <div className="flex items-center space-x-4">

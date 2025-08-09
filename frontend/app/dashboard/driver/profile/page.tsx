@@ -12,6 +12,7 @@ import { useAuth } from "@/app/contexts/AuthContext"
 import { toast } from "react-toastify"
 import DriverNavbar from "@/app/components/DriverNavbar"
 import Footer from "@/app/components/Footer"
+import DriverSidebar from "@/app/components/DriverSidebar"
 
 type DriverProfile = {
   id: number
@@ -180,7 +181,6 @@ export default function DriverProfilePage() {
 
   return (
     <>
-    <DriverNavbar />
     <div className="bg-blue-50">
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
       <Card>
@@ -364,7 +364,6 @@ export default function DriverProfilePage() {
       </Card>
     </div>
     </div>
-    <Footer />
-    </>
+   </>
   )
 }

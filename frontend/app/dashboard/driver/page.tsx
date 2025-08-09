@@ -1,15 +1,13 @@
 'use client'
 
-import Link from 'next/link'
-import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useRef, useState } from 'react'
-import { FaCar } from "react-icons/fa"
-import { IoNotifications } from "react-icons/io5"
-import { FaCirclePlus } from "react-icons/fa6"
+import { useAuth } from '../../contexts/AuthContext';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import { FaCar } from "react-icons/fa"
+import { FaCirclePlus } from "react-icons/fa6"
 import DriverNavbar from '@/app/components/DriverNavbar';
-
+import DriverSidebar from '@/app/components/DriverSidebar';
 
 interface RideFormData {
     departure_location: string;
@@ -21,85 +19,62 @@ interface RideFormData {
     additional_info: string;
 }
 
-const Page = () => {
-  const {user, isLoading, logout} = useAuth()
-  const router = useRouter() 
+export default function CreateRidePage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<RideFormData>({
     departure_location: '',
     destination: '',
     departure_time: '',
-    departure_date: new Date().toISOString().split('T')[0], // initialize with string: new Date(),
-    available_seats: 0,
+    departure_date: new Date().toISOString().split('T')[0],
+    available_seats: 1,
     price: 0,
     additional_info: '',
   });
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null); 
-  
-  useEffect(()=>{
-    if(!isLoading && !user){
-      router.push('/auth/login')
-    }
-  }, [user, isLoading, router]);    
-
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
+    if (!isLoading && !user) {
+      router.push('/auth/login');
     }
-    if (dropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [dropdownOpen]);
+  }, [user, isLoading, router]);
 
-  // Avatar initials
-  const getInitials = (name: string) => {
-    const parts = name.split(' ');
-    return parts.length > 1
-      ? parts[0][0].toUpperCase() + parts[1][0].toUpperCase()
-      : parts[0][0].toUpperCase();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (name === 'available_seats') {
+      return;
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'number' ? (parseFloat(value) || 0) : value,
+      }));
+    }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return null;
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleAvailableSeatsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty string or numbers between 1 and 10
+    if (value === '' || (Number(value) >= 1 && Number(value) <= 10)) {
+      setFormData(prev => ({
+        ...prev,
+        available_seats: value === '' ? 1 : Number(value),
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+    
     setIsSubmitting(true);
     try {
       const departureDateTime = `${formData.departure_date}T${formData.departure_time}:00`;
-
       const payload = {
         departure_location: formData.departure_location,
         destination: formData.destination,
         departure_time: departureDateTime,
-        available_seats: formData.available_seats,
+        available_seats: Number(formData.available_seats) || 1, // Ensure it's a number
         price: formData.price,
         additional_info: formData.additional_info || undefined,
       };
@@ -114,24 +89,24 @@ const Page = () => {
       });
 
       if (!response.ok) {
-        const text = await response.text();
-        console.error("Error response (not JSON):", text);
-      } else {
-        const data = await response.json();
-        console.log("Ride created:", data);
-        toast.success('Ride created successfully!');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to create ride');
       }
+
+      const data = await response.json();
+      toast.success('Ride created successfully!');
       
       // Reset form
       setFormData({
         departure_location: '',
         destination: '',
-        departure_date: new Date().toISOString().split('T')[0], // initialize with string
+        departure_date: new Date().toISOString().split('T')[0],
         departure_time: '',
-        available_seats: 0,
+        available_seats: 1,
         price: 0,
         additional_info: ''
       });
+      
       router.push('/dashboard/driver');
     } catch (error) {
       console.error('Error creating ride:', error);
@@ -141,64 +116,169 @@ const Page = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-blue-50">
-      <DriverNavbar/>
+      
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="flex items-center mb-6">
+          <FaCirclePlus className="text-blue-600 text-2xl mr-2" />
+          <h1 className="text-2xl font-bold text-gray-800">Create New Ride</h1>
+        </div>
+        
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label htmlFor="departure_location" className="block text-sm font-medium text-gray-700">
+                  Departure Location *
+                </label>
+                <input
+                  type="text"
+                  id="departure_location"
+                  name="departure_location"
+                  value={formData.departure_location}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-      {/* Create New Ride Form */}
-      <div className="p-6">
-        <div className="bg-white p-6 shadow rounded-lg max-w-4xl mx-auto">
-          <div className="flex items-center mb-4 space-x-2 text-blue-700">
-            <FaCirclePlus className="text-2xl" />
-            <h1 className="text-xl font-semibold">Create New Ride</h1>
-          </div>
+              <div className="space-y-2">
+                <label htmlFor="destination" className="block text-sm font-medium text-gray-700">
+                  Destination *
+                </label>
+                <input
+                  type="text"
+                  id="destination"
+                  name="destination"
+                  value={formData.destination}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Departure Location</label>
-              <input type="text"  value={formData.departure_location} onChange={handleChange} name="departure_location" placeholder="Enter Departure Location" className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+              <div className="space-y-2">
+                <label htmlFor="departure_date" className="block text-sm font-medium text-gray-700">
+                  Date *
+                </label>
+                <input
+                  type="date"
+                  id="departure_date"
+                  name="departure_date"
+                  value={formData.departure_date}
+                  onChange={handleChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="departure_time" className="block text-sm font-medium text-gray-700">
+                  Time *
+                </label>
+                <input
+                  type="time"
+                  id="departure_time"
+                  name="departure_time"
+                  value={formData.departure_time}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="available_seats" className="block text-sm font-medium text-gray-700">
+                  Available Seats *
+                </label>
+                <input
+                  type="number"
+                  id="available_seats"
+                  name="available_seats"
+                  min="1"
+                  max="10"
+                  value={formData.available_seats}
+                  onChange={handleAvailableSeatsChange}
+                  onBlur={(e) => {
+                    // Ensure at least 1 seat is selected
+                    if (!e.target.value || Number(e.target.value) < 1) {
+                      setFormData(prev => ({
+                        ...prev,
+                        available_seats: 1
+                      }));
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                  Price per Seat (KSH) *
+                </label>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  min="0"
+                  step="100"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Destination</label>
-              <input type="text" value={formData.destination} onChange={handleChange} name="destination" placeholder="Enter Destination" className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <div className="space-y-2">
+              <label htmlFor="additional_info" className="block text-sm font-medium text-gray-700">
+                Additional Information
+              </label>
+              <textarea
+                id="additional_info"
+                name="additional_info"
+                rows={3}
+                value={formData.additional_info}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Any additional details about the ride..."
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Departure Date</label>
-              <input type="date" value={formData.departure_date}  name="departure_date"  min={new Date().toISOString().split('T')[0]} onChange={handleChange} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Departure Time</label>
-              <input type="time" value={formData.departure_time} onChange={handleChange} name="departure_time" className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Available Seats</label>
-              <input type="number" value={formData.available_seats} onChange={handleChange} name="available_seats" placeholder="e.g., 3" className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Price per Seat</label>
-              <input type="number" value={formData.price} onChange={handleChange} name="price"  placeholder="e.g., 500" className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Additional Notes (Optional)</label>
-              <textarea  value={formData.additional_info} onChange={handleChange} name="additional_info" placeholder="Any additional details..." rows={3} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            </div>
-
-            <div className="md:col-span-2">
-              <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
-              {isSubmitting ? 'Creating...' : 'Create Ride Listing'}
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/driver')}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Creating...' : 'Create Ride'}
               </button>
             </div>
           </form>
         </div>
       </div>
     </div>
-  )
+  );
 }
-
-export default Page

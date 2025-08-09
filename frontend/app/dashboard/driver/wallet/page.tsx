@@ -1,12 +1,12 @@
 'use client'
 
-import DriverNavbar from '@/app/components/DriverNavbar'
 import React from 'react'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ArrowDown, ArrowUp, Wallet } from "lucide-react"
+import DriverSidebar from '@/app/components/DriverSidebar'
 
 export default function WalletPage() {
   const transactions = [
@@ -35,7 +35,6 @@ export default function WalletPage() {
 
   return (
     <>
-    <DriverNavbar/>
     <div className="space-y-8 p-10 bg-blue-50">
       
       <Card className='bg-[#005792]'>
