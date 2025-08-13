@@ -35,19 +35,19 @@ export default function WalletPage() {
 
   return (
     <>
-    <div className="space-y-8 p-10 bg-blue-50">
+    <div className="space-y-8 bg-blue-50">
       
       <Card className='bg-[#005792]'>
         <CardHeader className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Wallet className="w-6 h-6 text-blue-600" />
-            <CardTitle>Wallet Balance</CardTitle>
+            <Wallet className="w-6 h-6 text-blue-50" />
+            <CardTitle className='text-white'>Wallet Balance</CardTitle>
           </div>
           <Button variant="outline" className='bg-white text-[#00204a] hg-hover-'>Withdraw Funds</Button>
         </CardHeader>
         <CardContent>
           <p className="text-4xl font-bold text-white">KES 2,300</p>
-          <p className="text-sm text-muted-foreground mt-1">Last updated: August 4, 2025</p>
+          <p className="text-sm mt-1 text-white">Last updated: August 4, 2025</p>
         </CardContent>
       </Card>
 

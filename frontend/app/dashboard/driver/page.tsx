@@ -6,8 +6,9 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { FaCar } from "react-icons/fa"
 import { FaCirclePlus } from "react-icons/fa6"
-import DriverNavbar from '@/app/components/DriverNavbar';
 import DriverSidebar from '@/app/components/DriverSidebar';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface RideFormData {
     departure_location: string;
@@ -131,14 +132,17 @@ export default function CreateRidePage() {
   return (
     <div className="min-h-screen bg-blue-50">
       
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="flex items-center mb-6">
-          <FaCirclePlus className="text-blue-600 text-2xl mr-2" />
-          <h1 className="text-2xl font-bold text-gray-800">Create New Ride</h1>
+      <div className="max-w-4xl mx-auto">
+        <div className='flex justify-between'>
+        <div className="flex items-center mb-4">
+          <FaCirclePlus className="text-blue-600 text-xl mr-2" />
+          <h1 className="text-xl font-bold text-blue-600">Create New Ride</h1>
+        </div>
+          <div><Link href='/dashboard/driver/myrides'><Button>View Scheduled Rides</Button></Link></div>
         </div>
         
         <div className="bg-white shadow rounded-lg overflow-hidden">
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label htmlFor="departure_location" className="block text-sm font-medium text-gray-700">
@@ -150,7 +154,7 @@ export default function CreateRidePage() {
                   name="departure_location"
                   value={formData.departure_location}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
@@ -165,12 +169,12 @@ export default function CreateRidePage() {
                   name="destination"
                   value={formData.destination}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <label htmlFor="departure_date" className="block text-sm font-medium text-gray-700">
                   Date *
                 </label>
@@ -186,7 +190,7 @@ export default function CreateRidePage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <label htmlFor="departure_time" className="block text-sm font-medium text-gray-700">
                   Time *
                 </label>
@@ -201,7 +205,7 @@ export default function CreateRidePage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <label htmlFor="available_seats" className="block text-sm font-medium text-gray-700">
                   Available Seats *
                 </label>

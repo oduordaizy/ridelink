@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -116,7 +117,11 @@ export default function DriverSidebar() {
 function SidebarContent({ pathname }: { pathname: string }) {
   return (
     <nav className="space-y-1">
-      <h2 className="text-xl font-bold text-blue-700 mb-6 px-4">Travas</h2>
+      <Link href='/' className='pacifico-regular flex items-center text-[#0086CA]'>
+            <Image src="/logo.png" alt="Logo" width={50} height={50} className="!m-0" />
+            <span className="ml-0 font-semibold text-xl">Travas</span>
+          </Link>
+
       {navItems.map((item) => (
         <Link
           key={item.href}
@@ -124,7 +129,7 @@ function SidebarContent({ pathname }: { pathname: string }) {
           className={`flex items-center px-4 py-3 rounded-md text-sm ${
             pathname === item.href
               ? "bg-blue-100 text-blue-800 font-medium"
-              : "hover:bg-blue-50 text-gray-700"
+              : "hover:[#005792] text-gray-700"
           }`}
         >
           {item.icon}
