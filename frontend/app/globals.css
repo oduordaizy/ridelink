@@ -5,11 +5,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+
 :root {
   /* Primary Colors */
-  --primary: #0086CA;
+  --primary: #08A6F6;
   --primary-foreground: #FFFFFF;
-  --primary-dark: #013C5E;
+  --primary-dark: #00204a;
   --primary-background: #08A6F6;
   --primary-dark-hover: #08A6F6;
   

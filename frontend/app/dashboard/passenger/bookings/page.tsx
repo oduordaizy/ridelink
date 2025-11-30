@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect} from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch } from 'react-icons/fa';
-import { IoNotifications } from "react-icons/io5";
 import Link from 'next/link';
+import PassengerNavbar from '@/app/components/PassengerNavbar';
 
 interface Booking {
   id: number;
@@ -33,10 +33,6 @@ const statusColors = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
-const getInitials = (firstName: string, lastName: string) => {
-  return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
-};
-
 export default function BookingsPage() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
@@ -44,21 +40,6 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -133,56 +114,16 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-md">
-        <div className="flex items-center space-x-2 text-[#023E8A] text-xl font-bold">
-          <FaCar />
-          <Link href="/" className="hover:underline">Travas</Link>
-        </div>
-
-        <div className="hidden md:flex items-center space-x-6 text-gray-700 text-sm font-medium">
-          <Link href="/dashboard/passenger" className="hover:text-[#023E8A] transition">Find Rides</Link>
-          <Link href="/dashboard/passenger/bookings" className="text-[#023E8A] font-semibold transition">My Bookings</Link>
-          <Link href="/dashboard/passenger/profile" className="hover:text-[#023E8A] transition">Profile</Link>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <IoNotifications className="text-2xl text-gray-600 hover:text-[#023E8A] cursor-pointer" />
-          
-          <div className="relative" ref={dropdownRef}>
-            <button
-              className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg focus:outline-none"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              aria-label="User menu"
-            >
-              {getInitials(user?.first_name || '', user?.last_name || '')}
-            </button>
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-20">
-                <Link
-                  href="/dashboard/passenger/profile"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  Profile
-                </Link>
-                <button
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    logout && logout();
-                  }}
-                >
-                  Log out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <div className="p-6">
+    <div className="min-h-screen bg-background">
+      <PassengerNavbar 
+        user={{
+          first_name: user?.first_name,
+          last_name: user?.last_name,
+          email: user?.email
+        }} 
+        onLogout={logout} 
+      />
+      <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -245,7 +186,7 @@ export default function BookingsPage() {
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <FaCar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900">No bookings found</h3>
-                <p className="mt-1 text-gray-500">You haven't made any bookings yet.</p>
+                <p className="mt-1 text-gray-500">You haven&apos;t made any bookings yet.</p>
                 <div className="mt-6">
                   <Link
                     href="/dashboard/passenger"

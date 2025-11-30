@@ -1,27 +1,27 @@
 const testimonials = [
     {
       name: "Hilda Mutua",
-      feedback: "I'm so impressed with the selection of organic and locally sourced products. It's great to know I'm supporting local farmers and eating healthy."
+      feedback: "Travas made my daily commute simple and affordable. The pickup instructions are clear and the drivers are always courteous."
     },
     {
       name: "Sebastian Bell",
-      feedback: "Demeters Gardens is a lifesaver, especially for busy families. The convenience and reliability make it an invaluable part of my weekly routine."
+      feedback: "Switching to Travas cut my travel costs in half. I love the split-fare feature for team commutes — reliable and stress-free."
     },
     {
       name: "Rose Hurst",
-      feedback: "Top-notch quality foods, beautifully packaged, great customer service, and timely delivery."
+      feedback: "I use Travas for campus runs. It’s fast to book, and I’ve met friendly people on shared rides. Perfect for students on a budget."
     },
     {
       name: "Andrew Otieno",
-      feedback: "Love their precooked meal options, especially the cook-under-60-min ones. It's convenient for me to tweak up a quick healthy meal in minutes."
+      feedback: "Used Travas for staff transport during an event. Coordination was seamless and the drivers were professional."
     },
     {
       name: "Jane Chege",
-      feedback: "Great variety of products and excellent service. I shop for my groceries in Kenya from the UK!"
+      feedback: "Travas helped reduce travel costs for my delivery team. The shared routes map made planning much easier✅."
     },
     {
       name: "James Kiprop",
-      feedback: "Affordable prices, friendly staff, and top-quality products. This grocery store has become my go-to for all my household needs."
+      feedback: "Night rides with Travas feel safe — drivers follow protocols and app support is responsive when needed."
     }
   ]
   

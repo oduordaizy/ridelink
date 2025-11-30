@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { paymentAPI } from "@/app/services/api"
 import { useAuth } from "@/app/contexts/AuthContext"
+import PassengerNavbar from '@/app/components/PassengerNavbar';
 
 interface Transaction {
   id: number;
@@ -24,7 +25,7 @@ interface Transaction {
 type PaymentMethod = 'mpesa' | 'card' | 'paypal';
 
 export default function WalletPage() {
-  const { token } = useAuth()
+  const { user, token, logout } = useAuth()
   const [amount, setAmount] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [balance, setBalance] = useState<number | null>(null)
@@ -45,26 +46,19 @@ export default function WalletPage() {
         const [balanceRes, transactionsRes] = await Promise.all([
           paymentAPI.getWalletBalance(token),
           paymentAPI.getWalletTransactions(token)
-        ]);
+        ])
         
         console.log('=== DEBUG: Wallet API Response ===');
         console.log('Full response:', balanceRes);
-        console.log('Response type:', typeof balanceRes);
-        console.log('Response keys:', balanceRes ? Object.keys(balanceRes) : 'null/undefined');
         
         // Improved balance extraction with proper error handling
         let backendBalance = 0;
         
         if (balanceRes && typeof balanceRes === 'object') {
-          console.log('Response has data property:', 'data' in balanceRes);
-          console.log('Response has balance property:', 'balance' in balanceRes);
-          
           // Check both possible response structures
           if ('data' in balanceRes && balanceRes.data && typeof balanceRes.data === 'object' && 'balance' in balanceRes.data) {
             // Handle response with data wrapper: { data: { balance: number, ... } }
-            console.log('Found balance in data.balance:', balanceRes.data.balance);
             const balanceValue = Number(balanceRes.data.balance);
-            console.log('Parsed balance value:', balanceValue);
             if (!isNaN(balanceValue)) {
               backendBalance = balanceValue;
             } else {
@@ -72,9 +66,7 @@ export default function WalletPage() {
             }
           } else if ('balance' in balanceRes) {
             // Handle direct balance in response: { balance: number, ... }
-            console.log('Found balance in root:', balanceRes.balance);
             const balanceValue = Number(balanceRes.balance);
-            console.log('Parsed balance value:', balanceValue);
             if (!isNaN(balanceValue)) {
               backendBalance = balanceValue;
             } else {
@@ -88,14 +80,13 @@ export default function WalletPage() {
         }
         
         console.log('Setting wallet balance to:', backendBalance);
-        setBalance(backendBalance);
+        setBalance(backendBalance)
         setTransactions(transactionsRes.transactions || [])
       } catch (error) {
         console.error('Error fetching wallet data:', error)
         toast.error('Error', {
           description: error instanceof Error ? error.message : 'Failed to load wallet data'
         })
-        // Don't set a fallback balance - let user know there's an issue
         setBalance(null)
       } finally {
         setIsLoadingBalance(false)
@@ -491,6 +482,14 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-8 bg-blue-50 p-4 min-h-screen">
+      <PassengerNavbar 
+        user={{
+          first_name: user?.first_name,
+          last_name: user?.last_name,
+          email: user?.email
+        }} 
+        onLogout={logout} 
+      />
       <div className="max-w-6xl mx-auto">
         {/* Balance Card */}
         <Card className="border-0 shadow-lg overflow-hidden">

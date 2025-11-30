@@ -109,7 +109,7 @@ export default function About() {
         <section className="w-full max-w-2xl text-center mb-20 px-4">
           <h2 className="text-3xl font-bold text-foreground mb-4">Join the Travas Community</h2>
           <p className="text-muted-foreground mb-6">
-            Whether you're a driver or a passenger, Travas is here to make your journey better. Sign up today and be part of a smarter, friendlier way to travel.
+            Whether you&apos;re a driver or a passenger, Travas is here to make your journey better. Sign up today and be part of a smarter, friendlier way to travel.
           </p>
           <Link 
             href="/auth/register" 

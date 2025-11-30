@@ -1,11 +1,12 @@
 'use client'
-import Link from 'next/link';
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { IoNotifications } from "react-icons/io5";
-import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt,  FaLock } from "react-icons/fa";
-import Image from 'next/image';
+import { IoWallet, IoCard } from "react-icons/io5";
+import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner } from "react-icons/fa";
+import { FaMoneyBillWave as IoCash } from "react-icons/fa";
+import { paymentAPI } from '@/app/services/api';
+import PassengerNavbar from '@/app/components/PassengerNavbar';
 
 interface Ride {
   id: number;
@@ -22,6 +23,8 @@ interface Ride {
   driver_phone?: string;
 }
 
+type PaymentMethod = 'wallet' | 'mpesa' | 'card';
+
 const Page = () => {
   const {user, isLoading, logout} = useAuth()
   const router = useRouter()
@@ -29,47 +32,107 @@ const Page = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [mpesaPhone, setMpesaPhone] = useState('');
+  const [mpesaAmount, setMpesaAmount] = useState('');
+  const [showMpesaForm, setShowMpesaForm] = useState(false);
   const [searchParams, setSearchParams] = useState({
     departure: '',
     destination: '',
     date: ''
   });
 
+  const fetchRides = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // First, fetch all rides
+      const response = await fetch('http://127.0.0.1:8000/api/rides/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Error response:', response.status, errorData);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      let data = await response.json();
+      console.log('All rides data:', data);
+
+      // Filter rides based on search parameters
+      if (searchParams.departure?.trim() || searchParams.destination?.trim() || searchParams.date) {
+        const departureTerm = searchParams.departure?.trim().toLowerCase() || '';
+        const destinationTerm = searchParams.destination?.trim().toLowerCase() || '';
+        const dateTerm = searchParams.date ? new Date(searchParams.date).toISOString().split('T')[0] : '';
+        
+        console.log('Filtering with:', { departureTerm, destinationTerm, dateTerm });
+        
+        data = data.filter((ride: Ride) => {
+          const matchesDeparture = !departureTerm || 
+            ride.departure_location.toLowerCase().includes(departureTerm);
+          const matchesDestination = !destinationTerm || 
+            ride.destination.toLowerCase().includes(destinationTerm);
+          const matchesDate = !dateTerm || 
+            new Date(ride.departure_time).toISOString().split('T')[0] === dateTerm;
+            
+          return matchesDeparture && matchesDestination && matchesDate;
+        });
+      }
+      
+      setRides(data);
+    } catch (error) {
+      console.error('Error fetching rides:', error);
+      alert('Failed to load rides. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if(!isLoading && !user) {
       router.push('/auth/login')
     } else if (user) {
       fetchRides();
+      fetchWalletBalance();
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, fetchRides]);
 
-  const fetchRides = async () => {
+  
+
+  const fetchWalletBalance = async () => {
     try {
-      setLoading(true);
-      const query = new URLSearchParams();
-      if (searchParams.departure) query.append('departure_location__icontains', searchParams.departure);
-      if (searchParams.destination) query.append('destination__icontains', searchParams.destination);
-      if (searchParams.date) query.append('departure_time__date', searchParams.date);
-
-      const response = await fetch(`http://127.0.0.1:8000/api/rides/?${query.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setRides(data);
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        const response = await paymentAPI.getWalletBalance(token);
+        // Handle both possible response structures
+        const balance = response.data?.balance ?? response.balance;
+        setWalletBalance(Number(balance));
       }
     } catch (error) {
-      console.error('Error fetching rides:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching wallet balance:', error);
     }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Search submitted with params:', searchParams);
+    fetchRides();
+  };
+
+  const clearSearch = () => {
+    setSearchParams({
+      departure: '',
+      destination: '',
+      date: ''
+    });
+    // Fetch all rides when clearing search
     fetchRides();
   };
 
@@ -79,11 +142,6 @@ const Page = () => {
       ...prev,
       [name]: value
     }));
-  };
-
-  // Avatar initials
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'U';
   };
 
   // Close dropdown on outside click
@@ -112,55 +170,307 @@ const Page = () => {
     );
   }
 
+  const handlePaymentSelection = async (method: PaymentMethod) => {
+    if (!selectedRide) return;
+    
+    if (method === 'mpesa') {
+      setShowMpesaForm(true);
+      setMpesaAmount(selectedRide.price.toString());
+      return;
+    }
+    
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert('Please log in to make a payment');
+      return;
+    }
+    
+    setIsProcessingPayment(true);
+    
+    try {
+      if (method === 'wallet') {
+        // For wallet payments, just book the ride
+        await bookRide(selectedRide.id, 'wallet', token);
+      } else if (method === 'card') {
+        // For card payments, you would integrate with your payment processor
+        // This is a placeholder for the actual implementation
+        await bookRide(selectedRide.id, 'card', token);
+      }
+      
+      // Update wallet balance
+      if (method === 'wallet' && walletBalance !== null) {
+        setWalletBalance(walletBalance - selectedRide.price);
+      }
+      
+      // Show success message
+      alert(`Payment successful! Driver contact information is now available.`);
+      
+    } catch (error) {
+      console.error('Payment failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Payment failed. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setIsProcessingPayment(false);
+      setShowPaymentModal(false);
+      setSelectedRide(null);
+    }
+  };
+
+  const processMpesaPayment = async () => {
+    if (!selectedRide || !mpesaPhone || !mpesaAmount) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert('Please log in to make a payment');
+      return;
+    }
+    
+    // Format phone number to include country code if not present
+    let formattedPhone = mpesaPhone.trim();
+    if (!formattedPhone.startsWith('254') && formattedPhone.startsWith('0')) {
+      formattedPhone = '254' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('254') && !formattedPhone.startsWith('+254')) {
+      formattedPhone = '254' + formattedPhone;
+    }
+    
+    setIsProcessingPayment(true);
+    
+    try {
+      // First initiate M-Pesa payment using the paymentAPI service
+      const paymentData = await paymentAPI.initiateMpesaPayment(token, {
+        phone_number: formattedPhone,
+        amount: parseFloat(mpesaAmount)
+      });
+      
+      console.log('M-Pesa payment initiated:', paymentData);
+      
+      // Then book the ride
+      await bookRide(selectedRide.id, 'mpesa', token);
+      
+      // Show success message
+      alert('Payment initiated! Please check your phone to complete the M-Pesa payment.');
+      setShowMpesaForm(false);
+      setShowPaymentModal(false);
+      setMpesaPhone('');
+      setMpesaAmount('');
+      setSelectedRide(null);
+      
+      // Refresh available rides
+      fetchRides();
+      
+    } catch (error) {
+      console.error('M-Pesa payment failed:', error);
+      
+      // More detailed error messages based on error type
+      let errorMessage = 'M-Pesa payment failed. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('NetworkError')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('401')) {
+          errorMessage = 'Session expired. Please log in again.';
+        } else if (error.message.includes('400')) {
+          errorMessage = 'Invalid request. Please check the phone number and amount.';
+        } else if (error.message.includes('500')) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const bookRide = async (rideId: number, paymentMethod: string, token: string) => {
+    try {
+      // Book the ride
+      const response = await fetch(`http://127.0.0.1:8000/api/rides/${rideId}/book/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_method: paymentMethod,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to book ride');
+      }
+
+      // Update the ride's available seats and status
+      const updatedRide = await response.json();
+      setRides(prevRides => 
+        prevRides.map(ride => 
+          ride.id === rideId ? { ...ride, ...updatedRide } : ride
+        )
+      );
+
+      return updatedRide;
+    } catch (error) {
+      console.error('Error booking ride:', error);
+      throw error;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-md">
-         <Link href='/' className='pacifico-regular flex items-center text-[#0086CA]'>
-            <Image src="/logo.png" alt="Logo" width={50} height={50} className="!m-0" />
-            <span className="ml-0 font-semibold text-2xl">Travas</span>
-          </Link>
-
-        <div className="hidden md:flex items-center space-x-6 text-gray-700 text-sm font-medium">
-          <Link href="#" className="hover:text-primary transition">Find Rides</Link>
-          <Link href="/dashboard/passenger/bookings" className="hover:text-primary transition">My Bookings</Link>
-          <Link href="/dashboard/passenger/profile" className="hover:text-primary transition">Profile</Link>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <IoNotifications className="text-2xl text-gray-600 hover:text-primary cursor-pointer" />
-          
-          <div className="relative" ref={dropdownRef}>
-            <button
-              className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg focus:outline-none"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              aria-label="User menu"
+    <div className="min-h-screen bg-background relative">
+      <PassengerNavbar 
+        user={{
+          first_name: user?.first_name,
+          last_name: user?.last_name,
+          email: user?.email
+        }} 
+        onLogout={logout} 
+      />
+      
+      {/* Payment Modal */}
+      {showPaymentModal && selectedRide && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => {
+                setShowPaymentModal(false);
+                setSelectedRide(null);
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
             >
-              {getInitials(user?.first_name || '', user?.last_name || '')}
+              <FaTimes size={20} />
             </button>
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-20">
-                <Link
-                  href="/dashboard/passenger/profile"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  Profile
-                </Link>
-                <button
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    logout && logout();
-                  }}
-                >
-                  Log out
-                </button>
-              </div>
-            )}
+            
+            <h3 className="text-xl font-bold mb-4">Complete Your Booking</h3>
+            <div className="mb-6">
+              <p className="text-gray-600">From: <span className="font-medium">{selectedRide.departure_location}</span></p>
+              <p className="text-gray-600">To: <span className="font-medium">{selectedRide.destination}</span></p>
+              <p className="text-gray-600">Price: <span className="font-bold text-primary">KSh {selectedRide.price}</span></p>
+            </div>
+
+            <div className="space-y-3">
+              {showMpesaForm ? (
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="mpesa-phone" className="block text-sm font-medium text-gray-700 mb-1">
+                      M-Pesa Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="mpesa-phone"
+                      value={mpesaPhone}
+                      onChange={(e) => setMpesaPhone(e.target.value)}
+                      placeholder="e.g., 254712345678"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      disabled={isProcessingPayment}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="mpesa-amount" className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount (KSh)
+                    </label>
+                    <input
+                      type="number"
+                      id="mpesa-amount"
+                      value={mpesaAmount}
+                      onChange={(e) => setMpesaAmount(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      disabled={isProcessingPayment}
+                    />
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={processMpesaPayment}
+                      disabled={isProcessingPayment || !mpesaPhone || !mpesaAmount}
+                      className={`flex-1 py-2 px-4 rounded-lg font-medium ${
+                        isProcessingPayment || !mpesaPhone || !mpesaAmount
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      {isProcessingPayment ? (
+                        <span className="flex items-center justify-center">
+                          <FaSpinner className="animate-spin mr-2" />
+                          Processing...
+                        </span>
+                      ) : (
+                        'Pay with M-Pesa'
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setShowMpesaForm(false)}
+                      disabled={isProcessingPayment}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handlePaymentSelection('wallet')}
+                    disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide?.price || 0))}
+                    className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide?.price || 0))
+                        ? 'opacity-50 cursor-not-allowed bg-gray-100'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      {isProcessingPayment ? (
+                        <FaSpinner className="animate-spin text-primary text-xl mr-3" />
+                      ) : (
+                        <IoWallet className="text-primary text-xl mr-3" />
+                      )}
+                      <div className="text-left">
+                        <div>Pay with Wallet</div>
+                        {walletBalance !== null && (
+                          <div className="text-xs text-gray-500">Balance: KSh {walletBalance.toFixed(2)}</div>
+                        )}
+                      </div>
+                    </div>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => handlePaymentSelection('mpesa')}
+                    disabled={isProcessingPayment}
+                    className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      isProcessingPayment ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <IoCash className="text-green-600 text-xl mr-3" />
+                      <span>Pay with M-Pesa</span>
+                    </div>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => handlePaymentSelection('card')}
+                    disabled={isProcessingPayment}
+                    className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      isProcessingPayment ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <IoCard className="text-blue-600 text-xl mr-3" />
+                      <span>Pay with Card</span>
+                    </div>
+                    <span>→</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </nav>
+      )}
 
       {/* Hero Section with Search */}
       <section className="px-6 py-16 text-center bg-blue-50">
@@ -208,13 +518,24 @@ const Page = () => {
                 className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-            <button
-              type="submit"
-              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition flex items-center justify-center"
-            >
-              <FaSearch className="mr-2" />
-              Search
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition flex-1 flex items-center justify-center"
+              >
+                <FaSearch className="mr-2" />
+                Search
+              </button>
+              {(searchParams.departure || searchParams.destination || searchParams.date) && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </form>
         </div>
       </section>
@@ -235,80 +556,80 @@ const Page = () => {
             </div>
           ) : (
             rides.map((ride) => (
-              <div key={ride.id} className="bg-card rounded-lg border border-border overflow-hidden hover:shadow-sm transition-shadow">
-                <div className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1 min-w-0">
-                      {/* <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-secondary flex-shrink-0 flex items-center justify-center">
-                          <FaCar className="text-primary text-sm" />
-                        </div>
-                        <h3 className="text-base font-medium text-foreground truncate">
-                          {ride.driver.username}'s Ride
-                        </h3>
-                      </div> */}
+              <div key={ride.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between">
+                  {/* Ride details */}
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <FaCar className="text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {ride.driver.username}&apos;s Ride
+                      </h3>
+                    </div>
+
+                    <div className="space-y-2 pl-12">
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                        <p className="text-gray-700">{ride.departure_location}</p>
+                      </div>
+                      <div className="border-l-2 border-gray-300 h-6 ml-2"></div>
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+                        <p className="text-gray-700">{ride.destination}</p>
+                      </div>
                       
-                      <div className="space-y-1.5">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1"></div>
-                          </div>
-                          <p className="ml-2 text-sm text-muted-foreground truncate">
-                            {ride.departure_location}
-                          </p>
+                      <div className="grid grid-cols-2 gap-4 mt-3 text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {new Date(ride.departure_time).toLocaleString()}
                         </div>
-                        
-                        <div className="border-l-2 border-border h-4 ml-2.5"></div>
-                        
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1"></div>
-                          </div>
-                          <p className="ml-2 text-sm text-muted-foreground truncate">
-                            {ride.destination}
-                          </p>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-muted-foreground">
-                          <div className="flex items-center">
-                            <svg className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {new Date(ride.departure_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </div>
-                          <div className="flex items-center">
-                            <svg className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            {ride.available_seats} seat{ride.available_seats !== 1 ? 's' : ''}
-                          </div>
+                        <div className="flex items-center">
+                          <FaCar className="h-4 w-4 mr-2 text-gray-400" />
+                          <span>
+                            {ride.available_seats > 0 ? (
+                              `${ride.available_seats} seat${ride.available_seats !== 1 ? 's' : ''} left`
+                            ) : (
+                              <span className="text-red-500">Fully booked</span>
+                            )}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="text-right ml-3">
-                      <div className="text-xl font-bold text-primary">KSh {ride.price}</div>
-                      <div className="text-xs text-muted-foreground">per seat</div>
                     </div>
                   </div>
-                  
-                  <div className="border-t border-border pt-3 mt-3">
+
+                  {/* Price and action */}
+                  <div className="mt-4 md:mt-0 md:ml-6 text-right">
+                    <div className="text-2xl font-bold text-blue-600">KSh {Number(ride.price).toFixed(2)}</div>
+                    <div className="text-sm text-gray-500 mb-4">per seat</div>
+                    
                     {ride.is_paid ? (
-                      <p className="text-sm font-semibold text-primary">
-                        📞 {ride.driver_phone}
-                      </p>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground flex items-center">
-                          <FaLock className="mr-1 text-muted-foreground" /> Contact locked
-                        </p>
-                        <button
-                          onClick={() => alert('Please pay to unlock driver contact')}
-                          className="px-3 py-1 text-xs text-primary-foreground rounded bg-primary hover:bg-primary/90 transition-colors"
-                        >
-                          Unlock Contact
-                        </button>
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-green-600">✅ Booking confirmed</p>
+                        {ride.driver_phone && (
+                          <p className="text-sm text-gray-700 mt-1">
+                            Driver: {ride.driver_phone}
+                          </p>
+                        )}
                       </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setSelectedRide(ride);
+                          setShowPaymentModal(true);
+                        }}
+                        disabled={ride.available_seats <= 0}
+                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                          ride.available_seats > 0
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-gray-200 text-gray-600 cursor-not-allowed'
+                        }`}
+                      >
+                        {ride.available_seats > 0 ? 'Book Now' : 'Fully Booked'}
+                      </button>
                     )}
                   </div>
                 </div>

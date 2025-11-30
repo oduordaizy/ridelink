@@ -4,9 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { FaCar } from "react-icons/fa"
 import { FaCirclePlus } from "react-icons/fa6"
-import DriverSidebar from '@/app/components/DriverSidebar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -59,7 +57,7 @@ export default function CreateRidePage() {
     if (value === '' || (Number(value) >= 1 && Number(value) <= 10)) {
       setFormData(prev => ({
         ...prev,
-        available_seats: value === '' ? 1 : Number(value),
+        available_seats: value === '' ? 0 : Number(value),
       }));
     }
   };
@@ -87,14 +85,17 @@ export default function CreateRidePage() {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify(payload),
+        
       });
 
+      
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to create ride');
       }
 
-      const data = await response.json();
+      await response.json();
       toast.success('Ride created successfully!');
       
       // Reset form
@@ -127,9 +128,16 @@ export default function CreateRidePage() {
 
   if (!user) {
     return null;
+
+  }
+
+  if (user){
+    const accessToken = localStorage.getItem('access_token');  // If you stored it
+    console.log(accessToken);
   }
 
   return (
+    
     <div className="min-h-screen bg-blue-50">
       
       <div className="max-w-4xl mx-auto">
@@ -215,14 +223,20 @@ export default function CreateRidePage() {
                   name="available_seats"
                   min="1"
                   max="10"
-                  value={formData.available_seats}
+                  value={formData.available_seats || ''}
                   onChange={handleAvailableSeatsChange}
                   onBlur={(e) => {
-                    // Ensure at least 1 seat is selected
-                    if (!e.target.value || Number(e.target.value) < 1) {
+                    // Ensure at least 1 seat is selected when input loses focus
+                    const value = Number(e.target.value);
+                    if (isNaN(value) || value < 1) {
                       setFormData(prev => ({
                         ...prev,
                         available_seats: 1
+                      }));
+                    } else if (value > 10) {
+                      setFormData(prev => ({
+                        ...prev,
+                        available_seats: 10
                       }));
                     }
                   }}

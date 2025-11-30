@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Travas",
+  title: "🚘Travas",
   description: "Travas, platform for finding and sharing rides, travel",
 };
 

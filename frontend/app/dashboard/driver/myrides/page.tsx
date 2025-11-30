@@ -4,8 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { 
-  FaCar, FaCalendarAlt, FaUserFriends, FaMoneyBillWave, 
-  FaLock, FaUser 
+  FaCar, FaCalendarAlt, FaUserFriends, FaUser 
 } from 'react-icons/fa'
 import { format } from 'date-fns'
 
@@ -150,11 +149,11 @@ const Page = () => {
                 </div>
 
                 {/* Locked/Unlocked phone number */}
-                <div className="border-t pt-3">
+                {/* <div className="border-t pt-3">
                   <p className="text-sm font-semibold" style={{ color: '#005792' }}>
                     📞 {ride.driver_phone}
                   </p>
-                </div>
+                </div> */}
               </div>
             ))}
           </div>

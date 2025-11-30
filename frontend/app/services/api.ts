@@ -280,3 +280,73 @@ export const getMyRides = async () =>{
   });
   return res.json();
 }
+
+// Payment API functions
+export const paymentAPI = {
+  // Initiate M-Pesa payment
+  async initiateMpesaPayment(token: string, data: { phone_number: string; amount: number }) {
+    const response = await fetch(`${API_BASE_URL}/payments/wallet/topup/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phone: data.phone_number,  // Changed from phone_number to phone
+        amount: data.amount,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.detail || 
+                         errorData.error || 
+                         `Failed to initiate M-Pesa payment (${response.status})`;
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  },
+
+  // Get wallet balance
+  async getWalletBalance(token: string) {
+    const response = await fetch(`${API_BASE_URL}/payments/wallet/balance/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch wallet balance');
+    }
+
+    return response.json();
+  },
+
+  // Get wallet transactions
+  async getWalletTransactions(token: string, page: number = 1, pageSize: number = 10) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/payments/wallet/transactions/?${params}`, 
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch wallet transactions');
+    }
+
+    return response.json();
+  },
+};

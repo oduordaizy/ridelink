@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { authAPI, AuthResponse, RegisterData } from '../services/api';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: AuthResponse['user'] | null;
@@ -27,19 +29,84 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthResponse['user'] | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
+  // Function to clear auth state and redirect to login
+  const clearAuthAndRedirect = useCallback((message?: string) => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    
+    if (message) {
+      toast.error('Session Expired', { description: message });
+    }
+    
+    // Redirect to login page
+    if (typeof window !== 'undefined') {
+      router.push('/auth/login');
+    }
+  }, [router]);
+
+  // Check token expiration
+  const checkTokenExpiration = useCallback(() => {
+    const storedToken = localStorage.getItem('access_token');
+    if (!storedToken) {
+      clearAuthAndRedirect();
+      return false;
+    }
+    
+    try {
+      const payload = JSON.parse(atob(storedToken.split('.')[1]));
+      const isExpired = payload.exp * 1000 < Date.now();
+      
+      if (isExpired) {
+        clearAuthAndRedirect('Your session has expired. Please log in again.');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking token:', error);
+      clearAuthAndRedirect('Invalid session. Please log in again.');
+      return false;
+    }
+  }, [clearAuthAndRedirect]);
+
+  // Check auth state on mount
   useEffect(() => {
-    // Check for stored token on app load
     const storedToken = localStorage.getItem('access_token');
     const storedUser = localStorage.getItem('user');
     
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      if (checkTokenExpiration()) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      }
     }
     
     setIsLoading(false);
-  }, []);
+
+    // Set up API interceptor for 401 responses
+    const originalFetch = window.fetch;
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await originalFetch(input, init);
+      
+      if (response.status === 401) {
+        clearAuthAndRedirect('Your session has expired. Please log in again.');
+      }
+      
+      return response;
+    };
+
+    // Check token expiration every minute
+    const interval = setInterval(checkTokenExpiration, 60000);
+    
+    return () => {
+      window.fetch = originalFetch;
+      clearInterval(interval);
+    };
+  }, [checkTokenExpiration, clearAuthAndRedirect]);
 
   const login = async (username: string, password: string) => {
     try {
@@ -74,15 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
-  
-    // Delay clearing storage (optional)
-    setTimeout(() => {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-    }, 50);
+    clearAuthAndRedirect();
   };
 
   const updateUser = (userData: AuthResponse['user']) => {
@@ -105,4 +164,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

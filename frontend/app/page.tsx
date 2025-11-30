@@ -21,7 +21,7 @@ export default function Home() {
         {/* Hero Section */}
         <section className="w-full max-w-5xl flex flex-col md:flex-row items-center justify-between gap-12 mb-20">
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-foreground mb-6 leading-tight">
+            <h1 className="text-5xl md:text-6xl font-extrabold text-[#00204a] mb-6 leading-tight">
               Effortless <span className="text-primary">Ridesharing</span> for Everyone
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8">
