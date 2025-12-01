@@ -12,6 +12,7 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=15, validators=[
         RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
     ])
+    profile_picture = models.ImageField(upload_to='profile_pictures/', default='profile_pictures//default-profile.png', blank=True, null=True)
     # is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,8 +36,7 @@ class Passenger(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='passenger_profile')
     emergency_contact = models.CharField(max_length=15, blank=True)
     preferred_payment_method = models.CharField(max_length=50, default='wallet')
-    # rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
-    # total_rides = models.IntegerField(default=0)
+    
     
     class Meta:
         db_table = 'passenger_profiles'

@@ -5,14 +5,23 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
 from .models import User
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Create your views here.
 
 def home(request):
     return JsonResponse({'message': "Welcome to RideLink"})
+
+class ProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]  # Handles file uploads
+
+    def get_object(self):
+        return self.request.user
 
 class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
