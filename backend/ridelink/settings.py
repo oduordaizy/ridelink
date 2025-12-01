@@ -163,7 +163,8 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://ridelink-9x6t.vercel.app"
+    "https://ridelink-9x6t.vercel.app",
+    "https://ridelink-9x6t-lf4ce7pme-daisys-projects-7ca04aa0.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
