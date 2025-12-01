@@ -167,7 +167,15 @@ CORS_ALLOWED_ORIGINS = [
     "https://ridelink-9x6t-lf4ce7pme-daisys-projects-7ca04aa0.vercel.app",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://ridelink-uxya.onrender.com/",
+    "https://ridelink-9x6t-lf4ce7pme-daisys-projects-7ca04aa0.vercel.app",
+]
+
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_ALL_HEADERS = True
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
