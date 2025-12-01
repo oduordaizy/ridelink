@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/api';
 
 export interface LoginData {
   username: string;
@@ -268,12 +268,12 @@ export const rideBookingAPI = {
 
 //Get rides
 export const getAllRides = async ()=>{
-  const res = await fetch('http://127.0.0.1:8000/api/rides/')
+  const res = await fetch(`${API_BASE_URL}/rides/`)
   return res.json();
 }
 
 export const getMyRides = async () =>{
-   const res = await fetch('http://127.0.0.1:8000/api/rides/', {
+   const res = await fetch(`${API_BASE_URL}/rides/`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
     },

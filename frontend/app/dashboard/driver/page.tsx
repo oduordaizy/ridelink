@@ -7,6 +7,8 @@ import { toast } from 'react-toastify';
 import { FaCirclePlus } from "react-icons/fa6"
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/app/services/api';
+
 
 interface RideFormData {
     departure_location: string;
@@ -78,7 +80,7 @@ export default function CreateRidePage() {
         additional_info: formData.additional_info || undefined,
       };
 
-      const response = await fetch('http://127.0.0.1:8000/api/rides/', {
+      const response = await fetch(`${API_BASE_URL}/rides/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { IoWallet, IoCard } from "react-icons/io5";
 import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner } from "react-icons/fa";
 import { FaMoneyBillWave as IoCash } from "react-icons/fa";
-import { paymentAPI } from '@/app/services/api';
+import { paymentAPI, API_BASE_URL } from '@/app/services/api';
 import PassengerNavbar from '@/app/components/PassengerNavbar';
 
 interface Ride {
@@ -50,7 +50,7 @@ const Page = () => {
       setLoading(true);
       
       // First, fetch all rides
-      const response = await fetch('http://127.0.0.1:8000/api/rides/', {
+      const response = await fetch(`${API_BASE_URL}/rides/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
@@ -290,7 +290,7 @@ const Page = () => {
   const bookRide = async (rideId: number, paymentMethod: string, token: string) => {
     try {
       // Book the ride
-      const response = await fetch(`http://127.0.0.1:8000/api/rides/${rideId}/book/`, {
+      const response = await fetch(`${API_BASE_URL}/rides/${rideId}/book/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

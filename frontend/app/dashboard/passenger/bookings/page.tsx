@@ -5,6 +5,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch } from 'react-icons/fa';
 import Link from 'next/link';
 import PassengerNavbar from '@/app/components/PassengerNavbar';
+import { API_BASE_URL } from '@/app/services/api';
+
 
 interface Booking {
   id: number;
@@ -52,7 +54,7 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:8000/api/bookings/my-bookings/', {
+      const response = await fetch(`${API_BASE_URL}/bookings/my-bookings/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -83,7 +85,7 @@ export default function BookingsPage() {
   const cancelBooking = async (bookingId: number) => {
     if (window.confirm('Are you sure you want to cancel this booking?')) {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/bookings/${bookingId}/cancel/`, {
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

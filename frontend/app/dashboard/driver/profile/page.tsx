@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/app/services/api';
 
 import { useEffect, useState, ChangeEvent } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,7 +43,7 @@ export default function DriverProfilePage() {
       try {
         const token = localStorage.getItem("access_token")
         if (!token) throw new Error("No access token found")
-        const res = await fetch("http://127.0.0.1:8000/api/auth/profile/", {
+        const res = await fetch(`${API_BASE_URL}/auth/profile/`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) throw new Error("Failed to load profile")
@@ -90,7 +91,7 @@ export default function DriverProfilePage() {
       })
       if (newProfilePicture) payload.append("profile_picture", newProfilePicture)
 
-      const res = await fetch("http://127.0.0.1:8000/api/auth/profile/", {
+      const res = await fetch(`${API_BASE_URL}/auth/profile/`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` }, // FormData sets Content-Type automatically
         body: payload,

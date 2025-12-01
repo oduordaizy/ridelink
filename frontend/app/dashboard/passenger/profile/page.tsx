@@ -10,6 +10,9 @@ import { toast } from 'react-toastify';
 import { useAuth } from '@/app/contexts/AuthContext';
 import Footer from '@/app/components/Footer';
 import PassengerNavbar from '@/app/components/PassengerNavbar';
+import { API_BASE_URL } from '@/app/services/api';
+
+
 
 type ProfileFormData = Pick<PassengerProfile, 'first_name' | 'last_name' | 'phone_number' | 'gender'>;
 
@@ -48,7 +51,7 @@ export default function PassengerProfilePage() {
 
         if (!token) throw new Error('No access token found');
 
-        const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+        const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -89,7 +92,7 @@ export default function PassengerProfilePage() {
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error('No access token found');
 
-      const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+      const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
