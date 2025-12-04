@@ -3,10 +3,14 @@ from accounts.models import User
 
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=2600.00)  # Initial balance set to KES 1000
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=2600.00)
 
     def __str__(self):
         return f"{self.user.username}'s Wallet - {self.balance}"
+    
+    def top_up(self, amount):
+        self.balance += amount
+        self.save()
     
 
 class Transaction(models.Model):
