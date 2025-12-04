@@ -4,13 +4,14 @@ import json
 import logging
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
+from django.conf import settings
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 def get_access_token():
-    consumer_key = "HmooGXDUPyGx1kXbXKMoy27MrUwElwULXe7wEL0FTYlaUL5K"
-    consumer_secret = "9c9kOcbgaJ94sUcowbQzPH6BehMJL0wuxKaAe8GaY3B0cPBVExBgp1LJc257YVYC"
+    consumer_key = settings.MPESA_CONSUMER_KEY
+    consumer_secret = settings.MPESA_CONSUMER_SECRET
     api_url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 
     try:
@@ -35,8 +36,8 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
         dict: Response from MPESA API or error details
     """
     # MPESA API credentials
-    shortcode = "174379"  # Test credentials
-    passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+    shortcode = settings.MPESA_SHORTCODE
+    passkey = settings.MPESA_PASSKEY
     
     # Ensure phone number is in the correct format (strip + or 0 and add 254 if needed)
     phone_number = str(phone_number).strip()
@@ -71,7 +72,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
     }
     
     # Use ngrok URL for local development or your production URL
-    callback_url = "https://fb4ba3e603cf.ngrok-free.app/api/payments/mpesa/callback/"
+    callback_url = settings.CALLBACK_URL
     
     # Prepare request payload
     payload = {
