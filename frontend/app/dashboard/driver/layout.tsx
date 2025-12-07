@@ -3,8 +3,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import DriverSidebar from '../../components/DriverSidebar';
-import { IoNotifications, IoMenu, IoClose } from 'react-icons/io5';
+import { 
+  Home, 
+  User, 
+  Settings, 
+  Menu, 
+  X, 
+  Car, 
+  Wallet, 
+  History, 
+  Bell,
+  LogOut,
+  ChevronRight
+} from 'lucide-react';
 import Link from 'next/link';
 
 const DriverLayout = ({
@@ -19,7 +30,13 @@ const DriverLayout = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  const menuItems = [
+    { id: 'dashboard', icon: Home, label: 'Dashboard', href: '/dashboard/driver' },
+    { id: 'rides', icon: Car, label: 'My Rides', href: '/dashboard/driver/myrides' },
+    { id: 'wallet', icon: Wallet, label: 'Wallet', href: '/dashboard/driver/wallet' },
+    { id: 'profile', icon: User, label: 'Profile', href: '/dashboard/driver/profile' },
+  ];
 
   // Set client-side rendering
   useEffect(() => {
@@ -31,10 +48,6 @@ const DriverLayout = ({
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
-      }
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && 
-          !(event.target as HTMLElement).closest('[data-sidebar-toggle]')) {
-        setIsSidebarOpen(false);
       }
     }
 
@@ -49,139 +62,244 @@ const DriverLayout = ({
     setIsSidebarOpen(false);
   }, [pathname]);
 
-  const getInitials = (user: { first_name?: string; last_name?: string } | null | undefined) => {
-    if (!user?.first_name) return 'U';
-    const firstInitial = user.first_name?.[0]?.toUpperCase() || '';
-    const lastInitial = user.last_name?.[0]?.toUpperCase() || '';
-    return `${firstInitial}${lastInitial}` || 'U';
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const handleItemClick = () => {
+    setIsSidebarOpen(false);
   };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
+
+  const getInitials = (user: any) => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    if (user?.first_name) {
+      return user.first_name[0].toUpperCase();
+    }
+    if (user?.username) {
+      return user.username[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const userName = user?.first_name && user?.last_name 
+    ? `${user.first_name} ${user.last_name}` 
+    : user?.first_name || user?.username || 'User';
+  const userEmail = user?.email || '';
 
   if (!isClient) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#08A6F6]"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-blue-50">
-      {/* Mobile sidebar backdrop */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden">
-          <div 
-            ref={sidebarRef}
-            className="relative flex flex-col w-72 max-w-xs h-full bg-white shadow-xl"
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+            aria-label="Toggle menu"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">RideLink</h2>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-1 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
-              >
-                <span className="sr-only">Close sidebar</span>
-                <IoClose className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <DriverSidebar />
-            </div>
+            <Menu className="w-6 h-6 text-gray-700" />
+          </button>
+          <h1 className="text-xl font-bold text-[#00204a]">RideLink</h1>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button 
+            className="p-2 text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative"
+            onClick={() => {}}
+          >
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>
+          </button>
+          
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white font-semibold">
+            {getInitials(user)}
           </div>
         </div>
+      </header>
+
+      {/* Overlay for mobile */}
+      {isSidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          onClick={toggleSidebar}
+        />
       )}
 
-      {/* Static sidebar for desktop */}
-      <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col w-64 border-r border-gray-200 bg-white">
-          {/* <div className="flex items-center h-16 px-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">Travas</h2>
-          </div> */}
-          <div className="flex-1 overflow-y-auto">
-            <DriverSidebar />
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top navigation */}
-        <header className="bg-white shadow-sm z-10">
-          <div className="flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-            <div className="flex items-center">
-              <button
-                type="button"
-                data-sidebar-toggle
-                onClick={() => setIsSidebarOpen(true)}
-                className="p-2 text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
-              >
-                <span className="sr-only">Open sidebar</span>
-                <IoMenu className="w-6 h-6" />
-              </button>
-              <h1 className="ml-2 text-lg font-semibold text-gray-900 md:ml-4">
-                {pathname === '/dashboard/driver' ? 'Dashboard' : 
-                 pathname.includes('/myrides') ? 'My Rides' :
-                 pathname.includes('/wallet') ? 'Wallet' :
-                 pathname.includes('/profile') ? 'Profile' : 'Dashboard'}
-              </h1>
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 z-50
+          transform transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+          flex flex-col
+        `}
+      >
+        {/* Sidebar Header */}
+        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center">
+              <Car className="w-6 h-6 text-white" />
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <button 
-                className="p-2 text-gray-500 rounded-full hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                onClick={() => {}}
-              >
-                <span className="sr-only">View notifications</span>
-                <div className="relative">
-                  <IoNotifications className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500"></span>
-                </div>
-              </button>
+            <span className="text-xl font-bold text-[#00204a]">RideLink</span>
+          </div>
+          <button
+            onClick={toggleSidebar}
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="flex-1 p-4 overflow-y-auto mt-4">
+          <ul className="space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
               
-              {/* Profile dropdown */}
-              <div ref={dropdownRef} className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center max-w-xs rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold">
-                    {getInitials(user)}
-                  </div>
-                </button>
-                
-                {isProfileOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <div className="py-1">
-                      <Link
-                        href="/dashboard/driver/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Profile
-                      </Link>
-                      <button
-                        onClick={() => {
-                          logout();
-                          router.push('/');
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Sign out
-                      </button>
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    onClick={handleItemClick}
+                    className={`
+                      w-full flex items-center justify-between px-4 py-3 rounded-xl
+                      transition-all duration-200 group
+                      ${isActive 
+                        ? 'bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white shadow-lg shadow-[#08A6F6]/30' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-600'}`} />
+                      <span className="font-medium">{item.label}</span>
                     </div>
-                  </div>
-                )}
+                    {isActive && (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* User Info & Logout Section */}
+        <div className="border-t border-gray-200">
+          {/* User Info */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white font-semibold">
+                {getInitials(user)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 truncate text-sm">{userName}</h3>
+                <p className="text-xs text-gray-500 truncate">{userEmail}</p>
               </div>
             </div>
           </div>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-blue-50 p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto">
-            {children}
+          
+          {/* Logout Button */}
+          <div className="p-4">
+            <button
+              type="button"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium">Logout</span>
+            </button>
           </div>
-        </main>
-      </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="lg:ml-72 min-h-screen">
+        <div className="pt-16 lg:pt-0">
+          {/* Desktop Header */}
+          <header className="hidden lg:block bg-white shadow-sm">
+            <div className="flex items-center justify-between px-6 py-4">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {pathname === '/dashboard/driver' ? 'Dashboard' : 
+                 pathname.includes('/myrides') ? 'My Rides' :
+                 pathname.includes('/wallet') ? 'Wallet' :
+                 pathname.includes('/profile') ? 'Profile' :
+                 pathname.includes('/settings') ? 'Settings' : 'Dashboard'}
+              </h1>
+              
+              <div className="flex items-center gap-4">
+                <button 
+                  className="p-2 text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative"
+                  onClick={() => {}}
+                >
+                  <Bell className="h-6 w-6" />
+                  <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                </button>
+                
+                {/* Profile dropdown */}
+                <div ref={dropdownRef} className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#08A6F6]"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white font-semibold">
+                      {getInitials(user)}
+                    </div>
+                  </button>
+                  
+                  {isProfileOpen && (
+                    <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-1">
+                        <Link
+                          href="/dashboard/driver/profile"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-xl"
+                          onClick={() => setIsProfileOpen(false)}
+                        >
+                          Profile
+                        </Link>
+                        <Link
+                          href="/dashboard/driver/settings"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsProfileOpen(false)}
+                        >
+                          Settings
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-xl"
+                        >
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Page content */}
+          <div className="p-4 sm:p-6">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
