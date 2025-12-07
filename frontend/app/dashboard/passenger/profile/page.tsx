@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/app/contexts/AuthContext';
 import Footer from '@/app/components/Footer';
-import PassengerNavbar from '@/app/components/PassengerNavbar';
 import { API_BASE_URL } from '@/app/services/api';
 
 
@@ -152,15 +151,6 @@ export default function PassengerProfilePage() {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-    <PassengerNavbar 
-      user={{
-    first_name: user?.first_name,
-    last_name: user?.last_name,
-    email: user?.email
-  }} 
-      onLogout={logout} 
-/>
-
       <div className="max-w-5xl mx-auto px-6 py-10">
         <Card className="p-8 shadow-lg rounded-2xl">
           <div className="flex flex-col items-center mb-8">
@@ -235,7 +225,6 @@ export default function PassengerProfilePage() {
           </form>
         </Card>
       </div>
-      <Footer />
     </div>
   );
 }

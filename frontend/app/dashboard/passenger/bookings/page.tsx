@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch } from 'react-icons/fa';
 import Link from 'next/link';
-import PassengerNavbar from '@/app/components/PassengerNavbar';
 import { API_BASE_URL } from '@/app/services/api';
 
 
@@ -117,14 +116,7 @@ export default function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PassengerNavbar 
-        user={{
-          first_name: user?.first_name,
-          last_name: user?.last_name,
-          email: user?.email
-        }} 
-        onLogout={logout} 
-      />
+     
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">

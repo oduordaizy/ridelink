@@ -11,7 +11,6 @@ import { toast } from "sonner"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { paymentAPI } from "@/app/services/api"
 import { useAuth } from "@/app/contexts/AuthContext"
-import PassengerNavbar from '@/app/components/PassengerNavbar';
 
 interface Transaction {
   id: number;
@@ -482,15 +481,7 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-8 bg-blue-50 p-4 min-h-screen">
-      <PassengerNavbar 
-        user={{
-          first_name: user?.first_name,
-          last_name: user?.last_name,
-          email: user?.email
-        }} 
-        onLogout={logout} 
-      />
-      <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto">
         {/* Balance Card */}
         <Card className="border-0 shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">

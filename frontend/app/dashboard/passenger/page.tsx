@@ -6,7 +6,6 @@ import { IoWallet, IoCard } from "react-icons/io5";
 import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner } from "react-icons/fa";
 import { FaMoneyBillWave as IoCash } from "react-icons/fa";
 import { paymentAPI, API_BASE_URL } from '@/app/services/api';
-import PassengerNavbar from '@/app/components/PassengerNavbar';
 
 interface Ride {
   id: number;
@@ -323,15 +322,7 @@ const Page = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <PassengerNavbar 
-        user={{
-          first_name: user?.first_name,
-          last_name: user?.last_name,
-          email: user?.email
-        }} 
-        onLogout={logout} 
-      />
-      
+        
       {/* Payment Modal */}
       {showPaymentModal && selectedRide && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
