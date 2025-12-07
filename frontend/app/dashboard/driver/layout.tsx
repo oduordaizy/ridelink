@@ -111,7 +111,7 @@ const DriverLayout = ({
           >
             <Menu className="w-6 h-6 text-gray-700" />
           </button>
-          <h1 className="text-xl font-bold text-[#00204a]">RideLink</h1>
+          <h1 className="text-xl font-bold text-[#00204a]">Travas</h1>
         </div>
         
         <div className="flex items-center gap-3">
@@ -153,7 +153,7 @@ const DriverLayout = ({
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center">
               <Car className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-[#00204a]">RideLink</span>
+            <span className="text-xl font-bold text-[#00204a]">Travas</span>
           </div>
           <button
             onClick={toggleSidebar}

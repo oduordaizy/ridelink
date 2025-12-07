@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { FaCirclePlus } from "react-icons/fa6"
+import { FaArrowLeft, FaLocationDot, FaMapLocationDot, FaCalendarDays, FaClock, FaUsers, FaMoneyBill } from "react-icons/fa6"
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
@@ -55,7 +55,6 @@ export default function CreateRidePage() {
 
   const handleAvailableSeatsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow empty string or numbers between 1 and 10
     if (value === '' || (Number(value) >= 1 && Number(value) <= 10)) {
       setFormData(prev => ({
         ...prev,
@@ -75,7 +74,7 @@ export default function CreateRidePage() {
         departure_location: formData.departure_location,
         destination: formData.destination,
         departure_time: departureDateTime,
-        available_seats: Number(formData.available_seats) || 1, // Ensure it's a number
+        available_seats: Number(formData.available_seats) || 1,
         price: formData.price,
         additional_info: formData.additional_info || undefined,
       };
@@ -87,11 +86,8 @@ export default function CreateRidePage() {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify(payload),
-        
       });
 
-      
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to create ride');
@@ -100,7 +96,6 @@ export default function CreateRidePage() {
       await response.json();
       toast.success('Ride created successfully!');
       
-      // Reset form
       setFormData({
         departure_location: '',
         destination: '',
@@ -122,182 +117,190 @@ export default function CreateRidePage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#08A6F6] border-t-transparent"></div>
       </div>
     );
   }
 
   if (!user) {
     return null;
-
-  }
-
-  if (user){
-    const accessToken = localStorage.getItem('access_token');  // If you stored it
-    console.log(accessToken);
   }
 
   return (
-    
-    <div className="min-h-screen bg-blue-50">
-      
-      <div className="max-w-4xl mx-auto">
-        <div className='flex justify-between'>
-        <div className="flex items-center mb-4">
-          <FaCirclePlus className="text-blue-600 text-xl mr-2" />
-          <h1 className="text-xl font-bold text-blue-600">Create New Ride</h1>
-        </div>
-          <div><Link href='/dashboard/driver/myrides'><Button>View Scheduled Rides</Button></Link></div>
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <button
+            onClick={() => router.push('/dashboard/driver')}
+            className="flex items-center gap-2 text-gray-600 hover:text-[#08A6F6] mb-4 transition-colors"
+          >
+            {/* <FaArrowLeft /> */}
+            {/* <span className="text-sm font-medium">Back</span> */}
+          </button>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#00204a] mb-2">Create a Ride</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Share your journey and earn money</p>
         </div>
         
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <form onSubmit={handleSubmit} className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label htmlFor="departure_location" className="block text-sm font-medium text-gray-700">
-                  Departure Location *
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-4">
+          <div className="space-y-6">
+            {/* From & To */}
+            <div className="space-y-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <FaLocationDot className="text-[#08A6F6]" />
+                  From
                 </label>
                 <input
                   type="text"
-                  id="departure_location"
                   name="departure_location"
                   value={formData.departure_location}
                   onChange={handleChange}
-                  className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
+                  placeholder="Enter pickup location"
                   required
                 />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="destination" className="block text-sm font-medium text-gray-700">
-                  Destination *
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <FaMapLocationDot className="text-[#08A6F6]" />
+                  To
                 </label>
                 <input
                   type="text"
-                  id="destination"
                   name="destination"
                   value={formData.destination}
                   onChange={handleChange}
-                  className="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
+                  placeholder="Enter destination"
                   required
                 />
               </div>
+            </div>
 
-              <div className="space-y-1">
-                <label htmlFor="departure_date" className="block text-sm font-medium text-gray-700">
-                  Date *
+            {/* Date & Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <FaCalendarDays className="text-[#08A6F6]" />
+                  Date
                 </label>
                 <input
                   type="date"
-                  id="departure_date"
                   name="departure_date"
                   value={formData.departure_date}
                   onChange={handleChange}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="departure_time" className="block text-sm font-medium text-gray-700">
-                  Time *
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <FaClock className="text-[#08A6F6]" />
+                  Time
                 </label>
                 <input
                   type="time"
-                  id="departure_time"
                   name="departure_time"
                   value={formData.departure_time}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
                   required
                 />
               </div>
+            </div>
 
-              <div className="space-y-1">
-                <label htmlFor="available_seats" className="block text-sm font-medium text-gray-700">
-                  Available Seats *
+            {/* Seats & Price */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <FaUsers className="text-[#08A6F6]" />
+                  Seats
                 </label>
                 <input
                   type="number"
-                  id="available_seats"
                   name="available_seats"
                   min="1"
                   max="10"
                   value={formData.available_seats || ''}
                   onChange={handleAvailableSeatsChange}
                   onBlur={(e) => {
-                    // Ensure at least 1 seat is selected when input loses focus
                     const value = Number(e.target.value);
                     if (isNaN(value) || value < 1) {
-                      setFormData(prev => ({
-                        ...prev,
-                        available_seats: 1
-                      }));
+                      setFormData(prev => ({ ...prev, available_seats: 1 }));
                     } else if (value > 10) {
-                      setFormData(prev => ({
-                        ...prev,
-                        available_seats: 10
-                      }));
+                      setFormData(prev => ({ ...prev, available_seats: 10 }));
                     }
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
                   required
                 />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                  Price per Seat (KSH) *
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <FaMoneyBill className="text-[#08A6F6]" />
+                  Price (KSH)
                 </label>
                 <input
                   type="number"
-                  id="price"
                   name="price"
                   min="0"
                   step="100"
                   value={formData.price}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
+                  placeholder="0"
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="additional_info" className="block text-sm font-medium text-gray-700">
-                Additional Information
+            {/* Additional Info */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Additional Info (Optional)
               </label>
               <textarea
-                id="additional_info"
                 name="additional_info"
                 rows={3}
                 value={formData.additional_info}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Any additional details about the ride..."
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all resize-none"
+                placeholder="Any special requirements or details..."
               />
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard/driver')}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Creating...' : 'Create Ride'}
-              </button>
-            </div>
-          </form>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="w-full py-4 bg-[#08A6F6] hover:bg-[#00204a] text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  Creating Ride...
+                </span>
+              ) : (
+                'Create Ride'
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* View Scheduled Rides Link */}
+        <Link href='/dashboard/driver/myrides'>
+          <div className="text-center py-4 text-sm text-gray-600 hover:text-[#08A6F6] transition-colors">
+            View your scheduled rides →
+          </div>
+        </Link>
       </div>
     </div>
   );
