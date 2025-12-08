@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import { API_BASE_URL } from '@/app/services/api';
 import { 
   Car, 
   MapPin, 
@@ -55,7 +56,7 @@ const Page = () => {
       try {
         if (!user) return;
         
-        const response = await fetch(`http://127.0.0.1:8000/api/rides/?driver=${user.id}`, {
+        const response = await fetch(`${API_BASE_URL}/rides/?driver=${user.id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
