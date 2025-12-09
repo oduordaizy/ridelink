@@ -38,11 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
-    
+
     if (message) {
       toast.error('Session Expired', { description: message });
     }
-    
+
     // Redirect to login page
     if (typeof window !== 'undefined') {
       router.push('/auth/login');
@@ -53,55 +53,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkTokenExpiration = useCallback(() => {
     const storedToken = localStorage.getItem('access_token');
     if (!storedToken) {
-      clearAuthAndRedirect();
+      // Clear auth state but don't redirect - let individual pages handle redirects
+      setToken(null);
+      setUser(null);
       return false;
     }
-    
+
     try {
       const payload = JSON.parse(atob(storedToken.split('.')[1]));
       const isExpired = payload.exp * 1000 < Date.now();
-      
+
       if (isExpired) {
-        clearAuthAndRedirect('Your session has expired. Please log in again.');
+        // Clear expired token
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
         return false;
       }
       return true;
     } catch (error) {
       console.error('Error checking token:', error);
-      clearAuthAndRedirect('Invalid session. Please log in again.');
+      // Clear invalid token
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
       return false;
     }
-  }, [clearAuthAndRedirect]);
+  }, []);
 
   // Check auth state on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('access_token');
     const storedUser = localStorage.getItem('user');
-    
+
     if (storedToken && storedUser) {
       if (checkTokenExpiration()) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       }
     }
-    
+
     setIsLoading(false);
 
     // Set up API interceptor for 401 responses
     const originalFetch = window.fetch;
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const response = await originalFetch(input, init);
-      
+
       if (response.status === 401) {
         clearAuthAndRedirect('Your session has expired. Please log in again.');
       }
-      
+
       return response;
     };
 
     // Check token expiration every minute
     const interval = setInterval(checkTokenExpiration, 60000);
-    
+
     return () => {
       window.fetch = originalFetch;
       clearInterval(interval);
@@ -111,12 +123,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string) => {
     try {
       const response = await authAPI.login({ username, password });
-      
+
       // Store tokens and user data
       localStorage.setItem('access_token', response.access);
       localStorage.setItem('refresh_token', response.refresh);
       localStorage.setItem('user', JSON.stringify(response.user));
-      
+
       setToken(response.access);
       setUser(response.user);
     } catch (error) {
@@ -127,12 +139,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (data: RegisterData) => {
     try {
       const response = await authAPI.register(data);
-      
+
       // Store tokens and user data
       localStorage.setItem('access_token', response.access);
       localStorage.setItem('refresh_token', response.refresh);
       localStorage.setItem('user', JSON.stringify(response.user));
-      
+
       setToken(response.access);
       setUser(response.user);
     } catch (error) {

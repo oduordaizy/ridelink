@@ -278,7 +278,7 @@ export default function DriverWallet() {
               <span className="text-base md:text-lg opacity-90">Available Balance</span>
             </div>
             <div className="bg-white bg-opacity-20 rounded-full px-3 py-1">
-              <span className="text-xs md:text-sm">Active</span>
+              <span className="text-xs md:text-sm text-[#08A6F6]">Active</span>
             </div>
           </div>
 
