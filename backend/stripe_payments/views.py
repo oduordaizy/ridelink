@@ -17,40 +17,47 @@ import jwt
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def create_topup_checkout_session(request, amount):
-    # Get token from Authorization header
-    auth_header = request.headers.get('Authorization', '')
-    
-    if not auth_header.startswith('Bearer '):
-        return JsonResponse({'error': 'Authentication required'}, status=401)
-    
-    token = auth_header.split(' ')[1]
-    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_topup_checkout_session(request):
     try:
-        # Decode JWT WITHOUT verification (since it's from external auth server)
-        # In production, you should verify the signature with the public key
-        payload = jwt.decode(token, options={"verify_signature": False})
-        user_uuid = payload.get('sub')  # This is the UUID from your JWT
+        # Get the authenticated user
+        user = request.user
+        if user.is_anonymous:
+            return Response(
+                {"error": "Authentication required"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         
-        if not user_uuid:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+        # Get amount from request body
+        data = request.data
+        amount = data.get("amount")
         
-        # Find user by UUID (adjust field name if needed)
-        # If your User model uses 'id' as UUID, use: user = User.objects.get(id=user_uuid)
-        # If it's a different field, adjust accordingly
+        if not amount:
+            return Response(
+                {"error": "Amount is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         try:
-            user = User.objects.get(id=user_uuid)
-        except User.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be positive")
+        except (ValueError, TypeError):
+            return Response(
+                {"error": "Invalid amount. Must be a positive number."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # Convert amount to cents
-        amount_cents = int(float(amount) * 100)
+        amount_cents = int(amount * 100)
         
         # Validate amount
         if amount_cents < 1000:  # Minimum 10 KES
-            return JsonResponse({'error': 'Minimum amount is KES 10'}, status=400)
+            return Response(
+                {"error": "Minimum amount is KES 10"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Create Stripe checkout session
         session = stripe.checkout.Session.create(
@@ -71,16 +78,17 @@ def create_topup_checkout_session(request, amount):
             metadata={'user_id': str(user.id), 'topup_amount': str(amount)}
         )
         
-        return JsonResponse({
+        return Response({
             'checkout_url': session.url,
             'session_id': session.id
-        })
+        }, status=status.HTTP_200_OK)
         
-    except jwt.DecodeError:
-        return JsonResponse({'error': 'Invalid token format'}, status=401)
     except Exception as e:
         print(f"Error: {e}")  # Debug log
-        return JsonResponse({'error': str(e)}, status=500)
+        return Response(
+            {"error": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     
 @csrf_exempt
