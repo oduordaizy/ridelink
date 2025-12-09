@@ -26,6 +26,7 @@ class Driver(models.Model):
     vehicle_model = models.CharField(max_length=100, blank=True, null=True)
     vehicle_color = models.CharField(max_length=50, blank=True, null=True)
     vehicle_plate = models.CharField(max_length=20, blank=True, null=True)
+    vehicle_picture = models.ImageField(upload_to='vehicle_pictures/', blank=True, null=True)
     # is_available = models.BooleanField(default=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     

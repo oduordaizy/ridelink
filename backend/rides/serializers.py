@@ -2,17 +2,25 @@
 from rest_framework import serializers
 from django.utils import timezone
 from .models import Ride, Booking
-from accounts.models import User
+from accounts.models import User, Driver
+
+
+class DriverProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Driver
+        fields = ['vehicle_model', 'vehicle_color', 'vehicle_plate', 'vehicle_picture', 'rating']
 
 
 class UserSerializer(serializers.ModelSerializer):
+    driver_profile = DriverProfileSerializer(read_only=True)
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile_picture', 'driver_profile']
 
 
 class RideListSerializer(serializers.ModelSerializer):
-    driver = serializers.StringRelatedField()
+    driver = UserSerializer(read_only=True)  # Return full driver object
     available_seats = serializers.IntegerField()
     is_available = serializers.SerializerMethodField()
 

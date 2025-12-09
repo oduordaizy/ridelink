@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.db import transaction
+from django.db import transaction as db_transaction
 import json
 from .models import Transaction, Wallet
 from .mpesa import lipa_na_mpesa
@@ -57,7 +57,7 @@ def topup_wallet(request):
             )
         
         # Process the payment
-        with transaction.atomic():
+        with db_transaction.atomic():
             # Get or create wallet for the user
             wallet, created = Wallet.objects.get_or_create(
                 user=user,
@@ -244,29 +244,53 @@ def mpesa_callback(request):
                     return JsonResponse({"ResultCode": 1, "ResultDesc": "Missing required fields"})
                 
                 # Find the pending transaction
-                transaction = Transaction.objects.filter(
+                transaction_obj = Transaction.objects.filter(
                     status="pending",
                     amount=amount
                 ).filter(
                     wallet__user__phone_number__endswith=phone[-9:]
                 ).order_by('-created_at').first()
                 
-                if not transaction:
+                if not transaction_obj:
                     logger.error(f"No pending transaction found for amount: {amount}, phone: {phone}")
                     return JsonResponse({"ResultCode": 1, "ResultDesc": "Transaction not found"})
                 
                 # Update transaction status
-                with transaction.atomic():
-                    transaction.status = "success"
-                    transaction.mpesa_receipt_number = mpesa_receipt
-                    transaction.save()
+                with db_transaction.atomic():
+                    transaction_obj.status = "success"
+                    transaction_obj.mpesa_receipt_number = mpesa_receipt
+                    transaction_obj.save()
                     
                     # Update wallet balance
-                    wallet = transaction.wallet
+                    wallet = transaction_obj.wallet
                     wallet.balance += amount
                     wallet.save()
                     
                     logger.info(f"Successfully processed payment: {mpesa_receipt} for KES {amount}")
+                
+                # Check if this is a booking payment (not a wallet top-up)
+                # We can identify this by checking if there's a pending booking for this user
+                # that matches the payment amount
+                try:
+                    from rides.models import Booking
+                    
+                    # Find pending booking for this user with matching amount
+                    pending_booking = Booking.objects.filter(
+                        user=wallet.user,
+                        status='pending',
+                        is_paid=False
+                    ).select_related('ride').first()
+                    
+                    if pending_booking:
+                        # Check if amount matches ride price
+                        expected_amount = float(pending_booking.ride.price) * pending_booking.no_of_seats
+                        if abs(expected_amount - amount) < 0.01:  # Allow small floating point differences
+                            # Confirm the booking
+                            pending_booking.confirm_payment()
+                            logger.info(f"Confirmed booking {pending_booking.id} for ride {pending_booking.ride.id}")
+                except Exception as e:
+                    logger.error(f"Error confirming booking: {str(e)}", exc_info=True)
+                    # Don't fail the callback if booking confirmation fails
                 
                 return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
                 

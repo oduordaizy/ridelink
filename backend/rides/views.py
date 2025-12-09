@@ -6,12 +6,14 @@ from django_filters.rest_framework import OrderingFilter
 from django_filters import rest_framework as django_filters
 from django.db.models import Q
 from django.utils import timezone
+from django.db import transaction as db_transaction
 
 from .models import Ride, Booking
 from .serializers import (
     RideListSerializer, RideDetailSerializer,
     BookingSerializer, 
 )
+from payments.models import Wallet
 
 
 class IsDriverOrReadOnly(permissions.BasePermission):
@@ -43,6 +45,104 @@ class RideViewSet(viewsets.ModelViewSet):
         if user.user_type == 'driver':
             return Ride.objects.filter(driver=user)
         return Ride.objects.all()
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def book(self, request, pk=None):
+        """
+        Book a ride with payment
+        """
+        ride = self.get_object()
+        payment_method = request.data.get('payment_method')
+        no_of_seats = request.data.get('no_of_seats', 1)
+        
+        # Validate payment method
+        if payment_method not in ['wallet', 'mpesa', 'card']:
+            return Response({
+                'error': 'Invalid payment method. Must be wallet, mpesa, or card'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate seats availability
+        if ride.available_seats < no_of_seats:
+            return Response({
+                'error': f'Only {ride.available_seats} seat(s) available'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if user already has a booking for this ride
+        existing_booking = Booking.objects.filter(
+            ride=ride,
+            user=request.user,
+            status__in=['pending', 'confirmed']
+        ).first()
+        
+        if existing_booking:
+            return Response({
+                'error': 'You already have a booking for this ride'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create booking with transaction
+        try:
+            with db_transaction.atomic():
+                # Create booking
+                booking = Booking.objects.create(
+                    ride=ride,
+                    user=request.user,
+                    no_of_seats=no_of_seats,
+                    status='pending'
+                )
+                
+                # Handle payment method
+                if payment_method == 'wallet':
+                    # Process wallet payment immediately
+                    try:
+                        wallet = Wallet.objects.select_for_update().get(user=request.user)
+                    except Wallet.DoesNotExist:
+                        booking.delete()
+                        return Response({
+                            'error': 'Wallet not found. Please create a wallet first.'
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    total_amount = float(ride.price) * no_of_seats
+                    
+                    if wallet.balance < total_amount:
+                        booking.delete()
+                        return Response({
+                            'error': f'Insufficient wallet balance. Required: KSh {total_amount:.2f}, Available: KSh {wallet.balance:.2f}'
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Deduct from wallet
+                    wallet.balance -= total_amount
+                    wallet.save()
+                    
+                    # Confirm booking and reduce seats
+                    booking.confirm_payment()
+                    
+                    return Response({
+                        'success': True,
+                        'booking_id': booking.id,
+                        'message': 'Booking confirmed successfully',
+                        'driver_phone': ride.driver.phone_number,
+                        'ride_details': {
+                            'departure_location': ride.departure_location,
+                            'destination': ride.destination,
+                            'departure_time': ride.departure_time,
+                            'available_seats': ride.available_seats
+                        }
+                    }, status=status.HTTP_201_CREATED)
+                
+                elif payment_method in ['mpesa', 'card']:
+                    # Payment will be confirmed via callback/webhook
+                    # Booking stays in pending status
+                    return Response({
+                        'success': True,
+                        'booking_id': booking.id,
+                        'message': 'Booking created. Awaiting payment confirmation.',
+                        'status': 'pending_payment'
+                    }, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            return Response({
+                'error': f'Booking failed: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 
 class IsBookingOwner(permissions.BasePermission):
