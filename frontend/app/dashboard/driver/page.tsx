@@ -140,7 +140,7 @@ export default function CreateRidePage() {
             {/* <span className="text-sm font-medium">Back</span> */}
           </button>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#00204a] mb-2">Create a Ride</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Share your journey and save</p>
+          <p className="text-gray-600 text-sm sm:text-base">Share your journey and save on costs</p>
         </div>
         
         {/* Form Card */}

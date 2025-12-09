@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, Smartphone, Wallet, ArrowUpCircle, History, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import React from 'react';
+import { API_BASE_URL } from '@/app/services/api';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 // Add animation styles
 const styles = `
@@ -63,16 +65,45 @@ const Toast = ({ message, type, onClose }: ToastProps) => {
 };
 
 export default function DriverWallet() {
-  // Mock user data - replace with actual user from your auth context
-  const userName = 'James';
-  
-  const [balance, setBalance] = useState(2500.00);
+  // Get authenticated user from context
+  const { user } = useAuth();
+
+  const [balance, setBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [mpesaPhone, setMpesaPhone] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+
+  // Fetch wallet balance on component mount
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payments/wallet/balance/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch wallet balance');
+        }
+
+        const data = await response.json();
+        setBalance(data.balance);
+      } catch (error) {
+        console.error('Error fetching wallet balance:', error);
+        showToast('Failed to load wallet balance', 'error');
+        setBalance(0);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    fetchWalletBalance();
+  }, []);
 
   // Show toast notification
   const showToast = (message: string, type: ToastType = 'info') => {
@@ -89,110 +120,127 @@ export default function DriverWallet() {
   ]);
 
   const handleTopUp = async () => {
-  if (!topUpAmount || !paymentMethod) {
-    showToast('Please enter amount and select payment method', 'error');
-    return;
-  }
-
-  const amount = parseFloat(topUpAmount);
-  if (isNaN(amount) || amount <= 0) {
-    showToast('Please enter a valid amount', 'error');
-    return;
-  }
-
-  if (amount < 10) {
-    showToast('Minimum top-up amount is KES 10', 'error');
-    return;
-  }
-
-  if (paymentMethod === 'mpesa' && !mpesaPhone) {
-    showToast('Please enter your M-Pesa phone number', 'error');
-    return;
-  }
-
-  if (paymentMethod === 'mpesa' && !/^254\d{9}$/.test(mpesaPhone)) {
-    showToast('Please enter a valid M-Pesa number (254XXXXXXXXX)', 'error');
-    return;
-  }
-
-  setIsProcessing(true);
-
-   // Get the token from localStorage
-  const token = localStorage.getItem('userToken') || 
-              localStorage.getItem('access_token') || 
-              localStorage.getItem('token');
-      
-    if (!token) {
-        throw new Error('You need to be logged in to make a payment');
+    if (!topUpAmount || !paymentMethod) {
+      showToast('Please enter amount and select payment method', 'error');
+      return;
     }
 
-  try {
-    if (paymentMethod === 'card') {
-      // Stripe Integration - FIXED
-      
-      const response = await fetch(`http://localhost:8000/api/checkout/${amount}/`, {
-        method: 'POST', // Changed to POST
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include', // Important for authentication
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
-      }
-
-      const data = await response.json();
-
-      if (!data.checkout_url) {
-        throw new Error('No checkout URL received from server');
-      }
-
-      // Redirect to Stripe Checkout
-      showToast('Redirecting to Stripe checkout...', 'info');
-      window.location.href = data.checkout_url;
-
-    } else if (paymentMethod === 'mpesa') {
-      // M-Pesa Integration
-      const response = await fetch('http://localhost:8000/payments/wallet/topup/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          amount: amount,
-          payment_method: 'mpesa',
-          phone_number: mpesaPhone,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to initiate M-Pesa payment');
-      }
-
-      const data = await response.json();
-      showToast(`M-Pesa STK Push sent to ${mpesaPhone}. Check your phone to complete payment.`, 'success');
-      
-      // Close modal after success
-      setTimeout(() => {
-        setShowTopUpModal(false);
-        setTopUpAmount('');
-        setPaymentMethod('');
-        setMpesaPhone('');
-      }, 2000);
+    const amount = parseFloat(topUpAmount);
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Please enter a valid amount', 'error');
+      return;
     }
 
-  } catch (error) {
-    console.error('Payment error:', error);
-    showToast(error instanceof Error ? error.message : 'Payment processing failed. Please try again.', 'error');
-  } finally {
-    setIsProcessing(false);
-  }
-};
+    if (amount < 10) {
+      showToast('Minimum top-up amount is KES 10', 'error');
+      return;
+    }
+
+    if (paymentMethod === 'mpesa' && !mpesaPhone) {
+      showToast('Please enter your M-Pesa phone number', 'error');
+      return;
+    }
+
+    if (paymentMethod === 'mpesa' && !/^254\d{9}$/.test(mpesaPhone)) {
+      showToast('Please enter a valid M-Pesa number (254XXXXXXXXX)', 'error');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      if (paymentMethod === 'card') {
+        // Stripe Integration - Consistent with M-Pesa pattern
+        const response = await fetch(`${API_BASE_URL}/checkout/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: JSON.stringify({
+            amount: amount,
+          }),
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error data:', errorData);
+
+          // If 401, token is invalid
+          if (response.status === 401) {
+            showToast('Session expired. Please log in again.', 'error');
+            setTimeout(() => {
+              window.location.href = '/auth/login';
+            }, 2000);
+            return;
+          }
+
+          throw new Error(errorData.error || errorData.detail || 'Failed to create checkout session');
+        }
+
+        const data = await response.json();
+        console.log('Checkout response:', data);
+
+        if (!data.checkout_url) {
+          throw new Error('No checkout URL received from server');
+        }
+
+        // Redirect to Stripe Checkout
+        showToast('Redirecting to Stripe checkout...', 'info');
+        window.location.href = data.checkout_url;
+
+      } else if (paymentMethod === 'mpesa') {
+        // M-Pesa Integration - Same pattern
+        const response = await fetch(`${API_BASE_URL}/payments/wallet/topup/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: JSON.stringify({
+            amount: amount,
+            payment_method: 'mpesa',
+            phone: mpesaPhone,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error data:', errorData);
+
+          if (response.status === 401) {
+            showToast('Session expired. Please log in again.', 'error');
+            setTimeout(() => {
+              window.location.href = '/auth/login';
+            }, 2000);
+            return;
+          }
+
+          throw new Error(errorData.error || errorData.detail || 'Failed to initiate M-Pesa payment');
+        }
+
+        const data = await response.json();
+        showToast(`M-Pesa STK Push sent to ${mpesaPhone}. Check your phone to complete payment.`, 'success');
+
+        // Close modal after success
+        setTimeout(() => {
+          setShowTopUpModal(false);
+          setTopUpAmount('');
+          setPaymentMethod('');
+          setMpesaPhone('');
+        }, 2000);
+      }
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Payment processing failed. Please try again.';
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const quickAmounts = [500, 1000, 2000, 5000];
 
@@ -200,25 +248,27 @@ export default function DriverWallet() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       {/* Add styles */}
       <style>{styles}</style>
-      
+
       {/* Toast Notification */}
       {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
 
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Hello, {userName}</h1>
-          <p className="text-sm md:text-base text-gray-600">Manage your earnings and top-ups</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+            Hello, {user?.first_name || 'Driver'}
+          </h1>
+          <p className="text-sm md:text-base text-gray-600">Manage your wallet and top-ups</p>
         </div>
 
         {/* Balance Card */}
-        <div 
+        <div
           className="rounded-xl md:rounded-2xl p-6 md:p-8 mb-6 text-white shadow-lg"
           style={{ background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)' }}
         >
@@ -231,12 +281,19 @@ export default function DriverWallet() {
               <span className="text-xs md:text-sm">Active</span>
             </div>
           </div>
-          
+
           <div className="mb-6">
             <div className="text-3xl md:text-5xl font-bold mb-1">
-              KES {balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+              {isLoadingBalance ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                  <span className="text-2xl">Loading...</span>
+                </div>
+              ) : (
+                `KES ${(balance || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`
+              )}
             </div>
-            <p className="text-xs md:text-sm opacity-80">Last updated: Today, 2:30 PM</p>
+            <p className="text-xs md:text-sm opacity-80">Last updated: {new Date().toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>
           </div>
 
           <button
@@ -273,15 +330,14 @@ export default function DriverWallet() {
 
           <div className="space-y-2 md:space-y-3">
             {transactions.map((transaction) => (
-              <div 
+              <div
                 key={transaction.id}
                 className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div 
-                    className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      transaction.type === 'top-up' ? 'bg-green-100' : 'bg-red-100'
-                    }`}
+                  <div
+                    className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${transaction.type === 'top-up' ? 'bg-green-100' : 'bg-red-100'
+                      }`}
                   >
                     {transaction.type === 'top-up' ? (
                       <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
@@ -299,9 +355,8 @@ export default function DriverWallet() {
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className={`font-bold text-base md:text-lg ${
-                    transaction.type === 'top-up' ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <p className={`font-bold text-base md:text-lg ${transaction.type === 'top-up' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {transaction.type === 'top-up' ? '+' : ''}KES {Math.abs(transaction.amount).toLocaleString()}
                   </p>
                   <span className="text-xs text-gray-500 capitalize">{transaction.status}</span>
@@ -360,23 +415,20 @@ export default function DriverWallet() {
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Select Payment Method
               </label>
-              
+
               <div className="space-y-3">
                 {/* Card Payment */}
                 <button
                   onClick={() => setPaymentMethod('card')}
-                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                    paymentMethod === 'card'
-                      ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'card'
+                    ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    paymentMethod === 'card' ? 'bg-[#08A6F6]' : 'bg-gray-100'
-                  }`}>
-                    <CreditCard className={`w-6 h-6 ${
-                      paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
-                    }`} />
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'card' ? 'bg-[#08A6F6]' : 'bg-gray-100'
+                    }`}>
+                    <CreditCard className={`w-6 h-6 ${paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
+                      }`} />
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-gray-800">Card Payment</p>
@@ -387,18 +439,15 @@ export default function DriverWallet() {
                 {/* M-Pesa Payment */}
                 <button
                   onClick={() => setPaymentMethod('mpesa')}
-                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                    paymentMethod === 'mpesa'
-                      ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'mpesa'
+                    ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    paymentMethod === 'mpesa' ? 'bg-[#08A6F6]' : 'bg-gray-100'
-                  }`}>
-                    <Smartphone className={`w-6 h-6 ${
-                      paymentMethod === 'mpesa' ? 'text-white' : 'text-gray-600'
-                    }`} />
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'mpesa' ? 'bg-[#08A6F6]' : 'bg-gray-100'
+                    }`}>
+                    <Smartphone className={`w-6 h-6 ${paymentMethod === 'mpesa' ? 'text-white' : 'text-gray-600'
+                      }`} />
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-gray-800">M-Pesa</p>

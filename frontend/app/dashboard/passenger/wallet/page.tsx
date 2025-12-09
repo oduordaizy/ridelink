@@ -1,649 +1,496 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowDown, ArrowUp, Wallet, Loader2, CreditCard, Smartphone, Globe, CheckCircle2, XCircle } from "lucide-react"
-import { toast } from "sonner"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { paymentAPI } from "@/app/services/api"
-import { useAuth } from "@/app/contexts/AuthContext"
+import { useState, useEffect } from 'react';
+import { CreditCard, Smartphone, Wallet, ArrowUpCircle, History, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import React from 'react';
+import { API_BASE_URL } from '@/app/services/api';
+import { useAuth } from '@/app/contexts/AuthContext';
 
-interface Transaction {
-  id: number;
-  type: string;
-  amount: number;
-  date: string;
-  status: 'pending' | 'completed' | 'failed';
-  reference?: string;
+// Add animation styles
+const styles = `
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+`;
+
+// Types
+type ToastType = 'success' | 'error' | 'info';
+
+interface ToastProps {
+  message: string;
+  type: ToastType;
+  onClose: () => void;
 }
 
-type PaymentMethod = 'mpesa' | 'card' | 'paypal';
+interface ToastState {
+  message: string;
+  type: ToastType;
+}
 
-export default function WalletPage() {
-  const { user, token, logout } = useAuth()
-  const [amount, setAmount] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [balance, setBalance] = useState<number | null>(null)
-  const [isLoadingBalance, setIsLoadingBalance] = useState(true)
-  const [activeTab, setActiveTab] = useState<PaymentMethod>('mpesa')
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [isPolling, setIsPolling] = useState(false)
-  const [activePaymentId, setActivePaymentId] = useState<string | null>(null)
+// Toast Component
+const Toast = ({ message, type, onClose }: ToastProps) => {
+  const icons: Record<ToastType, React.ReactElement> = {
+    success: <CheckCircle className="w-5 h-5" />,
+    error: <AlertCircle className="w-5 h-5" />,
+    info: <AlertCircle className="w-5 h-5" />
+  };
 
-  // Fetch wallet data on component mount
+  const colors: Record<ToastType, string> = {
+    success: 'bg-green-50 border-green-200 text-green-800',
+    error: 'bg-red-50 border-red-200 text-red-800',
+    info: 'bg-blue-50 border-blue-200 text-blue-800'
+  };
+
+  return (
+    <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border-2 shadow-lg ${colors[type]} animate-slide-in max-w-sm`}>
+      <div className="flex-shrink-0">
+        {icons[type]}
+      </div>
+      <p className="text-sm font-medium flex-1">{message}</p>
+      <button onClick={onClose} className="flex-shrink-0 opacity-70 hover:opacity-100">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
+export default function DriverWallet() {
+  // Get authenticated user from context
+  const { user } = useAuth();
+
+  const [balance, setBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [mpesaPhone, setMpesaPhone] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
+
+  // Fetch wallet balance on component mount
   useEffect(() => {
-    const fetchWalletData = async () => {
-      if (!token) return
-      
+    const fetchWalletBalance = async () => {
       try {
-        setIsLoadingBalance(true)
-        const [balanceRes, transactionsRes] = await Promise.all([
-          paymentAPI.getWalletBalance(token),
-          paymentAPI.getWalletTransactions(token)
-        ])
-        
-        console.log('=== DEBUG: Wallet API Response ===');
-        console.log('Full response:', balanceRes);
-        
-        // Improved balance extraction with proper error handling
-        let backendBalance = 0;
-        
-        if (balanceRes && typeof balanceRes === 'object') {
-          // Check both possible response structures
-          if ('data' in balanceRes && balanceRes.data && typeof balanceRes.data === 'object' && 'balance' in balanceRes.data) {
-            // Handle response with data wrapper: { data: { balance: number, ... } }
-            const balanceValue = Number(balanceRes.data.balance);
-            if (!isNaN(balanceValue)) {
-              backendBalance = balanceValue;
-            } else {
-              throw new Error('Balance is not a valid number');
-            }
-          } else if ('balance' in balanceRes) {
-            // Handle direct balance in response: { balance: number, ... }
-            const balanceValue = Number(balanceRes.balance);
-            if (!isNaN(balanceValue)) {
-              backendBalance = balanceValue;
-            } else {
-              throw new Error('Balance is not a valid number');
-            }
-          } else {
-            throw new Error('Invalid balance response structure');
-          }
-        } else {
-          throw new Error('Invalid API response');
-        }
-        
-        console.log('Setting wallet balance to:', backendBalance);
-        setBalance(backendBalance)
-        setTransactions(transactionsRes.transactions || [])
-      } catch (error) {
-        console.error('Error fetching wallet data:', error)
-        toast.error('Error', {
-          description: error instanceof Error ? error.message : 'Failed to load wallet data'
-        })
-        setBalance(null)
-      } finally {
-        setIsLoadingBalance(false)
-      }
-    }
-
-    fetchWalletData()
-  }, [token])
-
-  // Poll for payment status with improved logic
-  useEffect(() => {
-    if (!activePaymentId || !isPolling || !token) {
-      return;
-    }
-
-    let pollAttempts = 0;
-    const MAX_ATTEMPTS = 40; // 2 minutes at 3s intervals
-
-    const pollInterval = setInterval(async () => {
-      pollAttempts++;
-      
-      if (pollAttempts > MAX_ATTEMPTS) {
-        clearInterval(pollInterval);
-        setIsPolling(false);
-        setActivePaymentId(null);
-        toast.error('Payment Timeout', {
-          description: 'Payment verification timed out. Please check your transaction history.'
-        });
-        return;
-      }
-
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/status/${activePaymentId}`, {
+        const response = await fetch(`${API_BASE_URL}/payments/wallet/balance/`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
 
         if (!response.ok) {
-          console.warn('Failed to check payment status');
-          return; // Continue polling
+          throw new Error('Failed to fetch wallet balance');
         }
-        
-        const { status } = await response.json();
-        
-        if (status === 'completed') {
-          clearInterval(pollInterval);
-          setIsPolling(false);
-          setActivePaymentId(null);
-          
-          // Refresh wallet data
-          try {
-            const [balanceRes, transactionsRes] = await Promise.all([
-              paymentAPI.getWalletBalance(token),
-              paymentAPI.getWalletTransactions(token)
-            ]);
-            
-            // Extract balance based on response structure
-            const newBalance = balanceRes.data?.balance ?? balanceRes.balance;
-            setBalance(Number(newBalance));
-            setTransactions(transactionsRes.transactions || []);
-            
-            toast.success('Payment Successful', {
-              description: 'Your wallet has been topped up successfully!'
-            });
-          } catch (error) {
-            console.error('Error refreshing wallet data:', error);
-            toast.error('Error', {
-              description: 'Payment was successful, but we had trouble updating your balance. Please refresh the page.'
-            });
-          }
-        } else if (status === 'failed' || status === 'reversed' || status === 'cancelled') {
-          clearInterval(pollInterval);
-          setIsPolling(false);
-          setActivePaymentId(null);
-          
-          const messages: Record<string, string> = {
-            reversed: 'The payment was reversed. The amount will be refunded to your M-Pesa account.',
-            cancelled: 'The payment was cancelled. No amount was deducted from your account.',
-            failed: 'Payment failed. Please try again.'
-          };
-          
-          toast.error('Payment Failed', {
-            description: messages[status] || messages.failed,
-            duration: 10000
-          });
-        }
+
+        const data = await response.json();
+        setBalance(data.balance);
       } catch (error) {
-        console.error('Error polling payment status:', error);
-        // Don't clear the interval on network errors, let it retry
+        console.error('Error fetching wallet balance:', error);
+        showToast('Failed to load wallet balance', 'error');
+        setBalance(0);
+      } finally {
+        setIsLoadingBalance(false);
       }
-    }, 3000); // Poll every 3 seconds
+    };
 
-    return () => clearInterval(pollInterval);
-  }, [activePaymentId, isPolling, token])
+    fetchWalletBalance();
+  }, []);
 
-  // Validate and format phone number
-  const validateAndFormatPhone = (phone: string): string | null => {
-    // Remove all non-digit characters
-    let cleaned = phone.replace(/\D/g, '');
-    
-    // Handle different input formats
-    if (cleaned.startsWith('0')) {
-      cleaned = '254' + cleaned.substring(1);
-    } else if (!cleaned.startsWith('254')) {
-      cleaned = '254' + cleaned;
-    }
-    
-    // Validate: Must be 254 + (7 or 1) + 8 digits
-    if (!/^254[17]\d{8}$/.test(cleaned)) {
-      return null;
-    }
-    
-    return cleaned;
+  // Show toast notification
+  const showToast = (message: string, type: ToastType = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
-  const handleTopUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const amountValue = parseFloat(amount)
-    
-    if (isNaN(amountValue) || amountValue < 1) {
-      toast.error("Invalid amount", {
-        description: "Please enter an amount of KES 1 or more"
-      })
-      return
+  // Mock transaction history
+  const [transactions] = useState([
+    { id: 1, type: 'top-up', amount: 1000, method: 'M-Pesa', date: '2024-12-04', status: 'completed' },
+    { id: 2, type: 'top-up', amount: 500, method: 'Card', date: '2024-12-03', status: 'completed' },
+    { id: 3, type: 'deduction', amount: -200, method: 'Commission', date: '2024-12-02', status: 'completed' },
+    { id: 4, type: 'top-up', amount: 1500, method: 'M-Pesa', date: '2024-12-01', status: 'completed' },
+  ]);
+
+  const handleTopUp = async () => {
+    if (!topUpAmount || !paymentMethod) {
+      showToast('Please enter amount and select payment method', 'error');
+      return;
     }
 
-    if (activeTab === 'mpesa') {
-      await handleMpesaPayment(amountValue)
-    } else {
-      // Handle other payment methods
-      toast.info("Coming Soon", {
-        description: `${activeTab.toUpperCase()} payment integration is coming soon!`
-      })
-    }
-  }
-
-  const handleMpesaPayment = async (amount: number) => {
-    if (!token) {
-      toast.error("Authentication required", {
-        description: "Please log in to continue"
-      })
-      return
+    const amount = parseFloat(topUpAmount);
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Please enter a valid amount', 'error');
+      return;
     }
 
-    // Validate and format phone number
-    const formattedPhone = validateAndFormatPhone(phoneNumber);
-    if (!formattedPhone) {
-      toast.error("Invalid phone number", {
-        description: "Please enter a valid M-Pesa phone number (e.g., 0712345678)"
-      })
-      return
+    if (amount < 10) {
+      showToast('Minimum top-up amount is KES 10', 'error');
+      return;
     }
 
-    setIsLoading(true)
-    let toastId: string | number = '';
-    
+    if (paymentMethod === 'mpesa' && !mpesaPhone) {
+      showToast('Please enter your M-Pesa phone number', 'error');
+      return;
+    }
+
+    if (paymentMethod === 'mpesa' && !/^254\d{9}$/.test(mpesaPhone)) {
+      showToast('Please enter a valid M-Pesa number (254XXXXXXXXX)', 'error');
+      return;
+    }
+
+    setIsProcessing(true);
+
     try {
-      // Show processing toast
-      toastId = toast.loading('Initiating M-Pesa payment...', {
-        description: 'Please wait while we process your request'
-      })
+      if (paymentMethod === 'card') {
+        // Stripe Integration - Consistent with M-Pesa pattern
+        const response = await fetch(`${API_BASE_URL}/checkout/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: JSON.stringify({
+            amount: amount,
+          }),
+        });
 
-      // Initiate M-Pesa payment
-      const response = await paymentAPI.initiateMpesaPayment(token, {
-        phone_number: formattedPhone,
-        amount: amount
-      });
+        console.log('Response status:', response.status);
 
-      // Check if response contains error
-      if (response.error) {
-        throw new Error(response.error);
-      }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error data:', errorData);
 
-      if (!response.payment_id) {
-        throw new Error('Failed to initiate payment. Please try again.');
-      }
+          // If 401, token is invalid
+          if (response.status === 401) {
+            showToast('Session expired. Please log in again.', 'error');
+            setTimeout(() => {
+              window.location.href = '/auth/login';
+            }, 2000);
+            return;
+          }
 
-      // Update UI with payment reference
-      setActivePaymentId(response.payment_id);
-      setIsPolling(true);
-      
-      toast.dismiss(toastId);
-      
-      toast.info('Enter M-Pesa PIN', {
-        description: 'Check your phone and enter your M-Pesa PIN to complete the payment',
-        duration: 10000
-      });
-      
-    } catch (error) {
-      console.error('M-Pesa payment error:', error);
-      
-      // Dismiss any existing loading toasts
-      if (toastId) {
-        toast.dismiss(toastId);
-      }
-      
-      // Handle specific error cases
-      let errorMessage = 'Failed to initiate M-Pesa payment. Please try again.';
-      
-      if (error instanceof Error && error.message) {
-        if (error.message.includes('insufficient funds')) {
-          errorMessage = 'Insufficient M-Pesa balance. Please top up your M-Pesa account and try again.';
-        } else if (error.message.includes('timeout') || error.message.includes('network')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (error.message.includes('invalid phone')) {
-          errorMessage = 'Invalid phone number. Please enter a valid M-Pesa registered number.';
-        } else {
-          errorMessage = error.message;
+          throw new Error(errorData.error || errorData.detail || 'Failed to create checkout session');
         }
+
+        const data = await response.json();
+        console.log('Checkout response:', data);
+
+        if (!data.checkout_url) {
+          throw new Error('No checkout URL received from server');
+        }
+
+        // Redirect to Stripe Checkout
+        showToast('Redirecting to Stripe checkout...', 'info');
+        window.location.href = data.checkout_url;
+
+      } else if (paymentMethod === 'mpesa') {
+        // M-Pesa Integration - Same pattern
+        const response = await fetch(`${API_BASE_URL}/payments/wallet/topup/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: JSON.stringify({
+            amount: amount,
+            payment_method: 'mpesa',
+            phone: mpesaPhone,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error data:', errorData);
+
+          if (response.status === 401) {
+            showToast('Session expired. Please log in again.', 'error');
+            setTimeout(() => {
+              window.location.href = '/auth/login';
+            }, 2000);
+            return;
+          }
+
+          throw new Error(errorData.error || errorData.detail || 'Failed to initiate M-Pesa payment');
+        }
+
+        const data = await response.json();
+        showToast(`M-Pesa STK Push sent to ${mpesaPhone}. Check your phone to complete payment.`, 'success');
+
+        // Close modal after success
+        setTimeout(() => {
+          setShowTopUpModal(false);
+          setTopUpAmount('');
+          setPaymentMethod('');
+          setMpesaPhone('');
+        }, 2000);
       }
-      
-      toast.error('Payment Failed', {
-        description: errorMessage,
-        duration: 10000
-      });
-      
-      // Reset form only on certain errors
-      if (!(error instanceof Error) || (!error.message?.includes('insufficient funds') && !error.message?.includes('invalid phone'))) {
-        setAmount('');
-        setPhoneNumber('');
-      }
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Payment processing failed. Please try again.';
+      showToast(errorMessage, 'error');
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
-  }
+  };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  // Render payment method form
-  const renderPaymentMethodForm = () => {
-    switch (activeTab) {
-      case 'mpesa':
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">M-Pesa Phone Number</Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <span className="text-gray-500">+254</span>
-                </div>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="712345678"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                  disabled={isLoading || isPolling}
-                  className="pl-14"
-                />
-              </div>
-              <p className="text-xs text-gray-500">Enter your M-Pesa registered phone number</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount (KES)</Label>
-              <Input
-                id="amount"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Enter amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={isLoading || isPolling}
-              />
-              <p className="text-xs text-gray-500">Minimum amount: KES 1</p>
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-green-600 hover:bg-green-700" 
-              disabled={isLoading || isPolling || !phoneNumber || !amount}
-            >
-              {isLoading || isPolling ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isPolling ? 'Processing Payment...' : 'Initiating...'}
-                </>
-              ) : (
-                <div className="flex items-center justify-center gap-2">
-                  <Smartphone className="w-4 h-4" />
-                  <span>Pay with M-Pesa</span>
-                </div>
-              )}
-            </Button>
-            {isPolling && (
-              <div className="text-center text-sm text-blue-600 mt-2">
-                <p>Check your phone to complete the payment</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  This may take a moment...
-                </p>
-              </div>
-            )}
-          </div>
-        )
-      
-      case 'card':
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Card Details</Label>
-              <Input placeholder="Card number" disabled={true} />
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <Input placeholder="MM/YY" disabled={true} />
-                <Input placeholder="CVC" disabled={true} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount-card">Amount (KES)</Label>
-              <Input
-                id="amount-card"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Enter amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <Button 
-              type="button" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => {
-                toast.info('Coming Soon', {
-                  description: 'Credit card payment integration is coming soon!'
-                })
-              }}
-              disabled={isLoading}
-            >
-              Pay with Card
-            </Button>
-          </div>
-        )
-      
-      case 'paypal':
-        return (
-          <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <p className="text-sm text-gray-600 mb-4">You&apos;ll be redirected to PayPal to complete your payment</p>
-              <div className="space-y-2">
-                <Label htmlFor="amount-paypal">Amount (KES)</Label>
-                <Input
-                  id="amount-paypal"
-                  type="number"
-                  min="10"
-                  step="1"
-                  placeholder="Enter amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-            <Button 
-              type="button" 
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-blue-900"
-              onClick={() => {
-                toast.info('Coming Soon', {
-                  description: 'PayPal integration is coming soon!'
-                })
-              }}
-              disabled={isLoading}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Globe className="w-5 h-5" />
-                <span>Pay with PayPal</span>
-              </div>
-            </Button>
-          </div>
-        )
-    }
-  }
+  const quickAmounts = [500, 1000, 2000, 5000];
 
   return (
-    <div className="space-y-8 bg-blue-50 p-4 min-h-screen">
-        <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      {/* Add styles */}
+      <style>{styles}</style>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+            Hello, {user?.first_name || 'Driver'}
+          </h1>
+          <p className="text-sm md:text-base text-gray-600">Manage your wallet and top-ups</p>
+        </div>
+
         {/* Balance Card */}
-        <Card className="border-0 shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium">Available Balance</p>
-                <h2 className="text-4xl font-bold mt-2">
-                  {isLoadingBalance ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      <span>Loading...</span>
-                    </div>
-                  ) : balance !== null ? (
-                    formatCurrency(balance)
-                  ) : (
-                    <span className="text-2xl">Unable to load balance</span>
-                  )}
-                </h2>
-                <p className="text-blue-100 text-sm mt-1">
-                  Last updated: {new Date().toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-              <div className="bg-white/20 p-3 rounded-full">
-                <Wallet className="w-8 h-8" />
-              </div>
+        <div
+          className="rounded-xl md:rounded-2xl p-6 md:p-8 mb-6 text-white shadow-lg"
+          style={{ background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-6 h-6 md:w-8 md:h-8" />
+              <span className="text-base md:text-lg opacity-90">Available Balance</span>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-full px-3 py-1">
+              <span className="text-xs md:text-sm">Active</span>
             </div>
           </div>
-          
-          {/* Top Up Section */}
-          <CardContent className="p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Up Wallet</h3>
-              <Tabs 
-                value={activeTab} 
-                onValueChange={(value) => {
-                  setActiveTab(value as PaymentMethod)
-                  setAmount('')
-                  setPhoneNumber('')
-                }}
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-3 mb-6">
-                  <TabsTrigger value="mpesa" className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4" />
-                    <span>M-Pesa</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="card" className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" />
-                    <span>Card</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="paypal" className="flex items-center gap-2">
-                    <Globe className="w-4 h-4" />
-                    <span>PayPal</span>
-                  </TabsTrigger>
-                </TabsList>
-                
-                <form onSubmit={handleTopUp}>
-                  {renderPaymentMethodForm()}
-                </form>
-              </Tabs>
-            </div>
-            
-            {/* Quick Top-Up Buttons */}
-            <div className="mt-6">
-              <p className="text-sm font-medium text-gray-700 mb-3">Quick Top-Up</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[100, 200, 500, 1000].map((quickAmount) => (
-                  <Button
-                    key={quickAmount}
-                    type="button"
-                    variant="outline"
-                    className="hover:bg-blue-50"
-                    onClick={() => setAmount(quickAmount.toString())}
-                    disabled={isLoading || isPolling}
-                  >
-                    KES {quickAmount}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Transactions Table */}
-        <Card className="mt-8 border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
-            <CardDescription>Your transaction history for the last 30 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {transactions.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No transactions yet</p>
-                <p className="text-sm text-gray-400 mt-1">Your transactions will appear here</p>
+          <div className="mb-6">
+            <div className="text-3xl md:text-5xl font-bold mb-1">
+              {isLoadingBalance ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                  <span className="text-2xl">Loading...</span>
+                </div>
+              ) : (
+                `KES ${(balance || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`
+              )}
+            </div>
+            <p className="text-xs md:text-sm opacity-80">Last updated: {new Date().toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+          </div>
+
+          <button
+            onClick={() => setShowTopUpModal(true)}
+            className="w-full bg-white text-[#08A6F6] font-semibold py-3 rounded-lg md:rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 text-sm md:text-base"
+          >
+            <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5" />
+            Top Up Wallet
+          </button>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6">
+          <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
+            <p className="text-gray-600 text-xs md:text-sm mb-1">This Month</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800">KES 12,450</p>
+          </div>
+          <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
+            <p className="text-gray-600 text-xs md:text-sm mb-1">Total Top-ups</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800">KES 45,200</p>
+          </div>
+          <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
+            <p className="text-gray-600 text-xs md:text-sm mb-1">Pending</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800">KES 0.00</p>
+          </div>
+        </div>
+
+        {/* Transaction History */}
+        <div className="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <History className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
+            <h2 className="text-lg md:text-xl font-bold text-gray-800">Recent Transactions</h2>
+          </div>
+
+          <div className="space-y-2 md:space-y-3">
+            {transactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                  <div
+                    className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${transaction.type === 'top-up' ? 'bg-green-100' : 'bg-red-100'
+                      }`}
+                  >
+                    {transaction.type === 'top-up' ? (
+                      <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                    ) : (
+                      <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 rotate-180" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-800 text-sm md:text-base truncate">
+                      {transaction.type === 'top-up' ? 'Top Up' : 'Deduction'}
+                    </p>
+                    <p className="text-xs md:text-sm text-gray-600 truncate">
+                      {transaction.method} • {transaction.date}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className={`font-bold text-base md:text-lg ${transaction.type === 'top-up' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                    {transaction.type === 'top-up' ? '+' : ''}KES {Math.abs(transaction.amount).toLocaleString()}
+                  </p>
+                  <span className="text-xs text-gray-500 capitalize">{transaction.status}</span>
+                </div>
               </div>
-            ) : (
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[160px]">Date & Time</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((tx) => (
-                      <TableRow key={tx.id}>
-                        <TableCell className="text-sm">
-                          {formatDate(tx.date)}
-                          {tx.reference && (
-                            <p className="text-xs text-gray-500 mt-1">Ref: {tx.reference}</p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {tx.amount > 0 ? (
-                              <ArrowDown className="text-green-600 w-4 h-4" />
-                            ) : (
-                              <ArrowUp className="text-red-600 w-4 h-4" />
-                            )}
-                            {tx.type}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            {tx.status === 'completed' ? (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            ) : tx.status === 'failed' ? (
-                              <XCircle className="w-4 h-4 text-red-500" />
-                            ) : (
-                              <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />
-                            )}
-                            <span className={`text-sm capitalize ${
-                              tx.status === 'completed' ? 'text-green-700' : 
-                              tx.status === 'failed' ? 'text-red-700' : 'text-yellow-700'
-                            }`}>
-                              {tx.status}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${
-                          tx.amount > 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {tx.amount > 0 ? `+${formatCurrency(tx.amount)}` : formatCurrency(tx.amount)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Top Up Modal */}
+      {showTopUpModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowTopUpModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Top Up Wallet</h2>
+
+            {/* Amount Input */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Enter Amount
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-3 text-gray-500 font-semibold">KES</span>
+                <input
+                  type="number"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-16 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none text-lg"
+                />
+              </div>
+            </div>
+
+            {/* Quick Amount Buttons */}
+            <div className="grid grid-cols-4 gap-2 mb-6">
+              {quickAmounts.map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => setTopUpAmount(amount.toString())}
+                  className="py-2 px-3 bg-[#C0DFED] text-[#003870] rounded-lg hover:bg-[#08A6F6] hover:text-white transition-colors text-sm font-semibold"
+                >
+                  {amount}
+                </button>
+              ))}
+            </div>
+
+            {/* Payment Method Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Select Payment Method
+              </label>
+
+              <div className="space-y-3">
+                {/* Card Payment */}
+                <button
+                  onClick={() => setPaymentMethod('card')}
+                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'card'
+                    ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                >
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'card' ? 'bg-[#08A6F6]' : 'bg-gray-100'
+                    }`}>
+                    <CreditCard className={`w-6 h-6 ${paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
+                      }`} />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-800">Card Payment</p>
+                    <p className="text-sm text-gray-600">Pay with Visa, Mastercard</p>
+                  </div>
+                </button>
+
+                {/* M-Pesa Payment */}
+                <button
+                  onClick={() => setPaymentMethod('mpesa')}
+                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'mpesa'
+                    ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                >
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'mpesa' ? 'bg-[#08A6F6]' : 'bg-gray-100'
+                    }`}>
+                    <Smartphone className={`w-6 h-6 ${paymentMethod === 'mpesa' ? 'text-white' : 'text-gray-600'
+                      }`} />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-800">M-Pesa</p>
+                    <p className="text-sm text-gray-600">Pay via STK Push</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* M-Pesa Phone Number */}
+            {paymentMethod === 'mpesa' && (
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  M-Pesa Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={mpesaPhone}
+                  onChange={(e) => setMpesaPhone(e.target.value)}
+                  placeholder="254712345678"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none"
+                />
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleTopUp}
+              disabled={isProcessing}
+              className="w-full bg-[#08A6F6] text-white font-semibold py-4 rounded-xl hover:bg-[#00204a] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                `Top Up KES ${topUpAmount || '0'}`
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
