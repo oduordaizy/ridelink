@@ -104,7 +104,7 @@ npm run dev
 
 ---
 
-## ⚡ Performance & SEO
+## Performance & SEO
 
 - **SEO**: Fully optimized with dynamic Sitemap, Robots.txt, and Open Graph metadata.
 - **Performance**: 
@@ -112,7 +112,7 @@ npm run dev
   - **Image Optimization**: Next.js Image component with WebP conversion.
   - **Minification**: Production builds automatically remove console logs and minify assets.
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -120,6 +120,6 @@ npm run dev
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 Distributed under the MIT License.
