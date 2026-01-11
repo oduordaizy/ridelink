@@ -13,7 +13,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 # Create your views here.
 
 def home(request):
-    return JsonResponse({'message': "Welcome to RideLink"})
+    return JsonResponse({'message': "Welcome to Travas"})
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
