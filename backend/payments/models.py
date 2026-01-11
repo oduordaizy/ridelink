@@ -16,9 +16,14 @@ class Wallet(models.Model):
 class Transaction(models.Model):
     wallet=models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
     mpesa_receipt_number = models.CharField(max_length=100, blank=True, null=True)
+    checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
+    merchant_request_id = models.CharField(max_length=100, blank=True, null=True)
+    result_code = models.IntegerField(null=True, blank=True)
+    result_desc = models.TextField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status= models.CharField(max_length=50, choices=[("pending", "Pending"), ("success", "Success"), ("failed", "Failed")], default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.wallet.user.username} - {self.amount} - {self.status}"

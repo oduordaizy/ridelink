@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db import transaction as db_transaction
+from django.utils import timezone
+from decimal import Decimal
 import json
 from .models import Transaction, Wallet
 from .mpesa import lipa_na_mpesa
@@ -47,10 +49,10 @@ def topup_wallet(request):
             )
         
         try:
-            amount = float(amount)
+            amount = Decimal(str(amount))
             if amount <= 0:
                 raise ValueError("Amount must be positive")
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, Exception):
             return Response(
                 {"error": "Invalid amount. Must be a positive number."}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -61,17 +63,10 @@ def topup_wallet(request):
             # Get or create wallet for the user
             wallet, created = Wallet.objects.get_or_create(
                 user=user,
-                defaults={'balance': 2600.00}  # Initial balance set to KES 1000
+                defaults={'balance': 2600.00}
             )
             
-            # Create a pending transaction
-            transaction_obj = Transaction.objects.create(
-                wallet=wallet,
-                amount=amount,
-                status="pending"
-            )
-            
-            # Initiate MPESA payment
+            # Initiate MPESA payment FIRST to get the IDs
             response = lipa_na_mpesa(
                 phone_number=phone_number,
                 amount=amount,
@@ -81,17 +76,19 @@ def topup_wallet(request):
             
             # Handle MPESA API response
             if "error" in response:
-                transaction_obj.status = "failed"
-                transaction_obj.save()
                 return Response(
                     {"error": f"Payment initiation failed: {response.get('error')}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
-            # Update transaction with MPESA request ID
-            if 'MerchantRequestID' in response:
-                transaction_obj.mpesa_request_id = response.get('MerchantRequestID')
-                transaction_obj.save()
+            # Create transaction with the IDs from MPESA response
+            transaction_obj = Transaction.objects.create(
+                wallet=wallet,
+                amount=amount,
+                status="pending",
+                checkout_request_id=response.get('CheckoutRequestID'),
+                merchant_request_id=response.get('MerchantRequestID')
+            )
             
             return Response({
                 "success": True,
@@ -101,6 +98,7 @@ def topup_wallet(request):
             }, status=status.HTTP_200_OK)
             
     except Exception as e:
+        logger.error(f"Topup error: {str(e)}", exc_info=True)
         return Response(
             {"error": f"An unexpected error occurred: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -116,7 +114,7 @@ def wallet_balance(request):
     try:
         wallet, created = Wallet.objects.get_or_create(
             user=request.user,
-            defaults={'balance': 2600.00}  # Initial balance set to KES 1000
+            defaults={'balance': 2600.00}
         )
         
         return Response({
@@ -148,7 +146,7 @@ def wallet_transactions(request):
         # Get or create wallet for the user
         wallet, created = Wallet.objects.get_or_create(
             user=request.user,
-            defaults={'balance': 2600.00}  # Initial balance set to KES 1000
+            defaults={'balance': 2600.00}
         )
         
         # Build the base queryset
@@ -173,7 +171,10 @@ def wallet_transactions(request):
             'status': tx.status,
             'mpesa_receipt_number': tx.mpesa_receipt_number or '',
             'created_at': tx.created_at.isoformat(),
-            'type': 'credit' if tx.amount >= 0 else 'debit'
+            'type': 'credit' if tx.amount >= 0 else 'debit',
+            'result_code': tx.result_code,
+            'result_desc': tx.result_desc,
+            'completed_at': tx.completed_at.isoformat() if tx.completed_at else None
         } for tx in transactions]
         
         return Response({
@@ -217,8 +218,25 @@ def mpesa_callback(request):
             logger.error("Invalid callback format - missing stkCallback")
             return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid callback format"})
         
+        checkout_request_id = stk_callback.get('CheckoutRequestID')
         result_code = stk_callback.get('ResultCode')
+        result_desc = stk_callback.get('ResultDesc')
         
+        # Find transaction by CheckoutRequestID (Unique identifier)
+        transaction_obj = Transaction.objects.filter(
+            checkout_request_id=checkout_request_id
+        ).first()
+
+        if not transaction_obj:
+            logger.error(f"Transaction not found for CheckoutRequestID: {checkout_request_id}")
+            # We still return success to Safaricom to acknowledge receipt
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Transaction not found"})
+            
+        # Update common fields regardless of success/failure
+        transaction_obj.result_code = result_code
+        transaction_obj.result_desc = result_desc
+        transaction_obj.completed_at = timezone.now()
+
         # If the payment was successful
         if result_code == 0:
             try:
@@ -233,30 +251,15 @@ def mpesa_callback(request):
                 
                 for item in items:
                     if item.get('Name') == 'Amount':
-                        amount = float(item.get('Value', 0))
+                        amount = Decimal(str(item.get('Value', 0)))
                     elif item.get('Name') == 'MpesaReceiptNumber':
                         mpesa_receipt = item.get('Value', '')
                     elif item.get('Name') == 'PhoneNumber':
-                        phone = str(item.get('Value', '')).lstrip('0')
-                
-                if not all([amount, mpesa_receipt, phone]):
-                    logger.error(f"Missing required fields in callback: amount={amount}, receipt={mpesa_receipt}, phone={phone}")
-                    return JsonResponse({"ResultCode": 1, "ResultDesc": "Missing required fields"})
-                
-                # Find the pending transaction
-                transaction_obj = Transaction.objects.filter(
-                    status="pending",
-                    amount=amount
-                ).filter(
-                    wallet__user__phone_number__endswith=phone[-9:]
-                ).order_by('-created_at').first()
-                
-                if not transaction_obj:
-                    logger.error(f"No pending transaction found for amount: {amount}, phone: {phone}")
-                    return JsonResponse({"ResultCode": 1, "ResultDesc": "Transaction not found"})
+                        phone = str(item.get('Value', ''))
                 
                 # Update transaction status
                 with db_transaction.atomic():
+                    # Reload transaction to lock it? (Not strictly necessary if single thread, but good practice)
                     transaction_obj.status = "success"
                     transaction_obj.mpesa_receipt_number = mpesa_receipt
                     transaction_obj.save()
@@ -269,12 +272,11 @@ def mpesa_callback(request):
                     logger.info(f"Successfully processed payment: {mpesa_receipt} for KES {amount}")
                 
                 # Check if this is a booking payment (not a wallet top-up)
-                # We can identify this by checking if there's a pending booking for this user
-                # that matches the payment amount
                 try:
                     from rides.models import Booking
                     
                     # Find pending booking for this user with matching amount
+                    # Ideally we should link Booking to Transaction explicitly, but for now fallback to logic
                     pending_booking = Booking.objects.filter(
                         user=wallet.user,
                         status='pending',
@@ -283,44 +285,30 @@ def mpesa_callback(request):
                     
                     if pending_booking:
                         # Check if amount matches ride price
-                        expected_amount = float(pending_booking.ride.price) * pending_booking.no_of_seats
-                        if abs(expected_amount - amount) < 0.01:  # Allow small floating point differences
+                        expected_amount = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
+                        if abs(expected_amount - amount) < Decimal('0.01'):
                             # Confirm the booking
                             pending_booking.confirm_payment()
-                            logger.info(f"Confirmed booking {pending_booking.id} for ride {pending_booking.ride.id}")
+                            logger.info(f"Confirmed booking {pending_booking.id} after successful wallet topup")
                 except Exception as e:
-                    logger.error(f"Error confirming booking: {str(e)}", exc_info=True)
-                    # Don't fail the callback if booking confirmation fails
+                    logger.error(f"Error checking for booking confirmation: {str(e)}", exc_info=True)
                 
                 return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
                 
             except Exception as e:
                 logger.error(f"Error processing successful payment: {str(e)}", exc_info=True)
+                transaction_obj.result_desc = f"System Error: {str(e)}"
+                transaction_obj.status = "failed"
+                transaction_obj.save()
                 return JsonResponse({"ResultCode": 1, "ResultDesc": f"Error: {str(e)}"})
         
         else:
             # Payment failed or was cancelled
-            error_msg = stk_callback.get('ResultDesc', 'Payment failed')
-            logger.warning(f"Payment failed: {error_msg}")
+            logger.warning(f"Payment failed for {checkout_request_id}: {result_desc}")
             
-            # Try to find and update the transaction
-            try:
-                merchant_request_id = stk_callback.get('MerchantRequestID')
-                checkout_request_id = stk_callback.get('CheckoutRequestID')
-                
-                if merchant_request_id or checkout_request_id:
-                    transaction = Transaction.objects.filter(
-                        status="pending",
-                        mpesa_request_id__in=[merchant_request_id, checkout_request_id, '']
-                    ).first()
-                    
-                    if transaction:
-                        transaction.status = "failed"
-                        transaction.save()
-                        logger.info(f"Updated transaction {transaction.id} to failed status")
-            
-            except Exception as e:
-                logger.error(f"Error updating failed transaction: {str(e)}", exc_info=True)
+            # Update the transaction status
+            transaction_obj.status = "failed"
+            transaction_obj.save()
             
             return JsonResponse({"ResultCode": 0, "ResultDesc": "Callback processed"})
     
@@ -346,7 +334,7 @@ def wallet_view(request):
             
         wallet, created = Wallet.objects.get_or_create(
             user=request.user,
-            defaults={'balance': 1000.00}  # Initial balance set to KES 1000
+            defaults={'balance': 1000.00}
         )
         transactions = Transaction.objects.filter(wallet=wallet).order_by('-created_at')[:10]
         
@@ -357,6 +345,9 @@ def wallet_view(request):
             'status': tx.status,
             'mpesa_receipt_number': tx.mpesa_receipt_number or '',
             'created_at': tx.created_at.isoformat(),
+            'result_code': tx.result_code,
+            'result_desc': tx.result_desc,
+            'completed_at': tx.completed_at.isoformat() if tx.completed_at else None
         } for tx in transactions]
         
         return JsonResponse({
