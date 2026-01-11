@@ -9,10 +9,27 @@ from django.conf import settings
 # Set up logging
 logger = logging.getLogger(__name__)
 
+def get_mpesa_urls():
+    """
+    Get MPESA API URLs based on environment settings.
+    Defaults to sandbox if MPESA_ENV is not set or not 'production'.
+    """
+    env = getattr(settings, 'MPESA_ENV', 'sandbox')
+    if env == 'production':
+        return {
+            "oauth": "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+            "stk_push": "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+        }
+    else:
+        return {
+            "oauth": "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+            "stk_push": "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+        }
+
 def get_access_token():
     consumer_key = settings.MPESA_CONSUMER_KEY
     consumer_secret = settings.MPESA_CONSUMER_SECRET
-    api_url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    api_url = get_mpesa_urls()["oauth"]
 
     try:
         response = requests.get(api_url, auth=HTTPBasicAuth(consumer_key, consumer_secret), timeout=30)
@@ -73,6 +90,8 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
     
     # Use ngrok URL for local development or your production URL
     callback_url = settings.CALLBACK_URL
+    if not callback_url:
+        logger.warning("MPESA CALLBACK_URL is not configured in settings.")
     
     # Prepare request payload
     payload = {
@@ -92,39 +111,19 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
     # Log the request (without sensitive data)
     log_payload = payload.copy()
     log_payload["Password"] = "*****"
-    logger.info(f"Sending MPESA request: {json.dumps(log_payload, indent=2)}")
+    logger.info(f"Sending MPESA request to {callback_url}: {json.dumps(log_payload, indent=2)}")
     
     try:
         # Make the API request
+        api_url = get_mpesa_urls()["stk_push"]
         response = requests.post(
-            "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+            api_url,
             json=payload,
             headers=headers,
             timeout=30
         )
         
         # Log the response
-        logger.info(f"MPESA API Response: {response.status_code} - {response.text}")
-        
-        # Check for HTTP errors
-        response.raise_for_status()
-        
-        response_data = response.json()
-        
-        # Check for API-level errors
-        if 'errorCode' in response_data:
-            error_msg = f"MPESA API error: {response_data.get('errorMessage', 'Unknown error')}"
-            logger.error(error_msg)
-            return {"error": error_msg, "code": response_data.get('errorCode')}
-            
-        return response_data
-        
-    except requests.exceptions.RequestException as e:
-        error_msg = f"MPESA API request failed: {str(e)}"
-        if hasattr(e, 'response') and e.response is not None:
-            error_msg += f" - {e.response.status_code}: {e.response.text}"
-        logger.error(error_msg)
-        return {"error": error_msg, "code": "REQUEST_FAILED"}
         logger.info(f"MPESA API Response: {response.status_code} - {response.text}")
         
         # Check for HTTP errors
