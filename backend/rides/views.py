@@ -171,64 +171,6 @@ class RideFilter(django_filters.FilterSet):
             'min_seats', 'date_after', 'date_before', 'status'
         ]
 
-
-# class RideViewSet(viewsets.ModelViewSet):
-#     queryset = Ride.objects.all()
-#     permission_classes = [permissions.IsAuthenticated]
-#     filter_backends = [django_filters.DjangoFilterBackend, filters.OrderingFilter]
-#     filterset_class = RideFilter
-#     ordering_fields = ['departure_time', 'price', 'available_seats']
-#     ordering = ['departure_time']
-
-#     def get_serializer_class(self):
-#         if self.action == 'retrieve':
-#             return RideDetailSerializer
-#         return RideListSerializer
-
-#     def get_queryset(self):
-#         queryset = super().get_queryset()
-        
-#         # Filter out past rides by default
-#         if self.request.query_params.get('include_past', '').lower() != 'true':
-#             queryset = queryset.filter(departure_time__gte=timezone.now())
-            
-#         # For list view, only show available rides
-#         if self.action == 'list':
-#             queryset = queryset.filter(status='available')
-            
-#         return queryset
-
-#     def perform_create(self, serializer):
-#         serializer.save(driver=self.request.user)
-
-#     @action(detail=True, methods=['post'])
-#     def cancel(self, request, pk=None):
-#         ride = self.get_object()
-#         if ride.driver != request.user:
-#             return Response(
-#                 {"detail": "You do not have permission to perform this action."},
-#                 status=status.HTTP_403_FORBIDDEN
-#             )
-            
-#         if ride.status == 'cancelled':
-#             return Response(
-#                 {"detail": "Ride is already cancelled"},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-            
-#         ride.status = 'cancelled'
-#         ride.save()
-        
-#         # Cancel all bookings
-#         for booking in ride.bookings.all():
-#             booking.cancel_booking(reason="Ride was cancelled by driver")
-            
-#         return Response(
-#             {"detail": "Ride cancelled successfully"},
-#             status=status.HTTP_200_OK
-#         )
-
-
 class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -294,42 +236,3 @@ class BookingViewSet(viewsets.ModelViewSet):
             {"detail": "Booking confirmed successfully"},
             status=status.HTTP_200_OK
         )
-
-
-# class PaymentViewSet(viewsets.ModelViewSet):
-#     serializer_class = PaymentSerializer
-#     permission_classes = [permissions.IsAuthenticated, IsPaymentOwner]
-    
-#     def get_queryset(self):
-#         # Users can only see their own payments
-#         return Payment.objects.filter(booking__user=self.request.user)
-
-#     @action(detail=True, methods=['post'])
-#     def refund(self, request, pk=None):
-#         payment = self.get_object()
-        
-#         if payment.booking.user != request.user:
-#             return Response(
-#                 {"detail": "You do not have permission to perform this action."},
-#                 status=status.HTTP_403_FORBIDDEN
-#             )
-            
-#         try:
-#             amount = request.data.get('amount')
-#             reason = request.data.get('reason')
-            
-#             payment.process_refund(amount, reason)
-#             return Response(
-#                 {"detail": "Refund processed successfully"},
-#                 status=status.HTTP_200_OK
-#             )
-#         except ValueError as e:
-#             return Response(
-#                 {"detail": str(e)},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         except Exception as e:
-#             return Response(
-#                 {"detail": "An error occurred while processing the refund"},
-#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
-#             )
