@@ -162,7 +162,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               height={50} 
               className="!m-0 transition-transform group-hover:scale-105" 
             />
-            <span className="ml-0 font-semibold text-2xl bg-gradient-to-r text-[#00204a] bg-clip-text ">
+            <span className="ml-0 font-semibold text-2xl bg-gradient-to-r text-[#08A6F6] bg-clip-text ">
               Travas
             </span>
           </Link>
@@ -176,7 +176,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               href={link.href}
               className={`px-4 py-2 rounded-lg transition-all duration-200 ${
                 isActive(link.href)
-                  ? 'bg-[#08A6F6] text-white shadow-sm'
+                  ? ' text-[#08A6F6]'
                   : 'text-[#484848] hover:text-[#08A6F6] hover:bg-[#C0DFED]/30'
               }`}
             >

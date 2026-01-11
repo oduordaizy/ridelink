@@ -61,23 +61,27 @@ class BookingSerializer(serializers.ModelSerializer):
     ride_details = RideListSerializer(source='ride', read_only=True)
     status = serializers.CharField(read_only=True)
     is_paid = serializers.BooleanField(read_only=True)
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
-            'id', 'ride', 'ride_details', 'user', 'seats_booked', 'status',
-            'is_paid', 'booked_at', 'updated_at', 'cancellation_reason'
+            'id', 'ride', 'ride_details', 'user', 'no_of_seats', 'status',
+            'is_paid', 'booked_at', 'updated_at', 'total_price'
         ]
         read_only_fields = ['booked_at', 'updated_at']
 
-    def validate_seats_booked(self, value):
+    def get_total_price(self, obj):
+        return obj.no_of_seats * obj.ride.price
+
+    def validate_no_of_seats(self, value):
         if value < 1:
             raise serializers.ValidationError("At least one seat must be booked")
         return value
 
     def validate(self, data):
         ride = data.get('ride') or self.instance.ride if self.instance else None
-        seats_booked = data.get('seats_booked')
+        no_of_seats = data.get('no_of_seats')
         
         if not ride:
             raise serializers.ValidationError({"ride": "Ride is required"})
@@ -85,9 +89,9 @@ class BookingSerializer(serializers.ModelSerializer):
         if ride.status != 'available':
             raise serializers.ValidationError({"ride": "This ride is not available for booking"})
             
-        if seats_booked and seats_booked > ride.available_seats:
+        if no_of_seats and no_of_seats > ride.available_seats:
             raise serializers.ValidationError(
-                {"seats_booked": f"Only {ride.available_seats} seats available"}
+                {"no_of_seats": f"Only {ride.available_seats} seats available"}
             )
             
         return data

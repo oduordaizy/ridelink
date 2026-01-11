@@ -1,15 +1,15 @@
 'use client';
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch } from 'react-icons/fa';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
 
-
 interface Booking {
   id: number;
-  ride: {
+  ride: number;
+  ride_details?: {
     id: number;
     departure_location: string;
     destination: string;
@@ -28,10 +28,10 @@ interface Booking {
 }
 
 const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  pending: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
+  confirmed: 'bg-blue-50 text-blue-700 border border-blue-200',
+  completed: 'bg-green-50 text-green-700 border border-green-200',
+  cancelled: 'bg-red-50 text-red-700 border border-red-200',
 };
 
 export default function BookingsPage() {
@@ -52,16 +52,20 @@ export default function BookingsPage() {
 
   const fetchBookings = async () => {
     try {
-      setLoading(true);
+      console.log('Fetching bookings...');
       const response = await fetch(`${API_BASE_URL}/bookings/my-bookings/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Bookings data received:', data);
         setBookings(data);
+      } else {
+        const text = await response.text();
+        console.error('Failed to fetch bookings:', response.status, text);
       }
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -71,13 +75,13 @@ export default function BookingsPage() {
   };
 
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
-      booking.ride.departure_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.ride.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.ride.driver.username.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchesSearch =
+      (booking.ride_details?.departure_location?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (booking.ride_details?.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (booking.ride_details?.driver?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+
     const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -93,7 +97,6 @@ export default function BookingsPage() {
         });
 
         if (response.ok) {
-          // Refresh bookings after cancellation
           fetchBookings();
         } else {
           const errorData = await response.json();
@@ -108,159 +111,437 @@ export default function BookingsPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-[#C0DFED] rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-[#08A6F6] border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+          </div>
+          <p className="text-[#484848] font-medium">Loading your bookings...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-     
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
-              <p className="mt-1 text-gray-600">View and manage your ride bookings</p>
-            </div>
-            <Link 
-              href="/dashboard/passenger"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-              Find a Ride
-            </Link>
-          </div>
-
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by location or driver"
-                  className="pl-10 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' }}>
+      {/* Hero Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.05)'
+        }}></div>
+        <div style={{ position: 'relative', padding: '3rem 1.5rem' }}>
+          <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+              alignItems: window.innerWidth < 768 ? 'flex-start' : 'center',
+              justifyContent: 'space-between',
+              gap: '1rem'
+            }}>
               <div>
-                <select
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+                <h1 style={{
+                  fontSize: '2.5rem',
+                  fontWeight: 'bold',
+                  color: '#FFFFFF',
+                  marginBottom: '0.5rem'
+                }}>My Bookings</h1>
+                <p style={{
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontSize: '1.125rem'
+                }}>View and manage your ride bookings</p>
               </div>
-              <div className="flex items-center justify-end">
-                <button
-                  onClick={fetchBookings}
-                  className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition flex items-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh
-                </button>
-              </div>
+              <Link
+                href="/dashboard/passenger"
+                style={{
+                  background: '#FFFFFF',
+                  color: '#08A6F6',
+                  padding: '0.875rem 1.5rem',
+                  borderRadius: '1rem',
+                  fontWeight: 'bold',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  textDecoration: 'none',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <FaSearch style={{ width: '1.25rem', height: '1.25rem' }} />
+                Find a Ride
+              </Link>
             </div>
-          </div>
-
-          {/* Bookings List */}
-          <div className="space-y-4">
-            {filteredBookings.length === 0 ? (
-              <div className="bg-white rounded-lg shadow p-8 text-center">
-                <FaCar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">No bookings found</h3>
-                <p className="mt-1 text-gray-500">You haven&apos;t made any bookings yet.</p>
-                <div className="mt-6">
-                  <Link
-                    href="/dashboard/passenger"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Find a Ride
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              filteredBookings.map((booking) => (
-                <div key={booking.id} className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div className="mb-4 md:mb-0">
-                        <div className="flex items-center">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {booking.ride.departure_location} → {booking.ride.destination}
-                          </h3>
-                          <span className={`ml-3 px-2 py-1 text-xs font-medium rounded-full ${statusColors[booking.status]}`}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                          </span>
-                          {booking.is_paid && (
-                            <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                              Paid
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                          <div className="flex items-center">
-                            <FaCalendarAlt className="mr-2 text-gray-400" />
-                            <span>{new Date(booking.ride.departure_time).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <FaClock className="mr-2 text-gray-400" />
-                            <span>{new Date(booking.ride.departure_time).toLocaleTimeString()}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <FaUser className="mr-2 text-gray-400" />
-                            <span>Driver: {booking.ride.driver.username}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <FaMapMarkerAlt className="mr-2 text-gray-400" />
-                            <span>{booking.no_of_seats} seat{booking.no_of_seats !== 1 ? 's' : ''}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <FaMoneyBillWave className="mr-2 text-gray-400" />
-                            <span>KSh {booking.total_price.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                        {booking.status === 'pending' && (
-                          <button
-                            onClick={() => cancelBooking(booking.id)}
-                            className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition"
-                          >
-                            Cancel Booking
-                          </button>
-                        )}
-                        <Link
-                          href={`/dashboard/passenger/bookings/${booking.id}`}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center"
-                        >
-                          View Details
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 px-6 py-3 text-xs text-gray-500 border-t border-gray-200">
-                    Booking ID: {booking.id} • Created: {new Date(booking.created_at).toLocaleString()}
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
+        {/* Filters */}
+        <div style={{
+          background: '#FFFFFF',
+          borderRadius: '1.5rem',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+          border: '1px solid #e5e7eb',
+          padding: '1.5rem',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(3, 1fr)',
+            gap: '1rem'
+          }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                left: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                color: '#6b7280'
+              }}>
+                <FaSearch style={{ height: '1.25rem', width: '1.25rem' }} />
+              </div>
+              <input
+                type="text"
+                placeholder="Search by location or driver"
+                style={{
+                  paddingLeft: '3rem',
+                  width: '100%',
+                  padding: '0.875rem 1rem',
+                  borderRadius: '0.875rem',
+                  border: '2px solid #e5e7eb',
+                  outline: 'none',
+                  transition: 'all 0.3s ease'
+                }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#08A6F6'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+              />
+            </div>
+            <div>
+              <select
+                style={{
+                  width: '100%',
+                  padding: '0.875rem 1rem',
+                  borderRadius: '0.875rem',
+                  border: '2px solid #e5e7eb',
+                  outline: 'none',
+                  transition: 'all 0.3s ease',
+                  color: '#374151',
+                  fontWeight: '500'
+                }}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#08A6F6'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+              <button
+                onClick={fetchBookings}
+                style={{
+                  background: '#FFFFFF',
+                  border: '2px solid #e5e7eb',
+                  color: '#374151',
+                  padding: '0.875rem 1.5rem',
+                  borderRadius: '0.875rem',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f9fafb';
+                  e.currentTarget.style.borderColor = '#08A6F6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#FFFFFF';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1.25rem', width: '1.25rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bookings List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {filteredBookings.length === 0 ? (
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: '1.5rem',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e5e7eb',
+              padding: '3rem',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '5rem',
+                height: '5rem',
+                background: 'linear-gradient(135deg, rgba(8, 166, 246, 0.1) 0%, rgba(0, 32, 74, 0.1) 100%)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.5rem'
+              }}>
+                <FaCar style={{ height: '2.5rem', width: '2.5rem', color: '#08A6F6' }} />
+              </div>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                color: '#00204a',
+                marginBottom: '0.5rem'
+              }}>No bookings found</h3>
+              <p style={{
+                color: '#6b7280',
+                marginBottom: '1.5rem'
+              }}>You haven&apos;t made any bookings yet or no matches found.</p>
+              <Link
+                href="/dashboard/passenger"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.875rem 1.5rem',
+                  fontSize: '1.125rem',
+                  fontWeight: 'bold',
+                  borderRadius: '1rem',
+                  color: '#FFFFFF',
+                  background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)',
+                  textDecoration: 'none',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(8, 166, 246, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(8, 166, 246, 0.4)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(8, 166, 246, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <FaSearch />
+                Find a Ride
+              </Link>
+            </div>
+          ) : (
+            filteredBookings.map((booking) => (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                onCancel={cancelBooking}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: number) => void }) {
+  return (
+    <div style={{
+      background: '#FFFFFF',
+      borderRadius: '1.5rem',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+      border: '1px solid #e5e7eb',
+      overflow: 'hidden',
+      transition: 'all 0.3s ease'
+    }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.12)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.06)';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+    >
+      <div style={{ padding: '1.5rem' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: window.innerWidth < 1024 ? 'column' : 'row',
+          alignItems: window.innerWidth < 1024 ? 'stretch' : 'center',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '1rem'
+            }}>
+              <h3 style={{
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                color: '#00204a'
+              }}>
+                {booking.ride_details?.departure_location || 'Unknown'} → {booking.ride_details?.destination || 'Unknown'}
+              </h3>
+              <span style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+                borderRadius: '0.75rem'
+              }}
+                className={statusColors[booking.status].split(' ').join(' ')}>
+                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              </span>
+              {booking.is_paid && (
+                <span style={{
+                  padding: '0.375rem 0.75rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  borderRadius: '0.75rem',
+                  background: '#dcfce7',
+                  color: '#16a34a',
+                  border: '1px solid #86efac'
+                }}>
+                  ✓ Paid
+                </span>
+              )}
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: window.innerWidth < 640 ? '1fr' : window.innerWidth < 1024 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+              gap: '1rem'
+            }}>
+              <InfoItem icon={<FaCalendarAlt />} label="Date" value={booking.ride_details?.departure_time ? new Date(booking.ride_details.departure_time).toLocaleDateString() : 'N/A'} />
+              <InfoItem icon={<FaClock />} label="Time" value={booking.ride_details?.departure_time ? new Date(booking.ride_details.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} />
+              <InfoItem icon={<FaUser />} label="Driver" value={booking.ride_details?.driver?.username || 'Unknown'} />
+              <InfoItem icon={<FaMapMarkerAlt />} label="Seats" value={`${booking.no_of_seats} seat${booking.no_of_seats !== 1 ? 's' : ''}`} />
+              <InfoItem icon={<FaMoneyBillWave />} label="Total" value={`KSh ${booking.total_price.toLocaleString()}`} />
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            flexDirection: window.innerWidth < 640 ? 'row' : window.innerWidth < 1024 ? 'row' : 'column',
+            gap: '0.5rem',
+            width: window.innerWidth < 1024 ? '100%' : 'auto'
+          }}>
+            {booking.status === 'pending' && (
+              <button
+                onClick={() => onCancel(booking.id)}
+                style={{
+                  padding: '0.875rem 1.25rem',
+                  border: '2px solid #ef4444',
+                  color: '#dc2626',
+                  borderRadius: '0.875rem',
+                  transition: 'all 0.3s ease',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  background: '#FFFFFF',
+                  flex: 1
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#fef2f2';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#FFFFFF';
+                }}
+              >
+                Cancel
+              </button>
+            )}
+            <Link
+              href={`/dashboard/passenger/bookings/${booking.id}`}
+              style={{
+                padding: '0.875rem 1.25rem',
+                background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)',
+                color: '#FFFFFF',
+                borderRadius: '0.875rem',
+                transition: 'all 0.3s ease',
+                textAlign: 'center',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 15px rgba(8, 166, 246, 0.3)',
+                textDecoration: 'none',
+                display: 'block',
+                flex: 1
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(8, 166, 246, 0.4)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(8, 166, 246, 0.3)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              View Details
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        background: 'linear-gradient(90deg, #f9fafb 0%, #FFFFFF 100%)',
+        padding: '0.875rem 1.5rem',
+        fontSize: '0.75rem',
+        color: '#6b7280',
+        borderTop: '1px solid #e5e7eb',
+        fontWeight: '500'
+      }}>
+        Booking ID: #{booking.id} • Created: {new Date(booking.created_at).toLocaleString()}
+      </div>
+    </div>
+  );
+}
+
+function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#374151' }}>
+      <div style={{
+        width: '2.5rem',
+        height: '2.5rem',
+        background: 'linear-gradient(135deg, rgba(8, 166, 246, 0.1) 0%, rgba(0, 32, 74, 0.1) 100%)',
+        borderRadius: '0.875rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        color: '#08A6F6'
+      }}>
+        {icon}
+      </div>
+      <div>
+        <p style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '500' }}>{label}</p>
+        <p style={{ fontWeight: '600' }}>{value}</p>
       </div>
     </div>
   );

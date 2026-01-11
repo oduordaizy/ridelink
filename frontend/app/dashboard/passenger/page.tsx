@@ -215,8 +215,8 @@ const Page = () => {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary"></div>
       </div>
     );
   }
@@ -440,489 +440,465 @@ const Page = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Toast Notifications */}
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
       <Toaster
         position="top-right"
         toastOptions={{
-          duration: 4000,
+          className: 'shadow-xl',
           style: {
-            background: '#363636',
+            background: '#333',
             color: '#fff',
-          },
-          success: {
-            duration: 5000,
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            duration: 6000,
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
+            borderRadius: '10px',
           },
         }}
       />
 
       {/* Payment Modal */}
       {showPaymentModal && selectedRide && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
-            <button
-              onClick={() => {
-                setShowPaymentModal(false);
-                setSelectedRide(null);
-              }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <FaTimes size={20} />
-            </button>
-
-            <h3 className="text-xl font-bold mb-4">Complete Your Booking</h3>
-            <div className="mb-6">
-              <p className="text-gray-600">From: <span className="font-medium">{selectedRide.departure_location}</span></p>
-              <p className="text-gray-600">To: <span className="font-medium">{selectedRide.destination}</span></p>
-              <p className="text-gray-600">Price: <span className="font-bold text-primary">KSh {selectedRide.price}</span></p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div className="bg-gradient-to-r from-primary-dark to-primary p-6 text-white relative">
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setSelectedRide(null);
+                }}
+                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
+              >
+                <FaTimes size={20} />
+              </button>
+              <h3 className="text-2xl font-bold">Complete Booking</h3>
+              <p className="text-white/80 text-sm mt-1">Select a payment method to confirm your seat</p>
             </div>
-
-            <div className="space-y-3">
-              {showMpesaForm ? (
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="mpesa-phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      M-Pesa Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      id="mpesa-phone"
-                      value={mpesaPhone}
-                      onChange={(e) => setMpesaPhone(e.target.value)}
-                      placeholder="e.g., 254712345678"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isProcessingPayment}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="mpesa-amount" className="block text-sm font-medium text-gray-700 mb-1">
-                      Amount (KSh)
-                    </label>
-                    <input
-                      type="number"
-                      id="mpesa-amount"
-                      value={mpesaAmount}
-                      onChange={(e) => setMpesaAmount(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={isProcessingPayment}
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={processMpesaPayment}
-                      disabled={isProcessingPayment || !mpesaPhone || !mpesaAmount}
-                      className={`flex-1 py-2 px-4 rounded-lg font-medium ${isProcessingPayment || !mpesaPhone || !mpesaAmount
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
-                        }`}
-                    >
-                      {isProcessingPayment ? (
-                        <span className="flex items-center justify-center">
-                          <FaSpinner className="animate-spin mr-2" />
-                          Processing...
-                        </span>
-                      ) : (
-                        'Pay with M-Pesa'
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setShowMpesaForm(false)}
-                      disabled={isProcessingPayment}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+            
+            <div className="p-6">
+              <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-500 text-sm">Trip</span>
+                  <span className="font-bold text-gray-800">KSh {selectedRide.price}</span>
                 </div>
-              ) : (
-                <>
-                  <button
-                    onClick={() => handlePaymentSelection('wallet')}
-                    disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide?.price || 0))}
-                    className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide?.price || 0))
-                      ? 'opacity-50 cursor-not-allowed bg-gray-100'
-                      : 'hover:bg-gray-50'
-                      }`}
-                  >
-                    <div className="flex items-center">
-                      {isProcessingPayment ? (
-                        <FaSpinner className="animate-spin text-primary text-xl mr-3" />
-                      ) : (
-                        <IoWallet className="text-primary text-xl mr-3" />
-                      )}
-                      <div className="text-left">
-                        <div>Pay with Wallet</div>
-                        {walletBalance !== null && (
-                          <div className="text-xs text-gray-500">Balance: KSh {walletBalance.toFixed(2)}</div>
+                <div className="flex items-center gap-2 text-gray-700">
+                  <span className="font-medium text-primary-dark">{selectedRide.departure_location}</span>
+                  <span className="text-gray-400">→</span>
+                  <span className="font-medium text-primary-dark">{selectedRide.destination}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {showMpesaForm ? (
+                  <div className="space-y-4 animate-in slide-in-from-right duration-200">
+                    <div>
+                      <label htmlFor="mpesa-phone" className="block text-sm font-semibold text-gray-700 mb-1.5">
+                        M-Pesa Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        id="mpesa-phone"
+                        value={mpesaPhone}
+                        onChange={(e) => setMpesaPhone(e.target.value)}
+                        placeholder="e.g., 254712345678"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50"
+                        disabled={isProcessingPayment}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="mpesa-amount" className="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Amount (KSh)
+                      </label>
+                      <input
+                        type="number"
+                        id="mpesa-amount"
+                        value={mpesaAmount}
+                        onChange={(e) => setMpesaAmount(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50"
+                        disabled={isProcessingPayment}
+                      />
+                    </div>
+                    <div className="flex space-x-3 pt-2">
+                      <button
+                        onClick={processMpesaPayment}
+                        disabled={isProcessingPayment || !mpesaPhone || !mpesaAmount}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold shadow-lg transform transition active:scale-95 ${isProcessingPayment || !mpesaPhone || !mpesaAmount
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
+                          : 'bg-green-600 text-white hover:bg-green-700 shadow-green-200'
+                          }`}
+                      >
+                        {isProcessingPayment ? (
+                          <span className="flex items-center justify-center">
+                            <FaSpinner className="animate-spin mr-2" />
+                            Processing...
+                          </span>
+                        ) : (
+                          'Pay with M-Pesa'
                         )}
+                      </button>
+                      <button
+                        onClick={() => setShowMpesaForm(false)}
+                        disabled={isProcessingPayment}
+                        className="px-6 py-3 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 font-medium transition-colors"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => handlePaymentSelection('wallet')}
+                      disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide?.price || 0))}
+                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-primary/30 hover:bg-blue-50/30 transition-all duration-200 bg-white"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                          {isProcessingPayment ? (
+                            <FaSpinner className="animate-spin text-primary" />
+                          ) : (
+                            <IoWallet className="text-primary text-xl" />
+                          )}
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-gray-800">Wallet</div>
+                          {walletBalance !== null && (
+                            <div className={`text-xs mt-0.5 ${walletBalance < (selectedRide?.price || 0) ? 'text-red-500' : 'text-green-600'}`}>
+                              Balance: KSh {walletBalance.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <span>→</span>
-                  </button>
+                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                    </button>
 
-                  <button
-                    onClick={() => handlePaymentSelection('mpesa')}
-                    disabled={isProcessingPayment}
-                    className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${isProcessingPayment ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-gray-50'
-                      }`}
-                  >
-                    <div className="flex items-center">
-                      <IoCash className="text-green-600 text-xl mr-3" />
-                      <span>Pay with M-Pesa</span>
-                    </div>
-                    <span>→</span>
-                  </button>
+                    <button
+                      onClick={() => handlePaymentSelection('mpesa')}
+                      disabled={isProcessingPayment}
+                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-green-500/30 hover:bg-green-50/30 transition-all duration-200 bg-white"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                          <IoCash className="text-green-600 text-xl" />
+                        </div>
+                        <span className="font-semibold text-gray-800">M-Pesa</span>
+                      </div>
+                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                    </button>
 
-                  <button
-                    onClick={() => handlePaymentSelection('card')}
-                    disabled={isProcessingPayment}
-                    className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${isProcessingPayment ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-gray-50'
-                      }`}
-                  >
-                    <div className="flex items-center">
-                      <IoCard className="text-blue-600 text-xl mr-3" />
-                      <span>Pay with Card</span>
-                    </div>
-                    <span>→</span>
-                  </button>
-                </>
-              )}
+                    <button
+                      onClick={() => handlePaymentSelection('card')}
+                      disabled={isProcessingPayment}
+                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-blue-500/30 hover:bg-blue-50/30 transition-all duration-200 bg-white"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                          <IoCard className="text-blue-600 text-xl" />
+                        </div>
+                        <span className="font-semibold text-gray-800">Card</span>
+                      </div>
+                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Hero Section with Search */}
-      <section className="px-4 py-8 text-center bg-blue-50">
-        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Find your perfect ride</h1>
-        <p className="text-lg md:text-xl text-gray-600 mb-8">Search, book, and travel with trusted drivers around you</p>
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-primary-dark via-[#04689E] to-primary pb-32 pt-16 px-6 shadow-lg overflow-hidden">
+        {/* Abstract Background Shapes */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white mix-blend-overlay filter blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-primary-foreground mix-blend-overlay filter blur-2xl animate-pulse"></div>
+        </div>
 
-        {/* Search Form */}
-        <div className="mt-10 max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaMapMarkerAlt className="h-5 w-5 text-gray-400" />
+        <div className="max-w-7xl mx-auto text-center relative z-10">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
+            Find your <span className="text-secondary">Perfect Ride</span>
+          </h1>
+          <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed">
+            Connect with trusted drivers, book seats instantly, and travel with comfort and peace of mind.
+          </p>
+        </div>
+      </div>
+
+      {/* Search Section - Floating */}
+      <div className="max-w-5xl mx-auto px-4 -mt-24 relative z-20 mb-12">
+        <div className="bg-white rounded-3xl shadow-xl p-4 md:p-8 border border-gray-100 backdrop-blur-sm bg-white/95">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            
+            <div className="md:col-span-3 relative group">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block pl-3">From</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <FaMapMarkerAlt className="h-5 w-5 text-primary group-focus-within:text-primary-dark transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="departure"
+                  value={searchParams.departure}
+                  onChange={handleInputChange}
+                  placeholder="Departure"
+                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
+                />
               </div>
-              <input
-                type="text"
-                name="departure"
-                value={searchParams.departure}
-                onChange={handleInputChange}
-                placeholder="From"
-                className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaMapMarkerAlt className="h-5 w-5 text-gray-400" />
+
+            <div className="hidden md:block md:col-span-1 flex justify-center">
+               <div className="w-8 h-0.5 bg-gray-200 mx-auto rounded-full"></div>
+            </div>
+
+            <div className="md:col-span-3 relative group">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block pl-3">To</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <FaMapMarkerAlt className="h-5 w-5 text-secondary-foreground group-focus-within:text-primary-dark transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="destination"
+                  value={searchParams.destination}
+                  onChange={handleInputChange}
+                  placeholder="Destination"
+                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
+                />
               </div>
-              <input
-                type="text"
-                name="destination"
-                value={searchParams.destination}
-                onChange={handleInputChange}
-                placeholder="To"
-                className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaCalendarAlt className="h-5 w-5 text-gray-400" />
+
+            <div className="md:col-span-3 relative group">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block pl-3">Date</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <FaCalendarAlt className="h-5 w-5 text-primary group-focus-within:text-primary-dark transition-colors" />
+                </div>
+                <input
+                  type="date"
+                   name="date"
+                  value={searchParams.date}
+                  onChange={handleInputChange}
+                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
+                />
               </div>
-              <input
-                type="date"
-                name="date"
-                value={searchParams.date}
-                onChange={handleInputChange}
-                className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
             </div>
-            <div className="flex gap-2">
+
+            <div className="md:col-span-2 flex flex-col gap-2 pt-6">
               <button
                 type="submit"
-                className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition flex-1 flex items-center justify-center"
+                className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
               >
-                <FaSearch className="mr-2" />
+                <FaSearch />
                 Search
               </button>
-              {(searchParams.departure || searchParams.destination || searchParams.date) && (
+               {(searchParams.departure || searchParams.destination || searchParams.date) && (
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition"
+                  className="w-full text-sm text-gray-500 hover:text-red-500 transition-colors py-1"
                 >
-                  Clear
+                  Clear Filters
                 </button>
               )}
             </div>
           </form>
         </div>
-      </section>
+      </div>
 
-      {/* Available Rides Section */}
-      <section className="px-4 py-6 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-foreground">Available Rides</h2>
+      {/* Main Content Area */}
+      <section className="max-w-7xl mx-auto px-4 pb-20">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-primary-dark">Available Rides</h2>
+            <p className="text-gray-500">
+              {rides.length} {rides.length === 1 ? 'ride' : 'rides'} found
+            </p>
+          </div>
+          
+          {/* Optional: Add Sort/Filter dropdowns here later */}
         </div>
-
-        {/* Rides List */}
-        <div className="grid grid-cols-1 gap-4">
-          {rides.length === 0 ? (
-            <div className="text-center py-12">
-              <FaCar className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900">No rides found</h3>
-              <p className="mt-1 text-gray-500">Try adjusting your search or check back later.</p>
+        
+        {rides.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100 text-center">
+            <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+              <FaCar className="h-10 w-10 text-primary/40" />
             </div>
-          ) : (
-            rides.map((ride) => {
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No rides available</h3>
+            <p className="text-gray-500 max-w-sm">
+              We couldn't find any rides matching your search. Try changing your filters or check back later.
+            </p>
+            <button 
+              onClick={clearSearch}
+              className="mt-6 text-primary font-medium hover:underline"
+            >
+              View all rides
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {rides.map((ride) => {
               const isExpanded = expandedRideId === ride.id;
               const departureDate = new Date(ride.departure_time);
+              const isFull = ride.available_seats === 0;
 
               return (
                 <div
                   key={ride.id}
-                  className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
+                  className={`bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group ${isExpanded ? 'ring-2 ring-primary/10' : ''}`}
                 >
-                  {/* Card Header - Always Visible */}
-                  <div
-                    onClick={() => setExpandedRideId(isExpanded ? null : ride.id)}
-                    className="p-5 cursor-pointer hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
+                  <div className="p-6 cursor-pointer relative" onClick={() => setExpandedRideId(isExpanded ? null : ride.id)}>
+                    {/* Route Line Visual - Absolute */}
+                    <div className="absolute left-6 top-20 bottom-24 w-0.5 bg-gray-100 hidden sm:block"></div>
+
+                    <div className="flex flex-col sm:flex-row gap-6">
+                      
+                      {/* Left: Driver & Route */}
                       <div className="flex-1">
-                        {/* Driver Info */}
-                        <div className="flex items-center gap-3 mb-4">
-                          {ride.driver.profile_picture ? (
-                            <img
-                              src={ride.driver.profile_picture}
-                              alt={ride.driver.username}
-                              className="w-12 h-12 rounded-full object-cover shadow-md border-2 border-blue-500"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
-                              <FaUser className="text-white text-lg" />
+                        {/* Driver Header */}
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="relative">
+                            {ride.driver.profile_picture ? (
+                              <img
+                                src={ride.driver.profile_picture}
+                                alt={ride.driver.username}
+                                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-full bg-linear-to-br from-primary to-blue-600 flex items-center justify-center text-white border-2 border-white shadow-md">
+                                <FaUser />
+                              </div>
+                            )}
+                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm">
+                              <FaStar className="text-yellow-400 text-xs" />
                             </div>
-                          )}
+                          </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {ride.driver.first_name || ride.driver.username}'s Ride
-                            </h3>
-                            <p className="text-sm text-gray-500">@{ride.driver.username}</p>
+                            <h4 className="font-bold text-gray-900 group-hover:text-primary transition-colors">
+                              {ride.driver.first_name || ride.driver.username}
+                            </h4>
+                            <div className="flex items-center text-xs text-gray-500 gap-2">
+                               <span>@{ride.driver.username}</span>
+                               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                               <span className="flex items-center gap-1">
+                                 <FaStar className="text-yellow-400" /> {ride.driver.driver_profile?.rating || 'New'}
+                               </span>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Route */}
-                        <div className="space-y-2 ml-1">
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
-                            <p className="text-gray-800 font-medium">{ride.departure_location}</p>
+                        {/* Route Info */}
+                        <div className="space-y-4 relative">
+                          <div className="flex items-start gap-4">
+                            <div className="mt-1 min-w-[12px] h-3 rounded-full bg-primary ring-4 ring-blue-50 relative z-10"></div>
+                            <div>
+                               <p className="font-semibold text-gray-900 text-lg leading-none">{ride.departure_location}</p>
+                               <p className="text-sm text-gray-500 mt-1">
+                                 {departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                               </p>
+                            </div>
                           </div>
-                          <div className="border-l-2 border-gray-300 h-8 ml-1.5"></div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></div>
-                            <p className="text-gray-800 font-medium">{ride.destination}</p>
-                          </div>
-                        </div>
-
-                        {/* Quick Info */}
-                        <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <FaClock className="text-blue-500" />
-                            <span>{departureDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <FaCar className="text-blue-500" />
-                            <span className={ride.available_seats > 0 ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>
-                              {ride.available_seats > 0 ? `${ride.available_seats} seat${ride.available_seats !== 1 ? 's' : ''} left` : 'Fully booked'}
-                            </span>
+                          <div className="flex items-start gap-4">
+                            <div className="mt-1 min-w-[12px] h-3 rounded-full bg-secondary-foreground ring-4 ring-blue-50 relative z-10"></div>
+                            <div>
+                               <p className="font-semibold text-gray-900 text-lg leading-none">{ride.destination}</p>
+                               <p className="text-sm text-gray-500 mt-1">
+                                 {/* Assuming simple duration calculation or just styling */}
+                                 Arrival
+                               </p>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Price and Expand Icon */}
-                      <div className="flex flex-col items-end gap-2 ml-4">
+                      {/* Right: Price & Status */}
+                      <div className="flex flex-row sm:flex-col justify-between items-end min-w-[120px] pl-6 sm:border-l border-gray-50">
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-blue-600">KSh {Number(ride.price).toFixed(2)}</div>
-                          <div className="text-xs text-gray-500">per seat</div>
+                          <p className="text-xs text-gray-500 uppercase font-semibold">Price per seat</p>
+                          <p className="text-2xl font-black text-primary">KSh {ride.price}</p>
                         </div>
-                        <div className="mt-2">
-                          {isExpanded ? (
-                            <FaChevronUp className="text-gray-400" />
-                          ) : (
-                            <FaChevronDown className="text-gray-400" />
-                          )}
+
+                        <div className="flex flex-col items-end gap-3 mt-4">
+                           <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                             isFull ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                           }`}>
+                             <div className={`w-2 h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                             {isFull ? 'Full' : `${ride.available_seats} seats left`}
+                           </div>
+                           
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               if (!isFull) {
+                                 setSelectedRide(ride);
+                                 setShowPaymentModal(true);
+                               }
+                             }}
+                             disabled={isFull}
+                             className={`px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all ${
+                               isFull 
+                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
+                               : 'bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95'
+                             }`}
+                           >
+                             {isFull ? 'Sold Out' : 'Book Seat'}
+                           </button>
                         </div>
                       </div>
+
+                    </div>
+                    
+                    {/* Expand Toggle */}
+                    <div className="absolute bottom-4 right-1/2 translate-x-1/2 sm:hidden text-gray-300">
+                       {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
                     </div>
                   </div>
 
-                  {/* Expanded Details */}
-                  {isExpanded && (
-                    <div className="px-5 pb-5 border-t border-gray-100 bg-gray-50">
-                      <div className="pt-4 space-y-4">
-                        {/* Detailed Ride Info */}
-                        <div className="bg-white rounded-lg p-4 shadow-sm">
-                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <FaInfoCircle className="text-blue-500" />
-                            Ride Details
-                          </h4>
-                          <div className="space-y-2 text-sm">
+                  {/* Expanded Details Section */}
+                  <div className={`bg-gray-50 border-t border-gray-100 transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                          <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <FaCar className="text-primary" /> Vehicle Details
+                          </h5>
+                          <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Departure Time:</span>
-                              <span className="font-medium text-gray-900">
-                                {departureDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
+                              <span className="text-gray-500">Model</span>
+                              <span className="font-medium">{ride.driver.driver_profile?.vehicle_model || 'Not specified'}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Available Seats:</span>
-                              <span className="font-medium text-gray-900">{ride.available_seats}</span>
+                              <span className="text-gray-500">Color</span>
+                              <span className="font-medium">{ride.driver.driver_profile?.vehicle_color || 'Not specified'}</span>
                             </div>
-                            {ride.additional_info && (
-                              <div className="pt-2 border-t border-gray-100">
-                                <span className="text-gray-600">Additional Info:</span>
-                                <p className="text-gray-900 mt-1">{ride.additional_info}</p>
-                              </div>
-                            )}
+                            <div className="flex justify-between">
+                               <span className="text-gray-500">Plate</span>
+                               <span className="font-medium">{ride.driver.driver_profile?.vehicle_plate || '*** ***'}</span>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Driver Info */}
-                        <div className="bg-white rounded-lg p-4 shadow-sm">
-                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <FaUser className="text-blue-500" />
-                            Driver Information
-                          </h4>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Name:</span>
-                              <span className="font-medium text-gray-900">
-                                {ride.driver.first_name && ride.driver.last_name
-                                  ? `${ride.driver.first_name} ${ride.driver.last_name}`
-                                  : ride.driver.username}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Username:</span>
-                              <span className="font-medium text-gray-900">@{ride.driver.username}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600 flex items-center gap-1">
-                                <FaPhone className="text-sm" />
-                                Contact:
-                              </span>
-                              {ride.is_paid && ride.driver_phone ? (
-                                <span className="font-medium text-gray-900">{ride.driver_phone}</span>
-                              ) : (
-                                <span className="text-gray-500 italic text-xs bg-gray-100 px-2 py-1 rounded">Hidden until booking confirmed</span>
-                              )}
-                            </div>
-                            {ride.driver.driver_profile?.rating !== undefined && (
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-600 flex items-center gap-1">
-                                  <FaStar className="text-sm text-yellow-500" />
-                                  Rating:
-                                </span>
-                                <span className="font-medium text-gray-900">{Number(ride.driver.driver_profile.rating).toFixed(1)} / 5.0</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Vehicle Info */}
-                        {ride.driver.driver_profile && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm">
-                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                              <FaCar className="text-blue-500" />
-                              Vehicle Information
-                            </h4>
-                            <div className="space-y-3">
-                              {ride.driver.driver_profile.vehicle_picture && (
-                                <div className="relative w-full h-40 rounded-lg overflow-hidden bg-gray-100">
-                                  <img
-                                    src={ride.driver.driver_profile.vehicle_picture}
-                                    alt="Vehicle"
-                                    className="w-full h-full object-cover"
-                                  />
+                       </div>
+                       
+                       <div>
+                          <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                             <FaInfoCircle className="text-primary" /> Trip Info
+                          </h5>
+                          <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
+                             <div className="flex justify-between">
+                                <span className="text-gray-500">Date</span>
+                                <span className="font-medium">{departureDate.toLocaleDateString()}</span>
+                             </div>
+                             {ride.additional_info && (
+                                <div className="pt-2 border-t border-gray-50 mt-2">
+                                  <p className="text-gray-600 italic">"{ride.additional_info}"</p>
                                 </div>
-                              )}
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                {ride.driver.driver_profile.vehicle_model && (
-                                  <div>
-                                    <span className="text-gray-600">Model:</span>
-                                    <p className="font-medium text-gray-900">{ride.driver.driver_profile.vehicle_model}</p>
-                                  </div>
-                                )}
-                                {ride.driver.driver_profile.vehicle_color && (
-                                  <div>
-                                    <span className="text-gray-600">Color:</span>
-                                    <p className="font-medium text-gray-900">{ride.driver.driver_profile.vehicle_color}</p>
-                                  </div>
-                                )}
-                                {ride.driver.driver_profile.vehicle_plate && (
-                                  <div className="col-span-2">
-                                    <span className="text-gray-600">Plate Number:</span>
-                                    <p className="font-medium text-gray-900 text-lg tracking-wider">{ride.driver.driver_profile.vehicle_plate}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                             )}
                           </div>
-                        )}
-                      </div>
+                       </div>
                     </div>
-                  )}
-
-                  {/* Action Button */}
-                  <div className="px-5 pb-5">
-                    {ride.is_paid ? (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p className="text-sm font-medium text-green-700 flex items-center gap-2">
-                          <span className="text-lg">✅</span>
-                          Booking confirmed
-                        </p>
-                        {ride.driver_phone && (
-                          <p className="text-sm text-green-600 mt-1">
-                            Driver contact: {ride.driver_phone}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedRide(ride);
-                          setShowPaymentModal(true);
-                        }}
-                        disabled={ride.available_seats <= 0}
-                        className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${ride.available_seats > 0
-                          ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          }`}
-                      >
-                        {ride.available_seats > 0 ? 'Book Now' : 'Fully Booked'}
-                      </button>
-                    )}
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </section>
     </div>
-  );
-};
+  )
+}
 
-export default Page;
+export default Page

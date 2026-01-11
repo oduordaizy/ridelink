@@ -238,8 +238,15 @@ class BookingViewSet(viewsets.ModelViewSet):
     ordering = ['-booked_at']
 
     def get_queryset(self):
-        # Users can only see their own bookings
-        return Booking.objects.filter(user=self.request.user)
+        #Allow both the Passenger AND the Driver to see the booking
+        user = self.request.user
+        return Booking.objects.filter(
+            Q(user=user) | Q(ride__driver=user)
+        ).distinct()
+
+    @action(detail=False, methods=['get'], url_path='my-bookings')
+    def my_bookings(self, request):
+        return self.list(request)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
