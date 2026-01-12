@@ -6,6 +6,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import Footer from '@/app/components/Footer';
 import Navbar from '@/app/components/Navbar';
 import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -18,6 +19,9 @@ export default function Register() {
     phone_number: '',
     user_type: 'passenger' as 'driver' | 'passenger',
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -185,31 +189,57 @@ export default function Register() {
                 <label htmlFor="password" className="block text-sm font-medium text-[#00204a] mb-1">
                   Password
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none"
-                  placeholder="••••••••"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none pr-10"
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#08A6F6] focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
               <div>
                 <label htmlFor="password_confirm" className="block text-sm font-medium text-[#00204a] mb-1">
                   Confirm Password
                 </label>
-                <input
-                  type="password"
-                  id="password_confirm"
-                  name="password_confirm"
-                  value={formData.password_confirm}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none"
-                  placeholder="••••••••"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="password_confirm"
+                    name="password_confirm"
+                    value={formData.password_confirm}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none pr-10"
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#08A6F6] focus:outline-none"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
