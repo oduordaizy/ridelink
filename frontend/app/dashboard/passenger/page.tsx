@@ -666,7 +666,7 @@ const Page = () => {
                   name="departure"
                   value={searchParams.departure}
                   onChange={handleInputChange}
-                  placeholder="Departure"
+                  placeholder="Starting point"
                   className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
                 />
               </div>

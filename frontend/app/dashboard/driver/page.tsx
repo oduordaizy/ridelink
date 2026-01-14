@@ -159,7 +159,7 @@ export default function CreateRidePage() {
                   value={formData.departure_location}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
-                  placeholder="Enter pickup location"
+                  placeholder="Start location"
                   required
                 />
               </div>
