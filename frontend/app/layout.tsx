@@ -26,17 +26,6 @@ export const metadata: Metadata = {
   creator: "Travas",
   metadataBase: new URL("https://travas.co.ke"),
   manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
-    other: [
-      {
-        rel: "apple-touch-icon-precomposed",
-        url: "/apple-icon.png",
-      },
-    ],
-  },
   openGraph: {
     title: "Travas - Reliable Ridesharing in Kenya",
     description: "Connect with drivers and passengers for affordable, secure, and convenient rides across Kenya.",

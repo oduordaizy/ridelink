@@ -19,7 +19,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href='/' className='pacifico-regular flex items-center text-[#08A6F6] hover:opacity-90 transition-opacity'>
-            <Image src="/logo.png" alt="Logo" width={40} height={40} className="!m-0" />
+            <Image src="/logo.png" alt="Logo" width={35} height={35} className="!m-0" />
             <span className="ml-0 font-semibold text-2xl">Travas</span>
           </Link>
 

@@ -3,20 +3,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Home, 
-  User, 
-  Settings, 
-  Menu, 
-  X, 
-  Car, 
-  Wallet, 
-  History, 
+import {
+  Home,
+  User,
+  Settings,
+  Menu,
+  X,
+  Car,
+  Wallet,
+  History,
   Bell,
   LogOut,
   ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const DriverLayout = ({
   children,
@@ -86,8 +87,8 @@ const DriverLayout = ({
     return 'U';
   };
 
-  const userName = user?.first_name && user?.last_name 
-    ? `${user.first_name} ${user.last_name}` 
+  const userName = user?.first_name && user?.last_name
+    ? `${user.first_name} ${user.last_name}`
     : user?.first_name || user?.username || 'User';
   const userEmail = user?.email || '';
 
@@ -111,18 +112,21 @@ const DriverLayout = ({
           >
             <Menu className="w-6 h-6 text-gray-700" />
           </button>
-          <h1 className="text-xl font-bold text-[#00204a]">Travas</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.png" alt="Travas Logo" width={32} height={32} />
+            <h1 className="text-xl font-bold text-[#00204a]">Travas</h1>
+          </Link>
         </div>
-        
+
         <div className="flex items-center gap-3">
-          <button 
+          <button
             className="p-2 text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative"
-            onClick={() => {}}
+            onClick={() => { }}
           >
             <Bell className="h-5 w-5" />
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>
           </button>
-          
+
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white font-semibold">
             {getInitials(user)}
           </div>
@@ -149,12 +153,10 @@ const DriverLayout = ({
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center">
-              <Car className="w-6 h-6 text-white" />
-            </div>
+          <Link href="/" className="flex items-center gap-3">
+            <Image src="/logo.png" alt="Travas Logo" width={32} height={32} />
             <span className="text-xl font-bold text-[#00204a]">Travas</span>
-          </div>
+          </Link>
           <button
             onClick={toggleSidebar}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -169,7 +171,7 @@ const DriverLayout = ({
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              
+
               return (
                 <li key={item.id}>
                   <Link
@@ -178,8 +180,8 @@ const DriverLayout = ({
                     className={`
                       w-full flex items-center justify-between px-4 py-3 rounded-xl
                       transition-all duration-200 group
-                      ${isActive 
-                        ? 'bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white shadow-lg shadow-[#08A6F6]/30' 
+                      ${isActive
+                        ? 'bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white shadow-lg shadow-[#08A6F6]/30'
                         : 'text-gray-700 hover:bg-gray-100'
                       }
                     `}
@@ -212,7 +214,7 @@ const DriverLayout = ({
               </div>
             </div>
           </div>
-          
+
           {/* Logout Button */}
           <div className="p-4">
             <button
@@ -234,22 +236,22 @@ const DriverLayout = ({
           <header className="hidden lg:block bg-white shadow-sm">
             <div className="flex items-center justify-between px-6 py-4">
               <h1 className="text-2xl font-bold text-gray-900">
-                {pathname === '/dashboard/driver' ? 'Dashboard' : 
-                 pathname.includes('/myrides') ? 'My Rides' :
-                 pathname.includes('/wallet') ? 'Wallet' :
-                 pathname.includes('/profile') ? 'Profile' :
-                 pathname.includes('/settings') ? 'Settings' : 'Dashboard'}
+                {pathname === '/dashboard/driver' ? 'Dashboard' :
+                  pathname.includes('/myrides') ? 'My Rides' :
+                    pathname.includes('/wallet') ? 'Wallet' :
+                      pathname.includes('/profile') ? 'Profile' :
+                        pathname.includes('/settings') ? 'Settings' : 'Dashboard'}
               </h1>
-              
+
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   className="p-2 text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative"
-                  onClick={() => {}}
+                  onClick={() => { }}
                 >
                   <Bell className="h-6 w-6" />
                   <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500"></span>
                 </button>
-                
+
                 {/* Profile dropdown */}
                 <div ref={dropdownRef} className="relative">
                   <button
@@ -260,7 +262,7 @@ const DriverLayout = ({
                       {getInitials(user)}
                     </div>
                   </button>
-                  
+
                   {isProfileOpen && (
                     <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                       <div className="py-1">

@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Menu, LogOut, Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { 
-  FaHome, 
-  FaCarAlt, 
-  FaWallet, 
+import {
+  FaHome,
+  FaCarAlt,
+  FaWallet,
   FaUser,
   FaUserCircle
 } from "react-icons/fa";
@@ -36,7 +36,7 @@ export default function DriverSidebar() {
 
   const getInitials = (user: { first_name?: string; last_name?: string } | null) => {
     if (!user?.first_name) return 'U';
-    return user.last_name 
+    return user.last_name
       ? `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
       : user.first_name[0].toUpperCase();
   };
@@ -68,8 +68,8 @@ export default function DriverSidebar() {
       <div className="border-t border-gray-200 pt-4 mt-4 w-full">
         <div className="flex items-center px-4 py-3 hover:bg-gray-50 rounded-md transition-colors cursor-pointer">
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage 
-              src="/default-profile.png" 
+            <AvatarImage
+              src="/default-profile.png"
               alt={user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'User'}
               className="object-cover"
             />
@@ -92,7 +92,7 @@ export default function DriverSidebar() {
             </p>
           </div>
         </div>
-        
+
         <div className="mt-2 space-y-1">
           <Link
             href="/dashboard/driver/profile"
@@ -118,19 +118,18 @@ function SidebarContent({ pathname }: { pathname: string }) {
   return (
     <nav className="space-y-1">
       <Link href='/' className='pacifico-regular flex items-center text-[#0086CA]'>
-            <Image src="/logo.png" alt="Logo" width={50} height={50} className="!m-0" />
-            <span className="ml-0 font-semibold text-xl">Travas</span>
-          </Link>
+        <Image src="/logo.png" alt="Logo" width={40} height={40} className="!m-0" />
+        <span className="ml-0 font-semibold text-xl">Travas</span>
+      </Link>
 
       {navItems.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          className={`flex items-center px-4 py-3 rounded-md text-sm ${
-            pathname === item.href
-              ? "bg-blue-100 text-blue-800 font-medium"
-              : "hover:[#005792] text-gray-700"
-          }`}
+          className={`flex items-center px-4 py-3 rounded-md text-sm ${pathname === item.href
+            ? "bg-blue-100 text-blue-800 font-medium"
+            : "hover:[#005792] text-gray-700"
+            }`}
         >
           {item.icon}
           {item.label}

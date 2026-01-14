@@ -59,34 +59,33 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
-      <aside 
-        className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <aside
+        className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#08A6F6] to-[#00204a]">
             <Link href='/' className='pacifico-regular flex items-center'>
-              <Image 
-                src="/logo.png" 
-                alt="Logo" 
-                width={40} 
-                height={40} 
-                className="!m-0" 
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={30}
+                height={30}
+                className="!m-0"
               />
               <span className="ml-1 font-semibold text-xl text-white">
                 Travas
               </span>
             </Link>
-            <button 
+            <button
               onClick={() => setSidebarOpen(false)}
               className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
               aria-label="Close menu"
@@ -116,11 +115,10 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center px-4 py-3 rounded-lg transition-all duration-200 font-medium ${
-                  isActive(link.href)
-                    ? 'bg-[#08A6F6] text-white shadow-md'
-                    : 'text-[#484848] hover:text-[#08A6F6] hover:bg-[#C0DFED]/30'
-                }`}
+                className={`flex items-center px-4 py-3 rounded-lg transition-all duration-200 font-medium ${isActive(link.href)
+                  ? 'bg-[#08A6F6] text-white shadow-md'
+                  : 'text-[#484848] hover:text-[#08A6F6] hover:bg-[#C0DFED]/30'
+                  }`}
               >
                 {link.label}
               </Link>
@@ -155,12 +153,12 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
           </button>
 
           <Link href='/' className='pacifico-regular flex items-center group'>
-            <Image 
-              src="/logo.png" 
-              alt="Logo" 
-              width={50} 
-              height={50} 
-              className="!m-0 transition-transform group-hover:scale-105" 
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={30}
+              height={30}
+              className="!m-0 transition-transform group-hover:scale-105"
             />
             <span className="ml-0 font-semibold text-2xl bg-gradient-to-r text-[#08A6F6] bg-clip-text ">
               Travas
@@ -174,11 +172,10 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
             <Link
               key={link.href}
               href={link.href}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                isActive(link.href)
-                  ? ' text-[#08A6F6]'
-                  : 'text-[#484848] hover:text-[#08A6F6] hover:bg-[#C0DFED]/30'
-              }`}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 ${isActive(link.href)
+                ? ' text-[#08A6F6]'
+                : 'text-[#484848] hover:text-[#08A6F6] hover:bg-[#C0DFED]/30'
+                }`}
             >
               {link.label}
             </Link>
@@ -187,14 +184,14 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
 
         {/* Right Side Actions */}
         <div className="flex items-center space-x-3">
-          <button 
+          <button
             className="relative p-2 rounded-lg hover:bg-[#F5F5F5] transition-colors group"
             aria-label="Notifications"
           >
             <IoNotifications className="text-2xl text-[#484848] group-hover:text-[#08A6F6] transition-colors" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
-          
+
           <div className="relative" ref={dropdownRef}>
             <button
               className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:ring-offset-2 hover:shadow-lg transition-all duration-200 hover:scale-105"
