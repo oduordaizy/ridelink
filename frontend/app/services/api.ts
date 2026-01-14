@@ -264,16 +264,16 @@ export const rideBookingAPI = {
 
     return response.json();
   },
-}; 
+};
 
 //Get rides
-export const getAllRides = async ()=>{
+export const getAllRides = async () => {
   const res = await fetch(`${API_BASE_URL}/rides/`)
   return res.json();
 }
 
-export const getMyRides = async () =>{
-   const res = await fetch(`${API_BASE_URL}/rides/`, {
+export const getMyRides = async () => {
+  const res = await fetch(`${API_BASE_URL}/rides/`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
     },
@@ -284,7 +284,7 @@ export const getMyRides = async () =>{
 // Payment API functions
 export const paymentAPI = {
   // Initiate M-Pesa payment
-  async initiateMpesaPayment(token: string, data: { phone_number: string; amount: number }) {
+  async initiateMpesaPayment(token: string, data: { phone_number: string; amount: number; booking_id?: number }) {
     const response = await fetch(`${API_BASE_URL}/payments/wallet/topup/`, {
       method: 'POST',
       headers: {
@@ -294,14 +294,15 @@ export const paymentAPI = {
       body: JSON.stringify({
         phone: data.phone_number,  // Changed from phone_number to phone
         amount: data.amount,
+        booking_id: data.booking_id,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.detail || 
-                         errorData.error || 
-                         `Failed to initiate M-Pesa payment (${response.status})`;
+      const errorMessage = errorData.detail ||
+        errorData.error ||
+        `Failed to initiate M-Pesa payment (${response.status})`;
       throw new Error(errorMessage);
     }
 
@@ -333,7 +334,7 @@ export const paymentAPI = {
     });
 
     const response = await fetch(
-      `${API_BASE_URL}/payments/wallet/transactions/?${params}`, 
+      `${API_BASE_URL}/payments/wallet/transactions/?${params}`,
       {
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -19,7 +19,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href='/' className='pacifico-regular flex items-center text-[#08A6F6] hover:opacity-90 transition-opacity'>
-            <Image src="/logo.png" alt="Logo" width={50} height={50} className="!m-0" />
+            <Image src="/logo.png" alt="Logo" width={40} height={40} className="!m-0" />
             <span className="ml-0 font-semibold text-2xl">Travas</span>
           </Link>
 
@@ -45,8 +45,8 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <div className="flex items-center space-x-3">
-                <Link 
-                  href="/dashboard" 
+                <Link
+                  href="/dashboard"
                   className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] px-4 py-2 rounded-lg text-sm font-medium transition-all"
                 >
                   My Dashboard
@@ -68,14 +68,14 @@ export default function Navbar() {
               </div>
             ) : (
               <>
-                <Link 
-                  href="/auth/login" 
+                <Link
+                  href="/auth/login"
                   className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] px-5 py-2 rounded-lg text-sm font-medium transition-all"
                 >
                   Sign In
                 </Link>
-                <Link 
-                  href="/auth/register" 
+                <Link
+                  href="/auth/register"
                   className="bg-[#08A6F6] text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#00204a] transition-all shadow-md hover:shadow-lg"
                 >
                   Sign Up
@@ -109,26 +109,26 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-[#E5E7EB]">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] block px-4 py-2.5 rounded-lg text-base font-medium transition-all"
             >
               Home
             </Link>
-            <Link 
-              href="/how-it-works" 
+            <Link
+              href="/how-it-works"
               className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] block px-4 py-2.5 rounded-lg text-base font-medium transition-all"
             >
               How it Works
             </Link>
-            <Link 
-              href="/about" 
+            <Link
+              href="/about"
               className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] block px-4 py-2.5 rounded-lg text-base font-medium transition-all"
             >
               About
             </Link>
-            <Link 
-              href="/contact" 
+            <Link
+              href="/contact"
               className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] block px-4 py-2.5 rounded-lg text-base font-medium transition-all"
             >
               Contact
@@ -146,8 +146,8 @@ export default function Navbar() {
                       Welcome, {user.first_name}!
                     </span>
                   </div>
-                  <Link 
-                    href="/dashboard" 
+                  <Link
+                    href="/dashboard"
                     className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] px-4 py-2.5 rounded-lg font-medium transition-all text-left"
                   >
                     My Dashboard
@@ -161,14 +161,14 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link 
-                    href="/auth/login" 
+                  <Link
+                    href="/auth/login"
                     className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] px-4 py-2.5 rounded-lg font-medium transition-all text-left"
                   >
                     Sign In
                   </Link>
-                  <Link 
-                    href="/auth/register" 
+                  <Link
+                    href="/auth/register"
                     className="bg-[#08A6F6] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#00204a] transition-all shadow-md text-center"
                   >
                     Sign Up

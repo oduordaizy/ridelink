@@ -57,6 +57,7 @@ const Page = () => {
     date: ''
   });
   const [expandedRideId, setExpandedRideId] = useState<number | null>(null);
+  const [numberOfSeats, setNumberOfSeats] = useState(1);
 
   // Fetch all rides (initial load and after clearing search)
   const fetchAllRides = useCallback(async () => {
@@ -226,7 +227,7 @@ const Page = () => {
 
     if (method === 'mpesa') {
       setShowMpesaForm(true);
-      setMpesaAmount(selectedRide.price.toString());
+      setMpesaAmount((selectedRide.price * numberOfSeats).toString());
       return;
     }
 
@@ -249,7 +250,7 @@ const Page = () => {
           },
           body: JSON.stringify({
             payment_method: 'wallet',
-            no_of_seats: 1
+            no_of_seats: numberOfSeats
           }),
         });
 
@@ -265,7 +266,7 @@ const Page = () => {
 
         // Update wallet balance
         if (walletBalance !== null) {
-          setWalletBalance(walletBalance - selectedRide.price);
+          setWalletBalance(walletBalance - (selectedRide.price * numberOfSeats));
         }
 
         // Refresh rides list
@@ -281,7 +282,7 @@ const Page = () => {
           },
           body: JSON.stringify({
             payment_method: 'card',
-            no_of_seats: 1
+            no_of_seats: numberOfSeats
           }),
         });
 
@@ -307,6 +308,7 @@ const Page = () => {
       setIsProcessingPayment(false);
       setShowPaymentModal(false);
       setSelectedRide(null);
+      setNumberOfSeats(1);
     }
   };
 
@@ -342,7 +344,7 @@ const Page = () => {
         },
         body: JSON.stringify({
           payment_method: 'mpesa',
-          no_of_seats: 1
+          no_of_seats: numberOfSeats
         }),
       });
 
@@ -357,7 +359,8 @@ const Page = () => {
       // Then initiate M-Pesa payment
       const paymentData = await paymentAPI.initiateMpesaPayment(token, {
         phone_number: formattedPhone,
-        amount: parseFloat(mpesaAmount)
+        amount: parseFloat(mpesaAmount), // This is already the total amount
+        booking_id: bookingData.booking_id || bookingData.id
       });
 
       console.log('M-Pesa payment initiated:', paymentData);
@@ -374,7 +377,9 @@ const Page = () => {
       setShowPaymentModal(false);
       setMpesaPhone('');
       setMpesaAmount('');
+      setMpesaAmount('');
       setSelectedRide(null);
+      setNumberOfSeats(1);
 
       // Refresh available rides
       fetchAllRides();
@@ -462,6 +467,7 @@ const Page = () => {
                 onClick={() => {
                   setShowPaymentModal(false);
                   setSelectedRide(null);
+                  setNumberOfSeats(1);
                 }}
                 className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
               >
@@ -470,13 +476,36 @@ const Page = () => {
               <h3 className="text-2xl font-bold">Complete Booking</h3>
               <p className="text-white/80 text-sm mt-1">Select a payment method to confirm your seat</p>
             </div>
-            
+
             <div className="p-6">
               <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-500 text-sm">Trip</span>
-                  <span className="font-bold text-gray-800">KSh {selectedRide.price}</span>
+                  <span className="text-gray-500 text-sm">Trip Total ({numberOfSeats} {numberOfSeats === 1 ? 'seat' : 'seats'})</span>
+                  <span className="font-bold text-gray-800 text-lg">KSh {(selectedRide.price * numberOfSeats).toLocaleString()}</span>
                 </div>
+
+                {/* Seat Selector */}
+                <div className="flex justify-between items-center mb-4 pt-2 border-t border-blue-200/50">
+                  <span className="text-gray-600 font-medium text-sm">Number of Seats (Max {selectedRide.available_seats})</span>
+                  <div className="flex items-center space-x-3 bg-white rounded-lg p-1 shadow-sm border border-gray-100">
+                    <button
+                      onClick={() => setNumberOfSeats(Math.max(1, numberOfSeats - 1))}
+                      disabled={numberOfSeats <= 1}
+                      className="w-8 h-8 rounded-md bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold"
+                    >
+                      -
+                    </button>
+                    <span className="font-bold text-gray-800 w-4 text-center">{numberOfSeats}</span>
+                    <button
+                      onClick={() => setNumberOfSeats(Math.min(selectedRide.available_seats, numberOfSeats + 1))}
+                      disabled={numberOfSeats >= selectedRide.available_seats}
+                      className="w-8 h-8 rounded-md bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 text-gray-700">
                   <span className="font-medium text-primary-dark">{selectedRide.departure_location}</span>
                   <span className="text-gray-400">→</span>
@@ -529,7 +558,7 @@ const Page = () => {
                             Processing...
                           </span>
                         ) : (
-                          'Pay with M-Pesa'
+                          `Pay KSh ${(selectedRide.price * numberOfSeats).toLocaleString()}`
                         )}
                       </button>
                       <button
@@ -545,7 +574,7 @@ const Page = () => {
                   <div className="space-y-3">
                     <button
                       onClick={() => handlePaymentSelection('wallet')}
-                      disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide?.price || 0))}
+                      disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide.price * numberOfSeats))}
                       className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-primary/30 hover:bg-blue-50/30 transition-all duration-200 bg-white"
                     >
                       <div className="flex items-center">
@@ -559,7 +588,7 @@ const Page = () => {
                         <div className="text-left">
                           <div className="font-semibold text-gray-800">Wallet</div>
                           {walletBalance !== null && (
-                            <div className={`text-xs mt-0.5 ${walletBalance < (selectedRide?.price || 0) ? 'text-red-500' : 'text-green-600'}`}>
+                            <div className={`text-xs mt-0.5 ${walletBalance < (selectedRide.price * numberOfSeats) ? 'text-red-500' : 'text-green-600'}`}>
                               Balance: KSh {walletBalance.toFixed(2)}
                             </div>
                           )}
@@ -625,7 +654,7 @@ const Page = () => {
       <div className="max-w-5xl mx-auto px-4 -mt-24 relative z-20 mb-12">
         <div className="bg-white rounded-3xl shadow-xl p-4 md:p-8 border border-gray-100 backdrop-blur-sm bg-white/95">
           <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            
+
             <div className="md:col-span-3 relative group">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block pl-3">From</label>
               <div className="relative">
@@ -644,7 +673,7 @@ const Page = () => {
             </div>
 
             <div className="hidden md:block md:col-span-1 flex justify-center">
-               <div className="w-8 h-0.5 bg-gray-200 mx-auto rounded-full"></div>
+              <div className="w-8 h-0.5 bg-gray-200 mx-auto rounded-full"></div>
             </div>
 
             <div className="md:col-span-3 relative group">
@@ -672,7 +701,7 @@ const Page = () => {
                 </div>
                 <input
                   type="date"
-                   name="date"
+                  name="date"
                   value={searchParams.date}
                   onChange={handleInputChange}
                   className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
@@ -688,7 +717,7 @@ const Page = () => {
                 <FaSearch />
                 Search
               </button>
-               {(searchParams.departure || searchParams.destination || searchParams.date) && (
+              {(searchParams.departure || searchParams.destination || searchParams.date) && (
                 <button
                   type="button"
                   onClick={clearSearch}
@@ -711,10 +740,10 @@ const Page = () => {
               {rides.length} {rides.length === 1 ? 'ride' : 'rides'} found
             </p>
           </div>
-          
+
           {/* Optional: Add Sort/Filter dropdowns here later */}
         </div>
-        
+
         {rides.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100 text-center">
             <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
@@ -724,7 +753,7 @@ const Page = () => {
             <p className="text-gray-500 max-w-sm">
               We couldn't find any rides matching your search. Try changing your filters or check back later.
             </p>
-            <button 
+            <button
               onClick={clearSearch}
               className="mt-6 text-primary font-medium hover:underline"
             >
@@ -748,7 +777,7 @@ const Page = () => {
                     <div className="absolute left-6 top-20 bottom-24 w-0.5 bg-gray-100 hidden sm:block"></div>
 
                     <div className="flex flex-col sm:flex-row gap-6">
-                      
+
                       {/* Left: Driver & Route */}
                       <div className="flex-1">
                         {/* Driver Header */}
@@ -774,11 +803,11 @@ const Page = () => {
                               {ride.driver.first_name || ride.driver.username}
                             </h4>
                             <div className="flex items-center text-xs text-gray-500 gap-2">
-                               <span>@{ride.driver.username}</span>
-                               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                               <span className="flex items-center gap-1">
-                                 <FaStar className="text-yellow-400" /> {ride.driver.driver_profile?.rating || 'New'}
-                               </span>
+                              <span>@{ride.driver.username}</span>
+                              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                              <span className="flex items-center gap-1">
+                                <FaStar className="text-yellow-400" /> {ride.driver.driver_profile?.rating || 'New'}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -788,20 +817,20 @@ const Page = () => {
                           <div className="flex items-start gap-4">
                             <div className="mt-1 min-w-[12px] h-3 rounded-full bg-primary ring-4 ring-blue-50 relative z-10"></div>
                             <div>
-                               <p className="font-semibold text-gray-900 text-lg leading-none">{ride.departure_location}</p>
-                               <p className="text-sm text-gray-500 mt-1">
-                                 {departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                               </p>
+                              <p className="font-semibold text-gray-900 text-lg leading-none">{ride.departure_location}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-start gap-4">
                             <div className="mt-1 min-w-[12px] h-3 rounded-full bg-secondary-foreground ring-4 ring-blue-50 relative z-10"></div>
                             <div>
-                               <p className="font-semibold text-gray-900 text-lg leading-none">{ride.destination}</p>
-                               <p className="text-sm text-gray-500 mt-1">
-                                 {/* Assuming simple duration calculation or just styling */}
-                                 Arrival
-                               </p>
+                              <p className="font-semibold text-gray-900 text-lg leading-none">{ride.destination}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {/* Assuming simple duration calculation or just styling */}
+                                Arrival
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -815,80 +844,78 @@ const Page = () => {
                         </div>
 
                         <div className="flex flex-col items-end gap-3 mt-4">
-                           <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
-                             isFull ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
-                           }`}>
-                             <div className={`w-2 h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                             {isFull ? 'Full' : `${ride.available_seats} seats left`}
-                           </div>
-                           
-                           <button 
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               if (!isFull) {
-                                 setSelectedRide(ride);
-                                 setShowPaymentModal(true);
-                               }
-                             }}
-                             disabled={isFull}
-                             className={`px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all ${
-                               isFull 
-                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
-                               : 'bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95'
-                             }`}
-                           >
-                             {isFull ? 'Sold Out' : 'Book Seat'}
-                           </button>
+                          <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${isFull ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                            }`}>
+                            <div className={`w-2 h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                            {isFull ? 'Full' : `${ride.available_seats} seats left`}
+                          </div>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isFull) {
+                                setSelectedRide(ride);
+                                setShowPaymentModal(true);
+                              }
+                            }}
+                            disabled={isFull}
+                            className={`px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all ${isFull
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                              : 'bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95'
+                              }`}
+                          >
+                            {isFull ? 'Sold Out' : 'Book Seat'}
+                          </button>
                         </div>
                       </div>
 
                     </div>
-                    
+
                     {/* Expand Toggle */}
                     <div className="absolute bottom-4 right-1/2 translate-x-1/2 sm:hidden text-gray-300">
-                       {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                      {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
                     </div>
                   </div>
 
                   {/* Expanded Details Section */}
                   <div className={`bg-gray-50 border-t border-gray-100 transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div>
-                          <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <FaCar className="text-primary" /> Vehicle Details
-                          </h5>
-                          <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Model</span>
-                              <span className="font-medium">{ride.driver.driver_profile?.vehicle_model || 'Not specified'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Color</span>
-                              <span className="font-medium">{ride.driver.driver_profile?.vehicle_color || 'Not specified'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                               <span className="text-gray-500">Plate</span>
-                               <span className="font-medium">{ride.driver.driver_profile?.vehicle_plate || '*** ***'}</span>
-                            </div>
+                      <div>
+                        <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <FaCar className="text-primary" /> Vehicle Details
+                        </h5>
+                        <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Model</span>
+                            <span className="font-medium">{ride.driver.driver_profile?.vehicle_model || 'Not specified'}</span>
                           </div>
-                       </div>
-                       
-                       <div>
-                          <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                             <FaInfoCircle className="text-primary" /> Trip Info
-                          </h5>
-                          <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
-                             <div className="flex justify-between">
-                                <span className="text-gray-500">Date</span>
-                                <span className="font-medium">{departureDate.toLocaleDateString()}</span>
-                             </div>
-                             {ride.additional_info && (
-                                <div className="pt-2 border-t border-gray-50 mt-2">
-                                  <p className="text-gray-600 italic">"{ride.additional_info}"</p>
-                                </div>
-                             )}
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Color</span>
+                            <span className="font-medium">{ride.driver.driver_profile?.vehicle_color || 'Not specified'}</span>
                           </div>
-                       </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Plate</span>
+                            <span className="font-medium">{ride.driver.driver_profile?.vehicle_plate || '*** ***'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <FaInfoCircle className="text-primary" /> Trip Info
+                        </h5>
+                        <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Date</span>
+                            <span className="font-medium">{departureDate.toLocaleDateString()}</span>
+                          </div>
+                          {ride.additional_info && (
+                            <div className="pt-2 border-t border-gray-50 mt-2">
+                              <p className="text-gray-600 italic">"{ride.additional_info}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
