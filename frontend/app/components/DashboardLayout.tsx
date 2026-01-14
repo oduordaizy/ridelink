@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { IoNotifications, IoMenu, IoClose } from 'react-icons/io5';
+import { IoNotificationsOff, IoMenu, IoClose } from 'react-icons/io5';
 import { usePathname } from 'next/navigation';
 
 interface User {
@@ -184,13 +184,13 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
 
         {/* Right Side Actions */}
         <div className="flex items-center space-x-3">
-          <button
+          <Link
+            href="/dashboard/passenger/notifications"
             className="relative p-2 rounded-lg hover:bg-[#F5F5F5] transition-colors group"
             aria-label="Notifications"
           >
-            <IoNotifications className="text-2xl text-[#484848] group-hover:text-[#08A6F6] transition-colors" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-          </button>
+            <IoNotificationsOff className="text-2xl text-[#484848] group-hover:text-[#08A6F6] transition-colors" />
+          </Link>
 
           <div className="relative" ref={dropdownRef}>
             <button

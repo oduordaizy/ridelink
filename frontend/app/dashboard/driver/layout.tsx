@@ -12,7 +12,7 @@ import {
   Car,
   Wallet,
   History,
-  Bell,
+  BellOff,
   LogOut,
   ChevronRight
 } from 'lucide-react';
@@ -119,13 +119,12 @@ const DriverLayout = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Link
+            href="/dashboard/driver/notifications"
             className="p-2 text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative"
-            onClick={() => { }}
           >
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>
-          </button>
+            <BellOff className="h-5 w-5" />
+          </Link>
 
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white font-semibold">
             {getInitials(user)}
@@ -244,13 +243,12 @@ const DriverLayout = ({
               </h1>
 
               <div className="flex items-center gap-4">
-                <button
+                <Link
+                  href="/dashboard/driver/notifications"
                   className="p-2 text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative"
-                  onClick={() => { }}
                 >
-                  <Bell className="h-6 w-6" />
-                  <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500"></span>
-                </button>
+                  <BellOff className="h-6 w-6" />
+                </Link>
 
                 {/* Profile dropdown */}
                 <div ref={dropdownRef} className="relative">
