@@ -5,9 +5,9 @@ from django.utils import timezone
 from django.db import transaction as db_transaction
 
 class Ride(models.Model):
-    departure_location = models.CharField(max_length=100)
-    destination = models.CharField(max_length=100)
-    departure_time = models.DateTimeField()
+    departure_location = models.CharField(max_length=100, db_index=True)
+    destination = models.CharField(max_length=100, db_index=True)
+    departure_time = models.DateTimeField(db_index=True)
     driver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='driven_rides')
     available_seats = models.IntegerField(null=False, default=1)
     additional_info = models.TextField(blank=True, null=True)
@@ -18,7 +18,7 @@ class Ride(models.Model):
         ('available', 'Available'),
         ('fully_booked', 'Fully Booked'),
     ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available', db_index=True)
     
     price = models.DecimalField(max_digits=6, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -52,10 +52,10 @@ class Booking(models.Model):
     ride = models.ForeignKey(Ride, on_delete=models.CASCADE, related_name='bookings')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
     no_of_seats = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
     booked_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_paid = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False, db_index=True)
 
     def __str__(self):
         return f"{self.user.username} booking on {self.ride} - {self.status}"

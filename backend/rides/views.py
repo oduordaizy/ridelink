@@ -7,6 +7,9 @@ from django_filters import rest_framework as django_filters
 from django.db.models import Q
 from django.utils import timezone
 from django.db import transaction as db_transaction
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 
 from .models import Ride, Booking
 from .serializers import (
@@ -38,13 +41,33 @@ class RideViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(driver=self.request.user)
+        # Invalidate cache when new ride is created
+        cache.delete_pattern("rides_list_*")
+
+    def list(self, request, *args, **kwargs):
+        # Only cache for passengers (who see all rides)
+        if request.user.user_type == 'driver':
+            return super().list(request, *args, **kwargs)
+        
+        # Create a cache key based on query params
+        cache_key = f"rides_list_{request.user.id}_{request.query_params.urlencode()}"
+        cached_data = cache.get(cache_key)
+        
+        if cached_data:
+            return Response(cached_data)
+        
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=60*5) # Cache for 5 minutes
+        return response
 
     def get_queryset(self):
         # Drivers only see their own rides; passengers see all
         user = self.request.user
+        queryset = Ride.objects.select_related('driver', 'driver__driver_profile').prefetch_related('images')
+        
         if user.user_type == 'driver':
-            return Ride.objects.filter(driver=user)
-        return Ride.objects.all()
+            return queryset.filter(driver=user)
+        return queryset
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def book(self, request, pk=None):
@@ -183,9 +206,13 @@ class BookingViewSet(viewsets.ModelViewSet):
     ordering = ['-booked_at']
 
     def get_queryset(self):
-        #Allow both the Passenger AND the Driver to see the booking
+        # Allow both the Passenger AND the Driver to see the booking
         user = self.request.user
-        return Booking.objects.filter(
+        return Booking.objects.select_related(
+            'user', 'ride', 'ride__driver', 'ride__driver__driver_profile'
+        ).prefetch_related(
+            'ride__images'
+        ).filter(
             Q(user=user) | Q(ride__driver=user)
         ).distinct()
 
