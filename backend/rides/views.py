@@ -53,7 +53,10 @@ class RideViewSet(viewsets.ModelViewSet):
         """
         ride = self.get_object()
         payment_method = request.data.get('payment_method')
-        no_of_seats = request.data.get('no_of_seats', 1)
+        try:
+            no_of_seats = int(request.data.get('no_of_seats', 1))
+        except (ValueError, TypeError):
+            no_of_seats = 1
         
         # Validate payment method
         if payment_method not in ['wallet', 'mpesa', 'card']:
@@ -101,7 +104,7 @@ class RideViewSet(viewsets.ModelViewSet):
                             'error': 'Wallet not found. Please create a wallet first.'
                         }, status=status.HTTP_400_BAD_REQUEST)
                     
-                    total_amount = float(ride.price) * no_of_seats
+                    total_amount = ride.price * no_of_seats
                     
                     if wallet.balance < total_amount:
                         booking.delete()

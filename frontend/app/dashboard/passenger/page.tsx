@@ -33,6 +33,11 @@ interface Ride {
   };
   is_paid?: boolean;
   driver_phone?: string;
+  images: {
+    id: number;
+    image: string;
+    created_at: string;
+  }[];
 }
 
 type PaymentMethod = 'wallet' | 'mpesa' | 'card';
@@ -880,26 +885,34 @@ const Page = () => {
                   {/* Expanded Details Section */}
                   <div className={`bg-gray-50 border-t border-gray-100 transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                      {/* Vehicle Photos Column */}
                       <div>
                         <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <FaCar className="text-primary" /> Vehicle Details
+                          <FaCar className="text-primary" /> Vehicle Photos
                         </h5>
-                        <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Model</span>
-                            <span className="font-medium">{ride.driver.driver_profile?.vehicle_model || 'Not specified'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Color</span>
-                            <span className="font-medium">{ride.driver.driver_profile?.vehicle_color || 'Not specified'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Plate</span>
-                            <span className="font-medium">{ride.driver.driver_profile?.vehicle_plate || '*** ***'}</span>
-                          </div>
+                        <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100">
+                          {ride.images && ride.images.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              {ride.images.map((img) => (
+                                <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden border border-gray-100">
+                                  <img
+                                    src={img.image}
+                                    alt="Vehicle"
+                                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-4 text-gray-500 text-sm">
+                              No vehicle photos available
+                            </div>
+                          )}
                         </div>
                       </div>
 
+                      {/* Trip Info Column */}
                       <div>
                         <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <FaInfoCircle className="text-primary" /> Trip Info
@@ -916,6 +929,7 @@ const Page = () => {
                           )}
                         </div>
                       </div>
+
                     </div>
                   </div>
                 </div>
@@ -925,7 +939,7 @@ const Page = () => {
         )}
       </section>
     </div>
-  )
+  );
 }
 
 export default Page

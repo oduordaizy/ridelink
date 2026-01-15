@@ -21,6 +21,7 @@ class Transaction(models.Model):
     result_code = models.IntegerField(null=True, blank=True)
     result_desc = models.TextField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    booking = models.ForeignKey('rides.Booking', on_delete=models.SET_NULL, null=True, blank=True, related_name="transactions")
     status= models.CharField(max_length=50, choices=[("pending", "Pending"), ("success", "Success"), ("failed", "Failed")], default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)

@@ -35,6 +35,7 @@ def topup_wallet(request):
             data = request.data
             phone_number = data.get("phone")
             amount = data.get("amount")
+            booking_id = data.get("booking_id")
         except Exception as e:
             return Response(
                 {"error": "Invalid request data"}, 
@@ -87,7 +88,8 @@ def topup_wallet(request):
                 amount=amount,
                 status="pending",
                 checkout_request_id=response.get('CheckoutRequestID'),
-                merchant_request_id=response.get('MerchantRequestID')
+                merchant_request_id=response.get('MerchantRequestID'),
+                booking_id=booking_id
             )
             
             return Response({
@@ -264,32 +266,54 @@ def mpesa_callback(request):
                     transaction_obj.mpesa_receipt_number = mpesa_receipt
                     transaction_obj.save()
                     
-                    # Update wallet balance
+                    # Update wallet balance (Credit)
                     wallet = transaction_obj.wallet
                     wallet.balance += amount
                     wallet.save()
                     
                     logger.info(f"Successfully processed payment: {mpesa_receipt} for KES {amount}")
                 
-                # Check if this is a booking payment (not a wallet top-up)
+                # Check if this is a booking payment
                 try:
                     from rides.models import Booking
                     
-                    # Find pending booking for this user with matching amount
-                    # Ideally we should link Booking to Transaction explicitly, but for now fallback to logic
-                    pending_booking = Booking.objects.filter(
-                        user=wallet.user,
-                        status='pending',
-                        is_paid=False
-                    ).select_related('ride').first()
+                    # 1. Use specific booking linked to transaction if available
+                    pending_booking = None
+                    if transaction_obj.booking:
+                        pending_booking = transaction_obj.booking
+                    else:
+                        # Fallback: Find pending booking for this user with matching amount
+                        pending_booking = Booking.objects.filter(
+                            user=wallet.user,
+                            status='pending',
+                            is_paid=False
+                        ).select_related('ride').first()
                     
-                    if pending_booking:
-                        # Check if amount matches ride price
+                    if pending_booking and pending_booking.status == 'pending':
+                        # Check if amount matches or is enough
                         expected_amount = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
-                        if abs(expected_amount - amount) < Decimal('0.01'):
-                            # Confirm the booking
-                            pending_booking.confirm_payment()
-                            logger.info(f"Confirmed booking {pending_booking.id} after successful wallet topup")
+                        # allow some tolerance or just check if it covers it
+                        if amount >= expected_amount:
+                           with db_transaction.atomic():
+                                # Confirm the booking
+                                pending_booking.confirm_payment()
+                                
+                                # Deduct from wallet immediately (Debit)
+                                wallet.balance -= expected_amount
+                                wallet.save()
+                                
+                                # Create a debit transaction for the booking
+                                Transaction.objects.create(
+                                    wallet=wallet,
+                                    amount=-expected_amount,
+                                    status="success",
+                                    result_code=0,
+                                    result_desc=f"Payment for Booking #{pending_booking.id}",
+                                    completed_at=timezone.now(),
+                                    booking=pending_booking
+                                )
+                                
+                                logger.info(f"Confirmed booking {pending_booking.id} and deducted KES {expected_amount} from wallet")
                 except Exception as e:
                     logger.error(f"Error checking for booking confirmation: {str(e)}", exc_info=True)
                 

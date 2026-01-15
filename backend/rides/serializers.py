@@ -1,7 +1,7 @@
 # rides/serializers.py
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Ride, Booking
+from .models import Ride, Booking, RideImage
 from accounts.models import User, Driver
 
 
@@ -19,15 +19,37 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile_picture', 'driver_profile']
 
 
+class RideImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RideImage
+        fields = ['id', 'image', 'created_at']
+
+
 class RideListSerializer(serializers.ModelSerializer):
     driver = UserSerializer(read_only=True)  # Return full driver object
     available_seats = serializers.IntegerField()
     is_available = serializers.SerializerMethodField()
+    images = RideImageSerializer(many=True, read_only=True)
+    uploaded_images = serializers.ListField(
+        child=serializers.ImageField(max_length=1000000, allow_empty_file=False, use_url=False),
+        write_only=True,
+        required=True,
+        allow_empty=False
+    )
 
     class Meta:
         model = Ride
         fields = '__all__'
-        read_only_fields = ['status', 'created_at', 'updated_at', 'driver']
+        read_only_fields = ['status', 'created_at', 'updated_at', 'driver', 'images']
+
+    def create(self, validated_data):
+        uploaded_images = validated_data.pop('uploaded_images', [])
+        ride = Ride.objects.create(**validated_data)
+        
+        for image in uploaded_images:
+            RideImage.objects.create(ride=ride, image=image)
+            
+        return ride
 
     def get_is_available(self, obj):
         return obj.available_seats > 0 and obj.status == 'available'
