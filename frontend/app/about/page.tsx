@@ -2,6 +2,15 @@ import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "About Us | Travas",
+  description: "Learn more about Travas, our mission to make shared travel effortless, affordable, and sustainable across Kenya.",
+  alternates: {
+    canonical: "/about",
+  },
+};
 
 const values = [
   {
@@ -111,8 +120,8 @@ export default function About() {
           <p className="text-muted-foreground mb-6">
             Whether you&apos;re a driver or a passenger, Travas is here to make your journey better. Sign up today and be part of a smarter, friendlier way to travel.
           </p>
-          <Link 
-            href="/auth/register" 
+          <Link
+            href="/auth/register"
             className="inline-block px-10 py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-lg hover:bg-primary/90 transition-all"
           >
             Get Started

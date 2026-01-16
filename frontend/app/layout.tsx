@@ -60,6 +60,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  alternates: {
+    canonical: "https://travas.co.ke",
+  },
   icons: {
     icon: "/logo2.png",
     shortcut: "/logo2.png",

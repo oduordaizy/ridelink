@@ -1,7 +1,15 @@
-'use client'
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "How It Works | Travas",
+  description: "Discover how Travas makes ridesharing simple, secure, and rewarding for both drivers and passengers in Kenya.",
+  alternates: {
+    canonical: "/how-it-works",
+  },
+};
 
 export default function HowItWorks() {
   return (
@@ -65,8 +73,8 @@ export default function HowItWorks() {
           <p className="text-muted-foreground mb-6">
             Join Travas today and experience a smarter, friendlier way to travel—whether you&apos;re behind the wheel or along for the ride.
           </p>
-          <Link 
-            href="/auth/register" 
+          <Link
+            href="/auth/register"
             className="inline-block px-10 py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-lg hover:bg-primary/90 transition-all"
           >
             Sign Up Now
