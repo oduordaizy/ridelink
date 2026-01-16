@@ -219,7 +219,7 @@ export default function Home() {
               "@type": "Organization",
               name: "Travas",
               url: "https://travas.co.ke",
-              logo: "https://travas.co.ke/apple-icon.png",
+              logo: "https://travas.co.ke/logo.png",
               sameAs: [
                 "https://facebook.com/travas",
                 "https://twitter.com/travas_ke",

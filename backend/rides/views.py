@@ -19,6 +19,23 @@ from .serializers import (
 from payments.models import Wallet
 
 
+
+class RideFilter(django_filters.FilterSet):
+    departure_location = django_filters.CharFilter(lookup_expr='icontains')
+    destination = django_filters.CharFilter(lookup_expr='icontains')
+    min_price = django_filters.NumberFilter(field_name='price', lookup_expr='gte')
+    max_price = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
+    min_seats = django_filters.NumberFilter(field_name='available_seats', lookup_expr='gte')
+    date_after = django_filters.DateTimeFilter(field_name='departure_time', lookup_expr='gte')
+    date_before = django_filters.DateTimeFilter(field_name='departure_time', lookup_expr='lte')
+
+    class Meta:
+        model = Ride
+        fields = [
+            'departure_location', 'destination', 'min_price', 'max_price',
+            'min_seats', 'date_after', 'date_before', 'status'
+        ]
+
 class IsDriverOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
          # Allow all safe methods (GET, HEAD, OPTIONS) for authenticated users
@@ -38,6 +55,10 @@ class RideViewSet(viewsets.ModelViewSet):
     queryset = Ride.objects.all()
     serializer_class = RideListSerializer
     permission_classes = [IsDriverOrReadOnly]
+    filter_backends = [django_filters.DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_class = RideFilter
+    ordering_fields = ['departure_time', 'price', 'available_seats']
+    ordering = ['departure_time']
 
     def perform_create(self, serializer):
         serializer.save(driver=self.request.user)
@@ -50,7 +71,8 @@ class RideViewSet(viewsets.ModelViewSet):
             return super().list(request, *args, **kwargs)
         
         # Create a cache key based on query params
-        cache_key = f"rides_list_{request.user.id}_{request.query_params.urlencode()}"
+        # Use a shared key for all passengers for the same query
+        cache_key = f"rides_list_passenger_{request.query_params.urlencode()}"
         cached_data = cache.get(cache_key)
         
         if cached_data:
@@ -158,12 +180,17 @@ class RideViewSet(viewsets.ModelViewSet):
                 elif payment_method in ['mpesa', 'card']:
                     # Payment will be confirmed via callback/webhook
                     # Booking stays in pending status
+                    # Invalidate cache since a seat might be 'reserved' or status changed
+                    cache.delete_pattern("rides_list_passenger_*")
                     return Response({
                         'success': True,
                         'booking_id': booking.id,
                         'message': 'Booking created. Awaiting payment confirmation.',
                         'status': 'pending_payment'
                     }, status=status.HTTP_201_CREATED)
+                
+                # Invalidate cache for wallet payment as well (it already calls confirm_payment which should signal invalidation, but explicit is better here if not using signals)
+                cache.delete_pattern("rides_list_passenger_*")
                 
         except Exception as e:
             return Response({
@@ -181,27 +208,13 @@ class IsPaymentOwner(permissions.BasePermission):
         return obj.booking.user == request.user
 
 
-class RideFilter(django_filters.FilterSet):
-    departure_location = django_filters.CharFilter(lookup_expr='icontains')
-    destination = django_filters.CharFilter(lookup_expr='icontains')
-    min_price = django_filters.NumberFilter(field_name='price', lookup_expr='gte')
-    max_price = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
-    min_seats = django_filters.NumberFilter(field_name='available_seats', lookup_expr='gte')
-    date_after = django_filters.DateTimeFilter(field_name='departure_time', lookup_expr='gte')
-    date_before = django_filters.DateTimeFilter(field_name='departure_time', lookup_expr='lte')
-
-    class Meta:
-        model = Ride
-        fields = [
-            'departure_location', 'destination', 'min_price', 'max_price',
-            'min_seats', 'date_after', 'date_before', 'status'
-        ]
 
 class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [django_filters.DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [django_filters.DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ['status', 'is_paid', 'ride']
+    search_fields = ['ride__departure_location', 'ride__destination', 'ride__driver__username']
     ordering_fields = ['booked_at', 'updated_at']
     ordering = ['-booked_at']
 

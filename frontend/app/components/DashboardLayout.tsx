@@ -160,7 +160,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               height={30}
               className="!m-0 transition-transform group-hover:scale-105"
             />
-            <span className="ml-0 font-semibold text-2xl bg-gradient-to-r text-[#08A6F6] bg-clip-text ">
+            <span className="ml-0 font-semibold text-2xl text-[#08A6F6]">
               Travas
             </span>
           </Link>

@@ -42,6 +42,7 @@ interface Ride {
   driver_phone?: string;
   is_paid?: boolean;
   additional_info?: string;
+  images?: { id: number; image: string; created_at: string }[];
 }
 
 interface Booking {
@@ -579,6 +580,27 @@ const Page = () => {
                 </div>
               )}
 
+              {/* Vehicle Photos */}
+              {selectedRide.images && selectedRide.images.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                    <Car className="w-4 h-4" />
+                    Vehicle Photos
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {selectedRide.images.map((img) => (
+                      <div key={img.id} className="aspect-video rounded-xl overflow-hidden border border-gray-100 group relative">
+                        <img
+                          src={img.image}
+                          alt="Vehicle"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Bookings Section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -634,7 +656,7 @@ const Page = () => {
                         </div>
                         <div className="text-right">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                              booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                            booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
                             }`}>
                             {booking.status}
                           </span>
@@ -769,6 +791,20 @@ const Page = () => {
                 />
               </div>
 
+              {/* Existing Photos thumbnails in Edit Modal */}
+              {selectedRide.images && selectedRide.images.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Current Photos</label>
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {selectedRide.images.map((img) => (
+                      <div key={img.id} className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                        <img src={img.image} alt="Vehicle thumbnail" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="pt-4 flex flex-col gap-3">
                 <button
                   type="submit"
@@ -796,6 +832,6 @@ const Page = () => {
       )}
     </div>
   );
-}
+};
 
 export default Page;

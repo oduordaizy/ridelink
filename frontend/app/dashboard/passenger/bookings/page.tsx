@@ -48,12 +48,20 @@ export default function BookingsPage() {
     } else if (user) {
       fetchBookings();
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, statusFilter]);
 
   const fetchBookings = async () => {
     try {
       console.log('Fetching bookings...');
-      const response = await fetch(`${API_BASE_URL}/bookings/my-bookings/`, {
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/bookings/my-bookings/?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -75,16 +83,13 @@ export default function BookingsPage() {
     }
   };
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch =
-      (booking.ride_details?.departure_location?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-      (booking.ride_details?.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-      (booking.ride_details?.driver?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (user) fetchBookings();
+    }, 300); // 300ms debounce for search
 
-    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, user]);
 
   const cancelBooking = async (bookingId: number) => {
     if (window.confirm('Are you sure you want to cancel this booking?')) {
@@ -296,7 +301,7 @@ export default function BookingsPage() {
 
         {/* Bookings List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {filteredBookings.length === 0 ? (
+          {bookings.length === 0 ? (
             <div style={{
               background: '#FFFFFF',
               borderRadius: '1.5rem',
@@ -357,7 +362,7 @@ export default function BookingsPage() {
               </Link>
             </div>
           ) : (
-            filteredBookings.map((booking) => (
+            bookings.map((booking) => (
               <BookingCard
                 key={booking.id}
                 booking={booking}

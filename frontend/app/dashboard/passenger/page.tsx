@@ -86,13 +86,7 @@ const Page = () => {
       console.log('All rides data:', data);
 
       const ridesList = Array.isArray(data) ? data : (data.results || []);
-
-      // Sort rides by departure time (soonest first)
-      const sortedRides = ridesList.sort((a: Ride, b: Ride) => {
-        return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
-      });
-
-      setRides(sortedRides);
+      setRides(ridesList);
     } catch (error) {
       console.error('Error fetching rides:', error);
       alert('Failed to load rides. Please try again later.');
@@ -106,7 +100,24 @@ const Page = () => {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_BASE_URL}/rides/`, {
+      const queryParams = new URLSearchParams();
+      if (searchParams.departure?.trim()) {
+        queryParams.append('departure_location', searchParams.departure.trim());
+      }
+      if (searchParams.destination?.trim()) {
+        queryParams.append('destination', searchParams.destination.trim());
+      }
+      if (searchParams.date) {
+        // Backend expects ISO format. Since we want rides on/after this date:
+        const date = new Date(searchParams.date);
+        queryParams.append('date_after', date.toISOString());
+        // If exact date match is preferred:
+        // const nextDay = new Date(date);
+        // nextDay.setDate(date.getDate() + 1);
+        // queryParams.append('date_before', nextDay.toISOString());
+      }
+
+      const response = await fetch(`${API_BASE_URL}/rides/?${queryParams.toString()}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
@@ -120,36 +131,10 @@ const Page = () => {
       }
 
       const dataRaw = await response.json();
-      console.log('All rides data:', dataRaw);
+      console.log('Search results:', dataRaw);
 
-      let ridesList = Array.isArray(dataRaw) ? dataRaw : (dataRaw.results || []);
-
-      // Filter rides based on search parameters
-      if (searchParams.departure?.trim() || searchParams.destination?.trim() || searchParams.date) {
-        const departureTerm = searchParams.departure?.trim().toLowerCase() || '';
-        const destinationTerm = searchParams.destination?.trim().toLowerCase() || '';
-        const dateTerm = searchParams.date ? new Date(searchParams.date).toISOString().split('T')[0] : '';
-
-        console.log('Filtering with:', { departureTerm, destinationTerm, dateTerm });
-
-        ridesList = ridesList.filter((ride: Ride) => {
-          const matchesDeparture = !departureTerm ||
-            ride.departure_location.toLowerCase().includes(departureTerm);
-          const matchesDestination = !destinationTerm ||
-            ride.destination.toLowerCase().includes(destinationTerm);
-          const matchesDate = !dateTerm ||
-            new Date(ride.departure_time).toISOString().split('T')[0] === dateTerm;
-
-          return matchesDeparture && matchesDestination && matchesDate;
-        });
-      }
-
-      // Sort rides by departure time (soonest first)
-      const sortedRides = ridesList.sort((a: Ride, b: Ride) => {
-        return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
-      });
-
-      setRides(sortedRides);
+      const ridesList = Array.isArray(dataRaw) ? dataRaw : (dataRaw.results || []);
+      setRides(ridesList);
     } catch (error) {
       console.error('Error fetching rides:', error);
       alert('Failed to load rides. Please try again later.');
@@ -471,7 +456,7 @@ const Page = () => {
       {showPaymentModal && selectedRide && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
-            <div className="bg-gradient-to-r from-primary-dark to-primary p-6 text-white relative">
+            <div className="bg-gradient-to-r from-[#00204a] to-[#08A6F6] p-6 text-white relative">
               <button
                 onClick={() => {
                   setShowPaymentModal(false);
@@ -535,7 +520,7 @@ const Page = () => {
                         value={mpesaPhone}
                         onChange={(e) => setMpesaPhone(e.target.value)}
                         placeholder="e.g., 254712345678"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all bg-gray-50"
                         disabled={isProcessingPayment}
                       />
                     </div>
@@ -548,7 +533,7 @@ const Page = () => {
                         id="mpesa-amount"
                         value={mpesaAmount}
                         onChange={(e) => setMpesaAmount(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-gray-50"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:border-transparent transition-all bg-gray-50"
                         disabled={isProcessingPayment}
                       />
                     </div>
@@ -584,7 +569,7 @@ const Page = () => {
                     <button
                       onClick={() => handlePaymentSelection('wallet')}
                       disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide.price * numberOfSeats))}
-                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-primary/30 hover:bg-blue-50/30 transition-all duration-200 bg-white"
+                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-[#08A6F6]/30 hover:bg-[#C0DFED]/10 transition-all duration-200 bg-white"
                     >
                       <div className="flex items-center">
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
@@ -612,7 +597,7 @@ const Page = () => {
                       className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-green-500/30 hover:bg-green-50/30 transition-all duration-200 bg-white"
                     >
                       <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                        <div className="w-10 h-10 rounded-full bg-green-100/50 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                           <IoCash className="text-green-600 text-xl" />
                         </div>
                         <span className="font-semibold text-gray-800">M-Pesa</span>
@@ -623,11 +608,11 @@ const Page = () => {
                     <button
                       onClick={() => handlePaymentSelection('card')}
                       disabled={isProcessingPayment}
-                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-blue-500/30 hover:bg-blue-50/30 transition-all duration-200 bg-white"
+                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-[#08A6F6]/30 hover:bg-[#C0DFED]/20 transition-all duration-200 bg-white"
                     >
                       <div className="flex items-center">
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                          <IoCard className="text-blue-600 text-xl" />
+                          <IoCard className="text-[#08A6F6] text-xl" />
                         </div>
                         <span className="font-semibold text-gray-800">Card</span>
                       </div>
@@ -642,16 +627,17 @@ const Page = () => {
       )}
 
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-primary-dark via-[#04689E] to-primary pb-32 pt-16 px-6 shadow-lg overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#00204a] via-[#04689E] to-[#08A6F6] pb-32 pt-16 px-6 shadow-lg overflow-hidden">
         {/* Abstract Background Shapes */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white mix-blend-overlay filter blur-3xl"></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-primary-foreground mix-blend-overlay filter blur-2xl animate-pulse"></div>
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white mix-blend-overlay filter blur-3xl opacity-30"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-white mix-blend-overlay filter blur-2xl animate-pulse opacity-20"></div>
+          <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-[#C0DFED] mix-blend-overlay filter blur-3xl opacity-20"></div>
         </div>
 
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
-            Find your <span className="text-secondary">Perfect Ride</span>
+            Find your <span className="text-[#C0DFED]">Perfect Ride</span>
           </h1>
           <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed">
             Connect with trusted drivers, book seats instantly, and travel with comfort and peace of mind.
@@ -668,7 +654,7 @@ const Page = () => {
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block pl-3">From</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaMapMarkerAlt className="h-5 w-5 text-primary group-focus-within:text-primary-dark transition-colors" />
+                  <FaMapMarkerAlt className="h-5 w-5 text-[#08A6F6] group-focus-within:text-[#00204a] transition-colors" />
                 </div>
                 <input
                   type="text"
@@ -676,7 +662,7 @@ const Page = () => {
                   value={searchParams.departure}
                   onChange={handleInputChange}
                   placeholder="Starting point"
-                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
+                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-[#08A6F6]/20 focus:bg-white focus:border-[#08A6F6]/30 transition-all text-gray-800 font-medium placeholder-gray-400"
                 />
               </div>
             </div>
@@ -689,7 +675,7 @@ const Page = () => {
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block pl-3">To</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaMapMarkerAlt className="h-5 w-5 text-secondary-foreground group-focus-within:text-primary-dark transition-colors" />
+                  <FaMapMarkerAlt className="h-5 w-5 text-gray-400 group-focus-within:text-[#08A6F6] transition-colors" />
                 </div>
                 <input
                   type="text"
@@ -697,7 +683,7 @@ const Page = () => {
                   value={searchParams.destination}
                   onChange={handleInputChange}
                   placeholder="Destination"
-                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
+                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-[#08A6F6]/20 focus:bg-white focus:border-[#08A6F6]/30 transition-all text-gray-800 font-medium placeholder-gray-400"
                 />
               </div>
             </div>
@@ -706,14 +692,14 @@ const Page = () => {
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block pl-3">Date</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaCalendarAlt className="h-5 w-5 text-primary group-focus-within:text-primary-dark transition-colors" />
+                  <FaCalendarAlt className="h-5 w-5 text-[#08A6F6] group-focus-within:text-[#00204a] transition-colors" />
                 </div>
                 <input
                   type="date"
                   name="date"
                   value={searchParams.date}
                   onChange={handleInputChange}
-                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all text-gray-800 font-medium placeholder-gray-400"
+                  className="pl-11 w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-[#08A6F6]/20 focus:bg-white focus:border-[#08A6F6]/30 transition-all text-gray-800 font-medium placeholder-gray-400"
                 />
               </div>
             </div>
@@ -721,7 +707,7 @@ const Page = () => {
             <div className="md:col-span-2 flex flex-col gap-2 pt-6">
               <button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                className="w-full bg-[#08A6F6] hover:bg-[#00204a] text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-[#08A6F6]/20 transition-all hover:translate-y-[-2px] active:scale-95 flex items-center justify-center gap-2"
               >
                 <FaSearch />
                 Search
@@ -744,7 +730,7 @@ const Page = () => {
       <section className="max-w-7xl mx-auto px-4 pb-20">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-primary-dark">Available Rides</h2>
+            <h2 className="text-2xl font-bold text-[#00204a]">Available Rides</h2>
             <p className="text-gray-500">
               {rides.length} {rides.length === 1 ? 'ride' : 'rides'} found
             </p>
@@ -779,7 +765,7 @@ const Page = () => {
               return (
                 <div
                   key={ride.id}
-                  className={`bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group ${isExpanded ? 'ring-2 ring-primary/10' : ''}`}
+                  className={`bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group hover:translate-y-[-4px] ${isExpanded ? 'ring-2 ring-[#08A6F6]/10 shadow-lg' : ''}`}
                 >
                   <div className="p-6 cursor-pointer relative" onClick={() => setExpandedRideId(isExpanded ? null : ride.id)}>
                     {/* Route Line Visual - Absolute */}
@@ -797,145 +783,164 @@ const Page = () => {
                                 src={ride.driver.profile_picture}
                                 alt={ride.driver.username}
                                 className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="w-14 h-14 rounded-full bg-linear-to-br from-primary to-blue-600 flex items-center justify-center text-white border-2 border-white shadow-md">
                                 <FaUser />
                               </div>
                             )}
-                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm">
-                              <FaStar className="text-yellow-400 text-xs" />
-                            </div>
                           </div>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 group-hover:text-[#08A6F6] transition-colors">
+                            {ride.driver.first_name || ride.driver.username}
+                          </h4>
+                          <div className="flex items-center text-xs text-gray-500 gap-2">
+                            <span>@{ride.driver.username}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Route Info */}
+                      <div className="space-y-4 relative">
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 min-w-[12px] h-3 rounded-full bg-[#08A6F6] ring-4 ring-blue-50 relative z-10"></div>
                           <div>
-                            <h4 className="font-bold text-gray-900 group-hover:text-primary transition-colors">
-                              {ride.driver.first_name || ride.driver.username}
-                            </h4>
-                            <div className="flex items-center text-xs text-gray-500 gap-2">
-                              <span>@{ride.driver.username}</span>
-                              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                              <span className="flex items-center gap-1">
-                                <FaStar className="text-yellow-400" /> {ride.driver.driver_profile?.rating || 'New'}
-                              </span>
-                            </div>
+                            <p className="font-semibold text-gray-900 text-lg leading-none">{ride.departure_location}</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
                           </div>
                         </div>
-
-                        {/* Route Info */}
-                        <div className="space-y-4 relative">
-                          <div className="flex items-start gap-4">
-                            <div className="mt-1 min-w-[12px] h-3 rounded-full bg-primary ring-4 ring-blue-50 relative z-10"></div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-lg leading-none">{ride.departure_location}</p>
-                              <p className="text-sm text-gray-500 mt-1">
-                                {departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-4">
-                            <div className="mt-1 min-w-[12px] h-3 rounded-full bg-secondary-foreground ring-4 ring-blue-50 relative z-10"></div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-lg leading-none">{ride.destination}</p>
-                              <p className="text-sm text-gray-500 mt-1">
-                                {/* Assuming simple duration calculation or just styling */}
-                                Arrival
-                              </p>
-                            </div>
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 min-w-[12px] h-3 rounded-full bg-[#00204a] ring-4 ring-gray-50 relative z-10"></div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-lg leading-none">{ride.destination}</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {/* Assuming simple duration calculation or just styling */}
+                              Arrival Point
+                            </p>
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Right: Price & Status */}
-                      <div className="flex flex-row sm:flex-col justify-between items-end min-w-[120px] pl-6 sm:border-l border-gray-50">
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 uppercase font-semibold">Price per seat</p>
-                          <p className="text-2xl font-black text-primary">KSh {ride.price}</p>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-3 mt-4">
-                          <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${isFull ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
-                            }`}>
-                            <div className={`w-2 h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                            {isFull ? 'Full' : `${ride.available_seats} seats left`}
-                          </div>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!isFull) {
-                                setSelectedRide(ride);
-                                setShowPaymentModal(true);
-                              }
-                            }}
-                            disabled={isFull}
-                            className={`px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all ${isFull
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
-                              : 'bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95'
-                              }`}
-                          >
-                            {isFull ? 'Sold Out' : 'Book Seat'}
-                          </button>
-                        </div>
+                    {/* Right: Price & Status */}
+                    <div className="flex flex-row sm:flex-col justify-between items-center sm:items-end min-w-[120px] pt-6 sm:pt-0 sm:pl-6 border-t sm:border-t-0 sm:border-l border-gray-100 sm:border-gray-50 mt-6 sm:mt-0">
+                      <div className="text-left sm:text-right">
+                        <p className="text-[10px] sm:text-xs text-gray-500 uppercase font-semibold tracking-wider">Price per seat</p>
+                        <p className="text-xl sm:text-2xl font-black text-[#08A6F6]">KSh {ride.price}</p>
                       </div>
 
+                      <div className="flex flex-col items-end gap-2 sm:gap-3">
+                        <div className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-1.5 ${isFull ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                          }`}>
+                          <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                          {isFull ? 'Full' : `${ride.available_seats} seats left`}
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isFull) {
+                              setSelectedRide(ride);
+                              setShowPaymentModal(true);
+                            }
+                          }}
+                          disabled={isFull}
+                          className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all ${isFull
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                            : 'bg-[#08A6F6] text-white hover:bg-[#00204a] hover:translate-y-[-2px] active:scale-95 shadow-[#08A6F6]/10'
+                            }`}
+                        >
+                          {isFull ? 'Sold Out' : 'Book Seat'}
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Expand Toggle */}
-                    <div className="absolute bottom-4 right-1/2 translate-x-1/2 sm:hidden text-gray-300">
-                      {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
-                    </div>
+                  </div>
+
+                  {/* Expand Toggle */}
+                  <div className="absolute bottom-4 right-1/2 translate-x-1/2 sm:hidden text-gray-300">
+                    {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
                   </div>
 
                   {/* Expanded Details Section */}
-                  <div className={`bg-gray-50 border-t border-gray-100 transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {isExpanded && (
+                    <div className="bg-gray-50 border-t border-gray-100 transition-all duration-300 ease-in-out overflow-hidden">
+                      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                      {/* Vehicle Photos Column */}
-                      <div>
-                        <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <FaCar className="text-primary" /> Vehicle Photos
-                        </h5>
-                        <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100">
-                          {ride.images && ride.images.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-2">
-                              {ride.images.map((img) => (
-                                <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden border border-gray-100">
-                                  <img
-                                    src={img.image}
-                                    alt="Vehicle"
-                                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-center py-4 text-gray-500 text-sm">
-                              No vehicle photos available
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Trip Info Column */}
-                      <div>
-                        <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <FaInfoCircle className="text-primary" /> Trip Info
-                        </h5>
-                        <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Date</span>
-                            <span className="font-medium">{departureDate.toLocaleDateString()}</span>
+                        {/* Vehicle Photos Column */}
+                        <div>
+                          <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <FaCar className="text-[#08A6F6]" /> Vehicle Photos
+                          </h5>
+                          <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100">
+                            {ride.images && ride.images.length > 0 ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                {ride.images.map((img) => (
+                                  <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden border border-gray-100">
+                                    <img
+                                      src={img.image}
+                                      alt="Vehicle"
+                                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-4 text-gray-500 text-sm">
+                                No vehicle photos available
+                              </div>
+                            )}
                           </div>
-                          {ride.additional_info && (
-                            <div className="pt-2 border-t border-gray-50 mt-2">
-                              <p className="text-gray-600 italic">"{ride.additional_info}"</p>
-                            </div>
-                          )}
                         </div>
-                      </div>
 
+                        {/* Ride Information Column */}
+                        <div>
+                          <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <FaMapMarkerAlt className="text-[#08A6F6]" /> Ride Details
+                          </h5>
+                          <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100 space-y-4">
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 bg-blue-50 rounded-lg text-[#08A6F6]">
+                                <FaCalendarAlt size={14} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Departure Date</p>
+                                <p className="text-sm font-semibold">{departureDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 bg-blue-50 rounded-lg text-[#08A6F6]">
+                                <FaClock size={14} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Departure Time</p>
+                                <p className="text-sm font-semibold">{departureDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                              </div>
+                            </div>
+
+                            {ride.additional_info && (
+                              <div className="flex items-start gap-3">
+                                <div className="p-2 bg-blue-50 rounded-lg text-[#08A6F6]">
+                                  <FaInfoCircle size={14} />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Additional Info</p>
+                                  <p className="text-sm text-gray-600 line-clamp-3">{ride.additional_info}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}

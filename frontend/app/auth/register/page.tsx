@@ -7,6 +7,7 @@ import Footer from '@/app/components/Footer';
 import Navbar from '@/app/components/Navbar';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -25,6 +26,7 @@ export default function Register() {
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'registering' | 'sending_otp' | 'success'>('idle');
   const { register, sendOtp } = useAuth();
   const router = useRouter();
 
@@ -39,10 +41,12 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    setStatus('registering');
 
     if (formData.password !== formData.password_confirm) {
       setError('Passwords do not match');
       setIsLoading(false);
+      setStatus('idle');
       return;
     }
 
@@ -57,11 +61,22 @@ export default function Register() {
         phone_number: formData.phone_number,
         user_type: formData.user_type,
       });
+
       // Send OTP
+      setStatus('sending_otp');
       await sendOtp(formData.email);
-      router.push(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}`);
+
+      setStatus('success');
+      toast.success('OTP sent to your email');
+
+      // Short delay to let user see the success message before redirect
+      setTimeout(() => {
+        router.push(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}`);
+      }, 1000);
+
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Registration failed');
+      setStatus('idle');
     } finally {
       setIsLoading(false);
     }
@@ -266,7 +281,13 @@ export default function Register() {
               disabled={isLoading}
               className="w-full py-3 rounded-lg bg-[#08A6F6] text-white font-semibold text-lg shadow-md hover:bg-[#00204a] transition-all disabled:opacity-50"
             >
-              {isLoading ? 'Creating Account...' : 'Sign Up'}
+              {status === 'registering'
+                ? 'Creating Account...'
+                : status === 'sending_otp'
+                  ? 'Sending OTP...'
+                  : status === 'success'
+                    ? 'Redirecting...'
+                    : 'Sign Up'}
             </button>
           </form>
 

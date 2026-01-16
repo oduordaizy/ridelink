@@ -20,7 +20,7 @@ class Ride(models.Model):
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available', db_index=True)
     
-    price = models.DecimalField(max_digits=6, decimal_places=2)
+    price = models.DecimalField(max_digits=6, decimal_places=2, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -53,7 +53,7 @@ class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
     no_of_seats = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
-    booked_at = models.DateTimeField(auto_now_add=True)
+    booked_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_paid = models.BooleanField(default=False, db_index=True)
 
