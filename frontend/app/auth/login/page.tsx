@@ -8,6 +8,7 @@ import Navbar from '@/app/components/Navbar';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 
+
 export default function Login() {
   const [formData, setFormData] = useState({
     username: '',
@@ -32,8 +33,12 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login(formData.username, formData.password);
-      router.push('/dashboard');
+      const user = await login(formData.username, formData.password);
+      if (user.user_type === 'driver') {
+        router.push('/dashboard/driver');
+      } else {
+        router.push('/dashboard/passenger');
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
     } finally {
@@ -143,6 +148,7 @@ export default function Login() {
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
+
 
             <p className="mt-6 text-center text-sm text-[#013C5E]">
               Don&apos;t have an account?{' '}

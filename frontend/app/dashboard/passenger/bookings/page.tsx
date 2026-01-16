@@ -62,7 +62,8 @@ export default function BookingsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Bookings data received:', data);
-        setBookings(data);
+        const bookingsList = Array.isArray(data) ? data : (data.results || []);
+        setBookings(bookingsList);
       } else {
         const text = await response.text();
         console.error('Failed to fetch bookings:', response.status, text);

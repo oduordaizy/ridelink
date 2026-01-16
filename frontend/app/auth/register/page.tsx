@@ -25,7 +25,7 @@ export default function Register() {
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, sendOtp } = useAuth();
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -47,7 +47,7 @@ export default function Register() {
     }
 
     try {
-      await register({
+      const response = await register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -57,7 +57,9 @@ export default function Register() {
         phone_number: formData.phone_number,
         user_type: formData.user_type,
       });
-      router.push('/dashboard');
+      // Send OTP
+      await sendOtp(formData.email);
+      router.push(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Registration failed');
     } finally {

@@ -96,6 +96,41 @@ export const authAPI = {
 
     return response.ok;
   },
+
+  // Send OTP
+  async sendOtp(email: string) {
+    const response = await fetch(`${API_BASE_URL}/auth/send-otp/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to send OTP');
+    }
+    return response.json();
+  },
+
+  // Verify OTP
+  async verifyOtp(email: string, otp: string): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-otp/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Invalid OTP');
+    }
+
+    return response.json();
+  }
 };
 
 // Dashboard API functions

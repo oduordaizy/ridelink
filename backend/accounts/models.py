@@ -13,7 +13,9 @@ class User(AbstractUser):
         RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
     ])
     profile_picture = models.ImageField(upload_to='profile_pictures/', default='profile_pictures//default-profile.png', blank=True, null=True)
-    # is_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
+    otp = models.CharField(max_length=6, blank=True, null=True)
+    otp_created_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

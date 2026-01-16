@@ -9,6 +9,8 @@ from rest_framework import generics, status, permissions
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
 from rest_framework.parsers import MultiPartParser, FormParser
+import requests
+
 
 # Create your views here.
 
@@ -26,6 +28,14 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserRegistrationSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e), 'trace': traceback.format_exc()}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class LoginView(generics.GenericAPIView):
     permission_classes = [AllowAny]
@@ -106,4 +116,67 @@ def logout(request):
         token.blacklist()
         return Response({"message": "Successfully logged out"}, status=status.HTTP_200_OK)
     except Exception:
-        return Response({"message": "Error logging out"}, status=status.HTTP_400_BAD_REQUEST) 
+        return Response({"message": "Error logging out"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+from .utils import generate_otp, send_otp_email
+from django.utils import timezone
+from datetime import timedelta
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def send_otp(request):
+    email = request.data.get('email')
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+    otp = generate_otp()
+    user.otp = otp
+    user.otp_created_at = timezone.now()
+    user.save()
+    
+    if send_otp_email(user, otp):
+        return Response({'message': 'OTP sent successfully'})
+    else:
+        return Response({'error': 'Failed to send OTP'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_otp(request):
+    email = request.data.get('email')
+    otp = request.data.get('otp')
+    
+    if not email or not otp:
+        return Response({'error': 'Email and OTP are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    if user.otp != otp:
+        return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    # Check expiration (e.g., 10 minutes)
+    if user.otp_created_at and timezone.now() > user.otp_created_at + timedelta(minutes=10):
+        return Response({'error': 'OTP has expired'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    user.is_verified = True
+    user.otp = None # Clear OTP after successful verification
+    user.save()
+    
+    refresh = RefreshToken.for_user(user)
+        
+    return Response({
+        'message': 'Email verified successfully',
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+        'user': UserProfileSerializer(user).data
+    })
+ 

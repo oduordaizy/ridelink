@@ -4,11 +4,11 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { API_BASE_URL } from '@/app/services/api';
-import { 
-  Car, 
-  MapPin, 
-  Clock, 
-  Users, 
+import {
+  Car,
+  MapPin,
+  Clock,
+  Users,
   Calendar,
   DollarSign,
   Filter,
@@ -55,7 +55,7 @@ const Page = () => {
     const fetchRides = async () => {
       try {
         if (!user) return;
-        
+
         const response = await fetch(`${API_BASE_URL}/rides/?driver=${user.id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -67,7 +67,8 @@ const Page = () => {
         }
 
         const data = await response.json();
-        const sortedRides = data.sort((a: Ride, b: Ride) => 
+        const ridesList = Array.isArray(data) ? data : (data.results || []);
+        const sortedRides = ridesList.sort((a: Ride, b: Ride) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         setRides(sortedRides);
@@ -102,7 +103,7 @@ const Page = () => {
   const filteredRides = rides.filter(ride => {
     const matchesFilter = filter === 'all' || ride.status === filter;
     const matchesSearch = ride.departure_location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         ride.destination.toLowerCase().includes(searchQuery.toLowerCase());
+      ride.destination.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -209,11 +210,10 @@ const Page = () => {
               <button
                 key={status}
                 onClick={() => setFilter(status as any)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-                  filter === status
+                className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${filter === status
                     ? 'bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white shadow-lg'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </button>
@@ -228,10 +228,10 @@ const Page = () => {
           <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No rides found</h3>
           <p className="text-gray-600 mb-6">
-            {rides.length === 0 
-              ? "Get started by creating your first ride listing" 
-              : searchQuery 
-                ? 'Try adjusting your search' 
+            {rides.length === 0
+              ? "Get started by creating your first ride listing"
+              : searchQuery
+                ? 'Try adjusting your search'
                 : 'No rides match the selected filter'}
           </p>
           {rides.length === 0 && (
@@ -249,18 +249,17 @@ const Page = () => {
           {filteredRides.map((ride) => {
             const status = ride.status as keyof typeof statusConfig;
             const StatusIcon = statusConfig[status]?.icon || AlertCircle;
-            
+
             return (
-              <div 
-                key={ride.id} 
+              <div
+                key={ride.id}
                 className="bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden group"
               >
                 <div className="p-5">
                   {/* Status Badge */}
                   <div className="flex items-center justify-between mb-4">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
-                      statusConfig[status]?.color || 'bg-gray-100 text-gray-800 border-gray-200'
-                    }`}>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusConfig[status]?.color || 'bg-gray-100 text-gray-800 border-gray-200'
+                      }`}>
                       <StatusIcon className="w-3.5 h-3.5" />
                       {statusConfig[status]?.label || ride.status}
                     </span>
@@ -280,7 +279,7 @@ const Page = () => {
                         <p className="text-sm font-semibold text-gray-900 truncate">{ride.departure_location}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-2">
                       <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <MapPin className="w-3 h-3 text-red-600" />
@@ -298,12 +297,12 @@ const Page = () => {
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <span className="text-xs">{format(new Date(ride.departure_time), 'MMM dd, yyyy')}</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="w-4 h-4 text-gray-400" />
                       <span className="text-xs">{format(new Date(ride.departure_time), 'h:mm a')}</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Users className="w-4 h-4 text-gray-400" />
                       <span className="text-xs">{ride.available_seats} seat{ride.available_seats !== 1 ? 's' : ''} available</span>

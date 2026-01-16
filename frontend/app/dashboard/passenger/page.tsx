@@ -85,8 +85,10 @@ const Page = () => {
       const data = await response.json();
       console.log('All rides data:', data);
 
+      const ridesList = Array.isArray(data) ? data : (data.results || []);
+
       // Sort rides by departure time (soonest first)
-      const sortedRides = data.sort((a: Ride, b: Ride) => {
+      const sortedRides = ridesList.sort((a: Ride, b: Ride) => {
         return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
       });
 
@@ -117,8 +119,10 @@ const Page = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      let data = await response.json();
-      console.log('All rides data:', data);
+      const dataRaw = await response.json();
+      console.log('All rides data:', dataRaw);
+
+      let ridesList = Array.isArray(dataRaw) ? dataRaw : (dataRaw.results || []);
 
       // Filter rides based on search parameters
       if (searchParams.departure?.trim() || searchParams.destination?.trim() || searchParams.date) {
@@ -128,7 +132,7 @@ const Page = () => {
 
         console.log('Filtering with:', { departureTerm, destinationTerm, dateTerm });
 
-        data = data.filter((ride: Ride) => {
+        ridesList = ridesList.filter((ride: Ride) => {
           const matchesDeparture = !departureTerm ||
             ride.departure_location.toLowerCase().includes(departureTerm);
           const matchesDestination = !destinationTerm ||
@@ -141,7 +145,7 @@ const Page = () => {
       }
 
       // Sort rides by departure time (soonest first)
-      const sortedRides = data.sort((a: Ride, b: Ride) => {
+      const sortedRides = ridesList.sort((a: Ride, b: Ride) => {
         return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
       });
 

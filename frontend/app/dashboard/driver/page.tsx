@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { FaArrowLeft, FaLocationDot, FaMapLocationDot, FaCalendarDays, FaClock, FaUsers, FaMoneyBill, FaXmark } from "react-icons/fa6"
+import { FaArrowLeft, FaLocationDot, FaMapLocationDot, FaCalendarDays, FaClock, FaUsers, FaMoneyBill, FaXmark, FaImage } from "react-icons/fa6"
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
@@ -21,10 +21,31 @@ interface RideFormData {
   vehicle_images: File[];
 }
 
+const ImagePreview = ({ file }: { file: File }) => {
+  const [preview, setPreview] = useState<string>('');
+
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  if (!preview) return <div className="w-full h-full bg-gray-100 animate-pulse" />;
+
+  return (
+    <img
+      src={preview}
+      alt="Vehicle preview"
+      className="w-full h-full object-cover"
+    />
+  );
+};
+
 export default function CreateRidePage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<RideFormData>({
     departure_location: '',
     destination: '',
@@ -42,20 +63,20 @@ export default function CreateRidePage() {
     }
   }, [user, isLoading, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const target = e.target;
+    const { name, value, type } = target;
 
     if (name === 'available_seats') {
       return;
     } else if (name === 'vehicle_images') {
-      const files = (e.target as HTMLInputElement).files;
+      const files = (target as HTMLInputElement).files;
       if (files) {
         setFormData(prev => ({
           ...prev,
           vehicle_images: [...prev.vehicle_images, ...Array.from(files)]
         }));
-        // Reset file input value so same files can be selected again if needed (though unlikely with append)
-        (e.target as HTMLInputElement).value = '';
+        (target as HTMLInputElement).value = '';
       }
     } else {
       setFormData(prev => ({
@@ -63,16 +84,16 @@ export default function CreateRidePage() {
         [name]: type === 'number' ? (parseFloat(value) || 0) : value,
       }));
     }
-  };
+  }, []);
 
-  const removeImage = (indexToRemove: number) => {
+  const removeImage = useCallback((indexToRemove: number) => {
     setFormData(prev => ({
       ...prev,
       vehicle_images: prev.vehicle_images.filter((_, index) => index !== indexToRemove)
     }));
-  };
+  }, []);
 
-  const handleAvailableSeatsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvailableSeatsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '' || (Number(value) >= 1 && Number(value) <= 10)) {
       setFormData(prev => ({
@@ -80,9 +101,9 @@ export default function CreateRidePage() {
         available_seats: value === '' ? 0 : Number(value),
       }));
     }
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
@@ -143,7 +164,7 @@ export default function CreateRidePage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [user, formData, router]);
 
   if (isLoading) {
     return (
@@ -175,7 +196,7 @@ export default function CreateRidePage() {
 
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-4">
-          <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* From & To */}
             <div className="space-y-4">
               <div>
@@ -308,30 +329,36 @@ export default function CreateRidePage() {
 
             {/* Vehicle Images */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Vehicle Photos <span className="text-red-500">*</span>
-                <span className="text-xs text-gray-500 block font-normal mt-1">Select one by one or multiple at once</span>
-              </label>
-
               <div className="space-y-4">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-xl appearance-none cursor-pointer hover:border-[#08A6F6] focus:outline-none"
+                >
+                  <div className="flex flex-col items-center space-y-2 pointer-events-none">
+                    <FaImage className="w-8 h-8 text-gray-400" />
+                    <span className="font-medium text-gray-600">
+                      Click to upload photos
+                    </span>
+                  </div>
+                </div>
+                {/* Hidden File Input outside the clickable area or within but not as the target */}
                 <input
                   type="file"
+                  id="vehicle_images"
                   name="vehicle_images"
+                  ref={fileInputRef}
                   accept="image/*"
                   multiple={true}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#08A6F6] file:text-white hover:file:bg-[#00204a]"
+                  className="hidden"
+                  tabIndex={-1}
                 />
 
                 {formData.vehicle_images.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {formData.vehicle_images.map((file, index) => (
                       <div key={index} className="relative group aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Vehicle preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                        <ImagePreview file={file} />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
@@ -356,7 +383,6 @@ export default function CreateRidePage() {
             {/* Submit Button */}
             <button
               type="submit"
-              onClick={handleSubmit}
               disabled={isSubmitting}
               className="w-full py-4 bg-[#08A6F6] hover:bg-[#00204a] text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
@@ -369,7 +395,7 @@ export default function CreateRidePage() {
                 'Create Ride'
               )}
             </button>
-          </div>
+          </form>
         </div>
 
         {/* View Scheduled Rides Link */}

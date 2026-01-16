@@ -8,8 +8,11 @@ import { toast } from 'sonner';
 interface AuthContextType {
   user: AuthResponse['user'] | null;
   token: string | null;
-  login: (username: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  login: (username: string, password: string) => Promise<AuthResponse['user']>;
+  register: (data: RegisterData) => Promise<AuthResponse['user']>;
+
+  sendOtp: (email: string) => Promise<void>;
+  verifyOtp: (email: string, otp: string) => Promise<AuthResponse['user']>;
   logout: () => void;
   updateUser: (userData: AuthResponse['user']) => void;
   isLoading: boolean;
@@ -60,7 +63,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const payload = JSON.parse(atob(storedToken.split('.')[1]));
+      const parts = storedToken.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid token format');
+      }
+
+      // Handle URL-safe base64 and decoding safely
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
       const isExpired = payload.exp * 1000 < Date.now();
 
       if (isExpired) {
@@ -131,6 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setToken(response.access);
       setUser(response.user);
+      return response.user;
     } catch (error) {
       throw error;
     }
@@ -140,6 +152,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authAPI.register(data);
 
+      // Store tokens and user data if available
+      if (response.access) {
+        localStorage.setItem('access_token', response.access);
+        setToken(response.access);
+      }
+      if (response.refresh) {
+        localStorage.setItem('refresh_token', response.refresh);
+      }
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+        setUser(response.user);
+      }
+
+      return response.user;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+
+
+  const sendOtp = async (email: string) => {
+    await authAPI.sendOtp(email);
+  }
+
+  const verifyOtp = async (email: string, otp: string) => {
+    try {
+      const response = await authAPI.verifyOtp(email, otp);
       // Store tokens and user data
       localStorage.setItem('access_token', response.access);
       localStorage.setItem('refresh_token', response.refresh);
@@ -147,10 +187,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setToken(response.access);
       setUser(response.user);
+      return response.user;
     } catch (error) {
       throw error;
     }
-  };
+  }
 
   const logout = () => {
     clearAuthAndRedirect();
@@ -166,6 +207,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     token,
     login,
     register,
+
+    sendOtp,
+    verifyOtp,
     logout,
     updateUser,
     isLoading,
