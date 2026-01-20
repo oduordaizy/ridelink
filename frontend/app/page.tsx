@@ -218,13 +218,26 @@ export default function Home() {
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "Travas",
+              alternateName: "Travas Ridesharing",
               url: "https://travas.co.ke",
-              logo: "https://travas.co.ke/logo.png",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://travas.co.ke/logo2.png",
+                width: "512",
+                height: "512"
+              },
+              description: "Reliable ridesharing platform in Kenya connecting drivers and passengers for affordable, secure, and convenient rides.",
               sameAs: [
                 "https://facebook.com/travas",
                 "https://twitter.com/travas_ke",
                 "https://instagram.com/travas_ke",
               ],
+              contactPoint: {
+                "@type": "ContactPoint",
+                contactType: "Customer Service",
+                areaServed: "KE",
+                availableLanguage: ["English", "Swahili"]
+              }
             }),
           }}
         />
