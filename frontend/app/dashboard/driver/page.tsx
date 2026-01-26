@@ -15,8 +15,8 @@ interface RideFormData {
   destination: string;
   departure_date: string;
   departure_time: string;
-  available_seats: number;
-  price: number;
+  available_seats: number | '';
+  price: number | '';
   additional_info: string;
   vehicle_images: File[];
 }
@@ -52,7 +52,7 @@ export default function CreateRidePage() {
     departure_time: '',
     departure_date: new Date().toISOString().split('T')[0],
     available_seats: 1,
-    price: 0,
+    price: '',
     additional_info: '',
     vehicle_images: [],
   });
@@ -69,19 +69,12 @@ export default function CreateRidePage() {
 
     if (name === 'available_seats') {
       return;
-    } else if (name === 'vehicle_images') {
-      const files = (target as HTMLInputElement).files;
-      if (files) {
-        setFormData(prev => ({
-          ...prev,
-          vehicle_images: [...prev.vehicle_images, ...Array.from(files)]
-        }));
-        (target as HTMLInputElement).value = '';
-      }
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: type === 'number' ? (parseFloat(value) || 0) : value,
+        [name]: type === 'number'
+          ? (value === '' ? '' : parseFloat(value))
+          : value,
       }));
     }
   }, []);
@@ -93,12 +86,31 @@ export default function CreateRidePage() {
     }));
   }, []);
 
+  const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    console.log('Files selected:', files);
+    if (files) {
+      const newFiles = Array.from(files);
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          vehicle_images: [...prev.vehicle_images, ...newFiles]
+        };
+        console.log('Updated formData images:', updated.vehicle_images);
+        return updated;
+      });
+      // Reset input value so the same file can be selected again if needed
+      e.target.value = '';
+    }
+  }, []);
+
   const handleAvailableSeatsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value === '' || (Number(value) >= 1 && Number(value) <= 10)) {
+    // Allow empty string or any positive number
+    if (value === '' || (!isNaN(Number(value)) && Number(value) >= 0)) {
       setFormData(prev => ({
         ...prev,
-        available_seats: value === '' ? 0 : Number(value),
+        available_seats: value === '' ? '' : Number(value),
       }));
     }
   }, []);
@@ -120,8 +132,8 @@ export default function CreateRidePage() {
       formDataToSend.append('departure_location', formData.departure_location);
       formDataToSend.append('destination', formData.destination);
       formDataToSend.append('departure_time', departureDateTime);
-      formDataToSend.append('available_seats', (Number(formData.available_seats) || 1).toString());
-      formDataToSend.append('price', formData.price.toString());
+      formDataToSend.append('available_seats', (formData.available_seats || 1).toString());
+      formDataToSend.append('price', (formData.price || 0).toString());
       if (formData.additional_info) {
         formDataToSend.append('additional_info', formData.additional_info);
       }
@@ -152,7 +164,7 @@ export default function CreateRidePage() {
         departure_date: new Date().toISOString().split('T')[0],
         departure_time: '',
         available_seats: 1,
-        price: 0,
+        price: '',
         additional_info: '',
         vehicle_images: []
       });
@@ -277,15 +289,12 @@ export default function CreateRidePage() {
                   type="number"
                   name="available_seats"
                   min="1"
-                  max="10"
-                  value={formData.available_seats || ''}
+                  value={formData.available_seats}
                   onChange={handleAvailableSeatsChange}
                   onBlur={(e) => {
                     const value = Number(e.target.value);
                     if (isNaN(value) || value < 1) {
                       setFormData(prev => ({ ...prev, available_seats: 1 }));
-                    } else if (value > 10) {
-                      setFormData(prev => ({ ...prev, available_seats: 10 }));
                     }
                   }}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
@@ -302,11 +311,11 @@ export default function CreateRidePage() {
                   type="number"
                   name="price"
                   min="0"
-                  step="100"
+                  step="any"
                   value={formData.price}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all"
-                  placeholder="0"
+                  placeholder="Enter price"
                   required
                 />
               </div>
@@ -330,8 +339,8 @@ export default function CreateRidePage() {
             {/* Vehicle Images */}
             <div>
               <div className="space-y-4">
-                <div
-                  onClick={() => fileInputRef.current?.click()}
+                <label
+                  htmlFor="vehicle_images"
                   className="flex flex-col items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-xl appearance-none cursor-pointer hover:border-[#08A6F6] focus:outline-none"
                 >
                   <div className="flex flex-col items-center space-y-2 pointer-events-none">
@@ -340,7 +349,7 @@ export default function CreateRidePage() {
                       Click to upload photos
                     </span>
                   </div>
-                </div>
+                </label>
                 {/* Hidden File Input outside the clickable area or within but not as the target */}
                 <input
                   type="file"
@@ -348,8 +357,8 @@ export default function CreateRidePage() {
                   name="vehicle_images"
                   ref={fileInputRef}
                   accept="image/*"
-                  multiple={true}
-                  onChange={handleChange}
+                  multiple
+                  onChange={handleImageChange}
                   className="hidden"
                   tabIndex={-1}
                 />
