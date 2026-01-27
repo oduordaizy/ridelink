@@ -162,59 +162,66 @@ class RideViewSet(viewsets.ModelViewSet):
                     status='pending'
                 )
                 
+                # Reduce seats immediately to prevent overbooking
+                # This is idempotent and handles the lock internally
+                booking.reduce_seats()
+                
+                message = ""
+                extra_data = {}
+
                 # Handle payment method
                 if payment_method == 'wallet':
                     # Process wallet payment immediately
                     try:
                         wallet = Wallet.objects.select_for_update().get(user=request.user)
                     except Wallet.DoesNotExist:
-                        booking.delete()
-                        return Response({
-                            'error': 'Wallet not found. Please create a wallet first.'
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValueError("Wallet not found. Please create a wallet first.")
                     
                     total_amount = ride.price * no_of_seats
                     
                     if wallet.balance < total_amount:
-                        booking.delete()
-                        return Response({
-                            'error': f'Insufficient wallet balance. Required: KSh {total_amount:.2f}, Available: KSh {wallet.balance:.2f}'
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                        raise ValueError(f"Insufficient wallet balance. Required: KSh {total_amount:.2f}, Available: KSh {wallet.balance:.2f}")
                     
                     # Deduct from wallet
                     wallet.balance -= total_amount
                     wallet.save()
                     
-                    # Confirm booking and reduce seats
-                    booking.confirm_payment()
+                    # Mark as paid and confirmed
+                    booking.is_paid = True
+                    booking.status = 'confirmed'
+                    booking.save(update_fields=['is_paid', 'status'])
                     
-                    return Response({
-                        'success': True,
-                        'booking_id': booking.id,
-                        'message': 'Booking confirmed successfully',
-                        'driver_phone': ride.driver.phone_number,
-                        'ride_details': {
-                            'departure_location': ride.departure_location,
-                            'destination': ride.destination,
-                            'departure_time': ride.departure_time,
-                            'available_seats': ride.available_seats
-                        }
-                    }, status=status.HTTP_201_CREATED)
-                
+                    # Send confirmation email
+                    from .utils import send_booking_confirmation_email
+                    send_booking_confirmation_email(booking)
+                    
+                    message = 'Booking confirmed successfully'
+                    extra_data = {'driver_phone': ride.driver.phone_number}
+
                 elif payment_method in ['mpesa', 'card']:
                     # Payment will be confirmed via callback/webhook
-                    # Booking stays in pending status
-                    # Invalidate cache since a seat might be 'reserved' or status changed
-                    cache.delete_pattern("rides_list_passenger_*")
-                    return Response({
-                        'success': True,
-                        'booking_id': booking.id,
-                        'message': 'Booking created. Awaiting payment confirmation.',
-                        'status': 'pending_payment'
-                    }, status=status.HTTP_201_CREATED)
+                    # Booking stays in pending status but seats are already reserved
+                    message = 'Booking created. Awaiting payment confirmation.'
+                    extra_data = {'status': 'pending_payment'}
                 
-                # Invalidate cache for wallet payment as well (it already calls confirm_payment which should signal invalidation, but explicit is better here if not using signals)
+                # Refresh ride to get updated available_seats for the response
+                ride.refresh_from_db()
+                
+                # Invalidate cache since available_seats has changed
                 cache.delete_pattern("rides_list_passenger_*")
+
+                return Response({
+                    'success': True,
+                    'booking_id': booking.id,
+                    'message': message,
+                    'ride_details': {
+                        'departure_location': ride.departure_location,
+                        'destination': ride.destination,
+                        'departure_time': ride.departure_time,
+                        'available_seats': ride.available_seats
+                    },
+                    **extra_data
+                }, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
             return Response({
