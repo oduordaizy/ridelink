@@ -20,7 +20,11 @@ export const metadata: Metadata = {
     default: "Travas - Reliable Ridesharing in Kenya",
     template: "%s | Travas",
   },
-  description: "Connect with drivers and passengers for affordable, secure, and convenient rides across Kenya. Save money and travel comfortably with Travas.",
+  description: "Connecting with drivers and passengers for affordable, secure, and convenient rides across Kenya. Save money and travel comfortably with Travas.",
+  applicationName: "Travas",
+  other: {
+    "apple-mobile-web-app-title": "Travas",
+  },
   keywords: ["ridesharing", "carpooling", "Kenya travel", "affordable rides", "Travas", "transport", "Nairobi rides", "Mombasa rides"],
   authors: [{ name: "Travas Team", url: "https://travas.co.ke" }],
   creator: "Travas",
@@ -28,7 +32,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   openGraph: {
     title: "Travas - Reliable Ridesharing in Kenya",
-    description: "Connect with drivers and passengers for affordable, secure, and convenient rides across Kenya.",
+    description: "Connecting with drivers and passengers for affordable, secure, and convenient rides across Kenya.",
     url: "https://travas.co.ke",
     siteName: "Travas",
     images: [
@@ -85,6 +89,23 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <ToastContainer position="top-right" autoClose={3000} />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "Travas",
+                "alternateName": "Travas Ridesharing",
+                "url": "https://travas.co.ke",
+                "potentialAction": {
+                  "@type": "SearchAction",
+                  "target": "https://travas.co.ke/dashboard/passenger?q={search_term_string}",
+                  "query-input": "required name=search_term_string"
+                }
+              }),
+            }}
+          />
         </AuthProvider>
       </body>
     </html>
