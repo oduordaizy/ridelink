@@ -12,9 +12,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG ='False'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,travas.co.ke,www.travas.co.ke").split(",")
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,travas.co.ke,www.travas.co.ke,.travas.co.ke").split(",") if host.strip()]
+# Add common variants explicitly just in case
+if 'travas.co.ke' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('travas.co.ke')
+    ALLOWED_HOSTS.append('www.travas.co.ke')
+    ALLOWED_HOSTS.append('api.travas.co.ke')
 
 # Application definition
 INSTALLED_APPS = [
