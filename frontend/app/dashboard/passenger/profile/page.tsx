@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '@/app/contexts/AuthContext';
 import Footer from '@/app/components/Footer';
 import { API_BASE_URL } from '@/app/services/api';
+import { FaCamera, FaUser, FaPhone, FaVenusMars } from 'react-icons/fa';
 
 
 
@@ -39,6 +40,7 @@ export default function PassengerProfilePage() {
     phone_number: '',
     gender: ''
   });
+  const [newProfilePicture, setNewProfilePicture] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Load profile
@@ -65,7 +67,12 @@ export default function PassengerProfilePage() {
 
         const data = await response.json();
         setPassenger(data);
-        setFormData(data);
+        setFormData({
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          phone_number: data.phone_number || '',
+          gender: data.gender || ''
+        });
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile');
@@ -83,6 +90,12 @@ export default function PassengerProfilePage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewProfilePicture(e.target.files[0]);
+    }
+  };
+
   // Save changes
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,13 +104,21 @@ export default function PassengerProfilePage() {
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error('No access token found');
 
+      const payload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== undefined) payload.append(key, value as string);
+      });
+
+      if (newProfilePicture) {
+        payload.append('profile_picture', newProfilePicture);
+      }
+
       const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: payload,
       });
 
       if (!response.ok) {
@@ -107,9 +128,10 @@ export default function PassengerProfilePage() {
 
       const updatedData = await response.json();
       setPassenger(updatedData);
-      updateUser(updatedData.user);
+      updateUser(updatedData);
       toast.success('Profile updated successfully!');
       setIsEditing(false);
+      setNewProfilePicture(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
@@ -120,7 +142,7 @@ export default function PassengerProfilePage() {
   if (isLoading && !passenger) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p>Loading profile...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -148,83 +170,148 @@ export default function PassengerProfilePage() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <div className="max-w-5xl mx-auto px-6 py-10">
-        <Card className="p-8 shadow-lg rounded-2xl">
-          <div className="flex flex-col items-center mb-8">
-            <div className="relative">
-              <Avatar className="w-28 h-28">
-                <AvatarImage src={passenger.profile_picture || '/default-profile.png'} />
-                <AvatarFallback>
-                  {passenger.first_name?.[0]}
-                  {passenger.last_name?.[0]}
+        <Card className="p-8 shadow-xl rounded-3xl border-none">
+          <div className="flex flex-col items-center mb-10">
+            <div className="relative group">
+              <Avatar className="w-32 h-32 border-4 border-white shadow-2xl">
+                <AvatarImage
+                  src={newProfilePicture ? URL.createObjectURL(newProfilePicture) : (passenger.profile_picture || '/default-profile.png')}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-green-100 text-green-700 text-3xl font-bold">
+                  {passenger.first_name?.[0]}{passenger.last_name?.[0]}
                 </AvatarFallback>
               </Avatar>
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="absolute bottom-0 right-0 bg-green-600 text-white p-2 rounded-full hover:bg-green-700"
-                >
-                  ✎
-                </button>
-              )}
+              <label className="absolute bottom-1 right-1 bg-green-600 hover:bg-green-700 text-white p-3 rounded-full cursor-pointer shadow-lg transition-all transform hover:scale-110">
+                <FaCamera size={18} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureChange}
+                  className="hidden"
+                />
+              </label>
             </div>
-            <h1 className="mt-4 text-2xl font-bold text-gray-800">
+
+            <h1 className="mt-6 text-3xl font-extrabold text-gray-900 tracking-tight">
               {passenger.first_name} {passenger.last_name}
             </h1>
-            <p className="text-gray-500">{passenger.email}</p>
-            <p className="text-sm text-gray-400">{passenger.user_type.toUpperCase()}</p>
+            <p className="text-gray-500 font-medium">{passenger.email}</p>
+            <div className="mt-2 px-4 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase tracking-wider">
+              {passenger.user_type}
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Personal Info */}
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div>
-              <h2 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
-                Personal Information
+              <h2 className="text-xl font-bold text-gray-800 border-b border-gray-100 pb-3 mb-6 flex items-center gap-2">
+                <FaUser className="text-green-600" /> Personal Information
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {['first_name', 'last_name', 'phone_number', 'gender'].map((field) => (
-                  <div key={field} className="space-y-2">
-                    <Label htmlFor={field} className="text-gray-600 capitalize">
-                      {field.replace('_', ' ')}
-                    </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name" className="text-sm font-bold text-gray-600 uppercase tracking-wide">First Name</Label>
+                  <div className="relative">
                     <Input
-                      id={field}
-                      name={field}
-                      value={formData[field as keyof ProfileFormData] || ''}
+                      id="first_name"
+                      name="first_name"
+                      value={formData.first_name}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      className="bg-gray-50 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                      className="bg-gray-50/50 border-gray-200 h-12 rounded-xl focus:border-green-500 focus:ring-green-500 disabled:opacity-70"
                     />
                   </div>
-                ))}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_name" className="text-sm font-bold text-gray-600 uppercase tracking-wide">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className="bg-gray-50/50 border-gray-200 h-12 rounded-xl focus:border-green-500 focus:ring-green-500 disabled:opacity-70"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone_number" className="text-sm font-bold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                    <FaPhone size={12} /> Phone Number
+                  </Label>
+                  <Input
+                    id="phone_number"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    placeholder="+254 700 000000"
+                    className="bg-gray-50/50 border-gray-200 h-12 rounded-xl focus:border-green-500 focus:ring-green-500 disabled:opacity-70"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender" className="text-sm font-bold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                    <FaVenusMars size={14} /> Gender
+                  </Label>
+                  <Input
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    placeholder="e.g. Male, Female"
+                    className="bg-gray-50/50 border-gray-200 h-12 rounded-xl focus:border-green-500 focus:ring-green-500 disabled:opacity-70"
+                  />
+                </div>
               </div>
             </div>
 
-            {isEditing && (
-              <div className="flex justify-end gap-3 border-t pt-6">
+            <div className="flex flex-col sm:flex-row justify-end gap-4 border-t border-gray-100 pt-8">
+              {!isEditing ? (
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => setIsEditing(false)}
-                  disabled={isLoading}
+                  onClick={() => setIsEditing(true)}
+                  className="bg-[#08A6F6] hover:bg-[#00204a] text-white px-10 h-12 rounded-xl font-bold shadow-lg transition-all"
                 >
-                  Cancel
+                  Edit Profile
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {isLoading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            )}
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setNewProfilePicture(null);
+                    }}
+                    disabled={isLoading}
+                    className="px-10 h-12 rounded-xl font-bold border-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-green-600 hover:bg-green-700 text-white px-10 h-12 rounded-xl font-bold shadow-lg shadow-green-200 transition-all"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Saving...
+                      </span>
+                    ) : 'Save Changes'}
+                  </Button>
+                </>
+              )}
+            </div>
           </form>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 }

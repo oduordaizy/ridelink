@@ -20,7 +20,7 @@ class Ride(models.Model):
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available', db_index=True)
     
-    price = models.DecimalField(max_digits=6, decimal_places=2, db_index=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -46,7 +46,7 @@ class Booking(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
-    
+        ('cancelled', 'Cancelled'),
     ]
     
     ride = models.ForeignKey(Ride, on_delete=models.CASCADE, related_name='bookings')
@@ -56,20 +56,15 @@ class Booking(models.Model):
     booked_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_paid = models.BooleanField(default=False, db_index=True)
+    seats_deducted = models.BooleanField(default=False, db_index=True)
 
     def __str__(self):
         return f"{self.user.username} booking on {self.ride} - {self.status}"
 
-    def confirm_booking(self):
-        if self.status != 'pending':
-            raise ValueError("No pending seats.")
-        self.status = 'confirmed'
-        self.save()
-
-    
-    def confirm_payment(self):
-        if self.is_paid:
-            return  # or raise ValueError("Already paid.")
+    def reduce_seats(self):
+        """Reduces available seats for the ride when booking is confirmed/paid"""
+        if self.seats_deducted:
+            return
 
         with db_transaction.atomic():
             # Refetch ride with lock to ensure seat availability hasn't changed
@@ -80,10 +75,72 @@ class Booking(models.Model):
             
             ride.available_seats -= self.no_of_seats
             
-            if ride.available_seats == 0:
+            if ride.available_seats <= 0:
                 ride.status = 'fully_booked'
             ride.save()
 
-            self.is_paid = True
-            self.status = 'confirmed'
-            self.save()
+            self.seats_deducted = True
+            self.save(update_fields=['seats_deducted'])
+
+    def restore_seats(self):
+        """Restores available seats for the ride when booking is cancelled"""
+        if not self.seats_deducted:
+            return
+
+        with db_transaction.atomic():
+            # Refetch ride with lock
+            ride = Ride.objects.select_for_update().get(id=self.ride_id)
+            ride.available_seats += self.no_of_seats
+            
+            if ride.available_seats > 0 and ride.status == 'fully_booked':
+                ride.status = 'available'
+            ride.save()
+
+            self.seats_deducted = False
+            self.save(update_fields=['seats_deducted'])
+
+    def confirm_booking(self):
+        """Manually confirm a booking (by driver) and reduce seats"""
+        if self.status != 'pending':
+            raise ValueError(f"Cannot confirm booking in {self.status} status.")
+        
+        self.reduce_seats()
+        self.status = 'confirmed'
+        self.save(update_fields=['status'])
+        
+        # Send confirmation email
+        from .utils import send_booking_confirmation_email
+        send_booking_confirmation_email(self)
+
+    def confirm_payment(self):
+        """Confirm payment and reduce seats"""
+        if self.is_paid:
+            return
+
+        self.reduce_seats()
+        self.is_paid = True
+        self.status = 'confirmed'
+        self.save(update_fields=['is_paid', 'status'])
+        
+        # Send confirmation email
+        from .utils import send_booking_confirmation_email
+        send_booking_confirmation_email(self)
+
+    def cancel_booking(self, reason=None):
+        """Cancel the booking and restore seats if they were deducted"""
+        if self.status == 'cancelled':
+            return
+
+        if self.seats_deducted:
+            self.restore_seats()
+
+        self.status = 'cancelled'
+        self.save(update_fields=['status'])
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            # Send notification to driver about new booking
+            from .utils import send_new_booking_notification_to_driver
+            send_new_booking_notification_to_driver(self)

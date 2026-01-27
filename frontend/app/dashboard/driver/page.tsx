@@ -152,6 +152,22 @@ export default function CreateRidePage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('Ride Creation Error Data:', errorData);
+        
+        // Handle DRF field-specific errors
+        if (typeof errorData === 'object' && !errorData.detail) {
+          const fieldErrors = Object.entries(errorData)
+            .map(([field, messages]) => {
+              const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              return `${fieldName}: ${Array.isArray(messages) ? messages[0] : messages}`;
+            })
+            .join('\n');
+          
+          if (fieldErrors) {
+            throw new Error(fieldErrors);
+          }
+        }
+        
         throw new Error(errorData.detail || 'Failed to create ride');
       }
 

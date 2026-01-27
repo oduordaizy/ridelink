@@ -83,12 +83,36 @@ class RideViewSet(viewsets.ModelViewSet):
         return response
 
     def get_queryset(self):
-        # Drivers only see their own rides; passengers see all
         user = self.request.user
+        now = timezone.now()
         queryset = Ride.objects.select_related('driver', 'driver__driver_profile').prefetch_related('images')
         
+        if user.is_anonymous or user.user_type == 'passenger':
+            # Passengers only see future, available rides
+            return queryset.filter(departure_time__gte=now, status='available')
+        
         if user.user_type == 'driver':
-            return queryset.filter(driver=user)
+            queryset = queryset.filter(driver=user)
+            category = self.request.query_params.get('category')
+            
+            from django.db.models import Count
+            if category == 'active':
+                return queryset.filter(departure_time__gte=now)
+            elif category == 'past':
+                # Departed rides with at least one booking
+                return queryset.annotate(booking_count=Count('bookings')).filter(
+                    departure_time__lt=now, 
+                    booking_count__gt=0
+                )
+            elif category == 'expired':
+                # Departed rides with no bookings
+                return queryset.annotate(booking_count=Count('bookings')).filter(
+                    departure_time__lt=now, 
+                    booking_count=0
+                )
+            # Default for drivers is to see all their rides
+            return queryset
+            
         return queryset
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])

@@ -65,7 +65,7 @@ const Page = () => {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'past' | 'expired'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // New state for View/Edit/Delete
@@ -96,8 +96,15 @@ const Page = () => {
     const fetchRides = async () => {
       try {
         if (!user) return;
+        setLoading(true);
 
-        const response = await fetch(`${API_BASE_URL}/rides/?driver=${user.id}`, {
+        const params = new URLSearchParams();
+        params.append('driver', user.id.toString());
+        if (filter !== 'all') {
+          params.append('category', filter);
+        }
+
+        const response = await fetch(`${API_BASE_URL}/rides/?${params.toString()}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -109,10 +116,9 @@ const Page = () => {
 
         const data = await response.json();
         const ridesList = Array.isArray(data) ? data : (data.results || []);
-        const sortedRides = ridesList.sort((a: Ride, b: Ride) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        setRides(sortedRides);
+
+        // Final frontend filtering for search
+        setRides(ridesList);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -121,7 +127,7 @@ const Page = () => {
     };
 
     fetchRides();
-  }, [user]);
+  }, [user, filter]);
 
   const fetchBookings = async (rideId: number) => {
     setFetchingBookings(true);
@@ -249,23 +255,32 @@ const Page = () => {
       icon: TrendingUp,
       label: 'Active'
     },
-    completed: {
+    past: {
       color: 'bg-green-100 text-green-800 border-green-200',
       icon: CheckCircle,
-      label: 'Completed'
+      label: 'Past'
     },
-    cancelled: {
-      color: 'bg-red-100 text-red-800 border-red-200',
+    expired: {
+      color: 'bg-gray-100 text-gray-800 border-gray-200',
       icon: XCircle,
-      label: 'Cancelled'
+      label: 'Expired'
+    },
+    available: {
+      color: 'bg-green-100 text-green-800 border-green-200',
+      icon: CheckCircle,
+      label: 'Available'
+    },
+    fully_booked: {
+      color: 'bg-amber-100 text-amber-800 border-amber-200',
+      icon: AlertCircle,
+      label: 'Full'
     }
   };
 
   const filteredRides = rides.filter(ride => {
-    const matchesFilter = filter === 'all' || ride.status === filter;
     const matchesSearch = ride.departure_location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ride.destination.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
   const stats = {
@@ -367,7 +382,7 @@ const Page = () => {
 
           {/* Filter Buttons */}
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {['all', 'active', 'completed', 'cancelled'].map((status) => (
+            {['all', 'active', 'past', 'expired'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status as any)}

@@ -89,7 +89,7 @@ const Page = () => {
       setRides(ridesList);
     } catch (error) {
       console.error('Error fetching rides:', error);
-      alert('Failed to load rides. Please try again later.');
+      toast.error('Failed to load rides. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -137,7 +137,7 @@ const Page = () => {
       setRides(ridesList);
     } catch (error) {
       console.error('Error fetching rides:', error);
-      alert('Failed to load rides. Please try again later.');
+      toast.error('Failed to load rides. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -227,7 +227,7 @@ const Page = () => {
 
     const token = localStorage.getItem('access_token');
     if (!token) {
-      alert('Please log in to make a payment');
+      toast.error('Please log in to make a payment');
       return;
     }
 
@@ -256,7 +256,9 @@ const Page = () => {
         const data = await response.json();
 
         // Show success message with driver contact
-        alert(`Booking confirmed! Driver contact: ${data.driver_phone}`);
+        toast.success(`Booking confirmed! Driver contact: ${data.driver_phone}`, {
+          duration: 8000,
+        });
 
         // Update wallet balance
         if (walletBalance !== null) {
@@ -314,7 +316,7 @@ const Page = () => {
 
     const token = localStorage.getItem('access_token');
     if (!token) {
-      alert('Please log in to make a payment');
+      toast.error('Please log in to make a payment');
       return;
     }
 
