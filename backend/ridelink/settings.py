@@ -12,14 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = True # os.getenv('DEBUG', 'False') == 'True'
+DEBUG ='False'
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "91b881865b95.ngrok-free.app",
-    ".onrender.com"
-] 
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,travas.co.ke,www.travas.co.ke").split(",")
 
 # Application definition
 INSTALLED_APPS = [
@@ -127,6 +122,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
