@@ -132,10 +132,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'access_token') {
         if (!e.newValue) {
-          // Token removed in another tab
+          // Token removed in another tab (logout)
           setToken(null);
           setUser(null);
-          router.push('/auth/login');
+          // Force reload to clear all states and navbar
+          window.location.reload();
         } else if (e.newValue !== token) {
           // Token changed to a different one (another user logged in)
           // We must force a refresh or logout to avoid identity confusion
