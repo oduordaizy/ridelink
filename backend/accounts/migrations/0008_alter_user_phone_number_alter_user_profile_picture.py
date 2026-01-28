@@ -4,6 +4,11 @@ import django.core.validators
 from django.db import migrations, models
 
 
+def delete_null_phones(apps, schema_editor):
+    User = apps.get_model('accounts', 'User')
+    # Delete users with NULL phone numbers (the duplicates identified in 0007)
+    User.objects.filter(phone_number__isnull=True).delete()
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,10 +16,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(delete_null_phones),
         migrations.AlterField(
             model_name='user',
             name='phone_number',
-            field=models.CharField(max_length=15, unique=True, validators=[django.core.validators.RegexValidator(message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.", regex='^\\+?1?\\d{9,15}$')]),
+            field=models.CharField(blank=True, max_length=15, null=True, unique=True, validators=[django.core.validators.RegexValidator(message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.", regex='^\\+?1?\\d{9,15}$')]),
         ),
         migrations.AlterField(
             model_name='user',
