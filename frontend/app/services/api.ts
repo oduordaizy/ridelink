@@ -43,8 +43,13 @@ export const authAPI = {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
+      const errorData = await response.json().catch(() => ({}));
+      const anyData = errorData as any;
+      const errorMessage = anyData.message ||
+        (anyData.non_field_errors && anyData.non_field_errors[0]) ||
+        (Object.values(anyData)[0] && Array.isArray(Object.values(anyData)[0]) ? (Object.values(anyData)[0] as any)[0] : Object.values(anyData)[0]) ||
+        'Login failed';
+      throw new Error(errorMessage);
     }
 
     return response.json();
