@@ -1,4 +1,5 @@
-from django.db import migrations
+import django.core.validators
+from django.db import migrations, models
 from django.db.models import Count
 
 def cleanup_duplicate_phones(apps, schema_editor):
@@ -17,7 +18,6 @@ def cleanup_duplicate_phones(apps, schema_editor):
         users = User.objects.filter(phone_number=phone).order_by('id')
         
         # Keep the first user, set phone_number to None for the rest
-        # We use update() to bypass potential validation issues
         duplicate_users = users[1:]
         for user in duplicate_users:
             user.phone_number = None
@@ -30,5 +30,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # First make the field nullable so we can set duplicates to None
+        migrations.AlterField(
+            model_name='user',
+            name='phone_number',
+            field=models.CharField(
+                blank=True, 
+                max_length=15, 
+                null=True, 
+                validators=[django.core.validators.RegexValidator(message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.", regex='^\\+?1?\\d{9,15}$')]
+            ),
+        ),
+        # Then clean up the duplicates
         migrations.RunPython(cleanup_duplicate_phones),
     ]
