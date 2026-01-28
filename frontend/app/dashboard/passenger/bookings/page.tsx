@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
-import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch } from 'react-icons/fa';
+import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch, FaUserFriends, FaPhone, FaEnvelope } from 'react-icons/fa';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
 
@@ -17,13 +17,15 @@ interface Booking {
     price: number;
     driver: {
       username: string;
+      phone_number?: string;
+      email?: string;
     };
   };
   no_of_seats: number;
   total_price: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   is_paid: boolean;
-  created_at: string;
+  booked_at: string;
   updated_at: string;
 }
 
@@ -442,71 +444,30 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
               )}
             </div>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: window.innerWidth < 640 ? '1fr' : window.innerWidth < 1024 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-              gap: '1rem'
-            }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <InfoItem icon={<FaCalendarAlt />} label="Date" value={booking.ride_details?.departure_time ? new Date(booking.ride_details.departure_time).toLocaleDateString() : 'N/A'} />
               <InfoItem icon={<FaClock />} label="Time" value={booking.ride_details?.departure_time ? new Date(booking.ride_details.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} />
               <InfoItem icon={<FaUser />} label="Driver" value={booking.ride_details?.driver?.username || 'Unknown'} />
-              <InfoItem icon={<FaMapMarkerAlt />} label="Seats" value={`${booking.no_of_seats} seat${booking.no_of_seats !== 1 ? 's' : ''}`} />
+              <InfoItem icon={<FaUserFriends />} label="Seats" value={`${booking.no_of_seats} seat${booking.no_of_seats !== 1 ? 's' : ''}`} />
               <InfoItem icon={<FaMoneyBillWave />} label="Total" value={`KSh ${booking.total_price.toLocaleString()}`} />
             </div>
           </div>
 
-          <div style={{
-            display: 'flex',
-            flexDirection: window.innerWidth < 640 ? 'row' : window.innerWidth < 1024 ? 'row' : 'column',
-            gap: '0.5rem',
-            width: window.innerWidth < 1024 ? '100%' : 'auto'
-          }}>
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 min-w-[200px] w-full lg:w-auto">
             {booking.status === 'pending' && (
               <button
                 onClick={() => onCancel(booking.id)}
-                style={{
-                  padding: '0.875rem 1.25rem',
-                  border: '2px solid #ef4444',
-                  color: '#dc2626',
-                  borderRadius: '0.875rem',
-                  transition: 'all 0.3s ease',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  background: '#FFFFFF',
-                  flex: 1
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#fef2f2';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#FFFFFF';
-                }}
+                className="w-full flex-1 py-3.5 px-6 rounded-2xl bg-white border-2 border-red-500 text-red-500 font-bold hover:bg-red-50 transition-all active:scale-95 shadow-sm"
               >
                 Cancel
               </button>
             )}
             <Link
               href={`/dashboard/passenger/bookings/${booking.id}`}
+              className="w-full flex-1 py-3.5 px-6 background-gradient-primary text-center font-bold text-white rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300"
               style={{
-                padding: '0.875rem 1.25rem',
                 background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)',
-                color: '#FFFFFF',
-                borderRadius: '0.875rem',
-                transition: 'all 0.3s ease',
-                textAlign: 'center',
-                fontWeight: 'bold',
-                boxShadow: '0 4px 15px rgba(8, 166, 246, 0.3)',
                 textDecoration: 'none',
-                display: 'block',
-                flex: 1
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(8, 166, 246, 0.4)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(8, 166, 246, 0.3)';
-                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               View Details
@@ -523,7 +484,7 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
         borderTop: '1px solid #e5e7eb',
         fontWeight: '500'
       }}>
-        Booking ID: #{booking.id} • Created: {new Date(booking.created_at).toLocaleString()}
+        Booking ID: #{booking.id} • Created: {new Date(booking.booked_at).toLocaleString()}
       </div>
     </div>
   );
