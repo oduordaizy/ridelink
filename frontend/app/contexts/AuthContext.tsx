@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI, AuthResponse, RegisterData } from '../services/api';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 interface AuthContextType {
   user: AuthResponse['user'] | null;
@@ -13,6 +13,8 @@ interface AuthContextType {
 
   sendOtp: (email: string) => Promise<void>;
   verifyOtp: (email: string, otp: string) => Promise<AuthResponse['user']>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (data: any) => Promise<void>;
   logout: () => void;
   updateUser: (userData: AuthResponse['user']) => void;
   switchRole: () => Promise<AuthResponse['user']>;
@@ -44,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
 
     if (message) {
-      toast.error('Session Expired', { description: message });
+      toast.error(`Session Expired: ${message}`);
     }
 
     // Redirect to login page
@@ -194,6 +196,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  const forgotPassword = async (email: string) => {
+    await authAPI.forgotPassword(email);
+  }
+
+  const resetPassword = async (data: any) => {
+    await authAPI.resetPassword(data);
+  }
+
   const logout = () => {
     clearAuthAndRedirect();
   };
@@ -223,6 +233,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     sendOtp,
     verifyOtp,
+    forgotPassword,
+    resetPassword,
     logout,
     updateUser,
     switchRole,

@@ -132,6 +132,50 @@ export const authAPI = {
     return response.json();
   },
 
+  // Forgot password
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to send reset code');
+    }
+
+    const responseData = await response.json();
+    if (responseData.error) {
+      throw new Error(responseData.error);
+    }
+    return responseData;
+  },
+
+  // Reset password
+  async resetPassword(data: any): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to reset password');
+    }
+
+    const responseData = await response.json();
+    if (responseData.error) {
+      throw new Error(responseData.error);
+    }
+    return responseData;
+  },
+
   // Switch user role
   async switchRole(token: string): Promise<{ message: string, user: AuthResponse['user'] }> {
     const response = await fetch(`${API_BASE_URL}/auth/switch-role/`, {

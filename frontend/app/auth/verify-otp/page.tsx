@@ -6,7 +6,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
 import Image from 'next/image';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 function VerifyOTPContent() {
     const [otp, setOtp] = useState('');

@@ -9,7 +9,7 @@ class User(AbstractUser):
     )
     
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
-    phone_number = models.CharField(max_length=15, validators=[
+    phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True, validators=[
         RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
     ])
     profile_picture = models.ImageField(upload_to='profile_pictures/', default='profile_pictures/default-profile.png', blank=True, null=True)

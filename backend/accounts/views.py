@@ -209,3 +209,54 @@ class SwitchRoleView(generics.UpdateAPIView):
             'message': f'Successfully switched to {new_role} mode',
             'user': serializer.data
         }, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    email = request.data.get('email')
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        # Return 200 with error message to avoid red console logs, as requested
+        return Response({'error': 'User with this email does not exist'}, status=status.HTTP_200_OK)
+        
+    otp = generate_otp()
+    user.otp = otp
+    user.otp_created_at = timezone.now()
+    user.save()
+    
+    if send_otp_email(user, otp):
+        return Response({'message': 'Password reset OTP sent to your email'})
+    else:
+        return Response({'error': 'Failed to send OTP'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request):
+    email = request.data.get('email')
+    otp = request.data.get('otp')
+    new_password = request.data.get('new_password')
+    
+    if not email or not otp or not new_password:
+        return Response({'error': 'Email, OTP and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_200_OK)
+        
+    if user.otp != otp:
+        return Response({'error': 'Invalid OTP'}, status=status.HTTP_200_OK)
+        
+    if user.otp_created_at and timezone.now() > user.otp_created_at + timedelta(minutes=10):
+        return Response({'error': 'OTP has expired'}, status=status.HTTP_200_OK)
+        
+    # Reset password
+    user.set_password(new_password)
+    user.otp = None
+    user.save()
+    
+    return Response({'message': 'Password reset successfully. You can now log in.'})

@@ -7,7 +7,7 @@ import Footer from '@/app/components/Footer';
 import Navbar from '@/app/components/Navbar';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -75,7 +75,21 @@ export default function Register() {
       }, 1000);
 
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Registration failed');
+      console.error('Registration error:', error);
+      if (error instanceof Error) {
+        const message = error.message;
+        // If message looks like a JSON object (field errors)
+        if (message.includes('{') || message.includes(':')) {
+          setError('Please check the form for errors');
+          toast.error(message);
+        } else {
+          setError(message);
+          toast.error(message);
+        }
+      } else {
+        setError('Registration failed. Please try again.');
+        toast.error('Registration failed');
+      }
       setStatus('idle');
     } finally {
       setIsLoading(false);
