@@ -25,33 +25,44 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'registering' | 'sending_otp' | 'success'>('idle');
   const { register, sendOtp } = useAuth();
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
     setIsLoading(true);
     setStatus('registering');
 
     if (formData.password !== formData.password_confirm) {
-      setError('Passwords do not match');
+      setFieldErrors({ password_confirm: 'Passwords do not match' });
       setIsLoading(false);
       setStatus('idle');
       return;
     }
 
     try {
-      const response = await register({
+      await register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -78,22 +89,42 @@ export default function Register() {
       console.error('Registration error:', error);
       if (error instanceof Error) {
         const message = error.message;
-        // If message looks like a JSON object (field errors)
-        if (message.includes('{') || message.includes(':')) {
-          setError('Please check the form for errors');
-          toast.error(message);
-        } else {
+
+        // Try to parse field-specific errors from the backend response
+        // DRF usually returns errors in an object format if handled by the serializer
+        try {
+          if (message.includes('{')) {
+            const parsed = JSON.parse(message);
+            // Convert array messages to single strings
+            const formatted: Record<string, string> = {};
+            Object.entries(parsed).forEach(([key, val]) => {
+              formatted[key] = Array.isArray(val) ? val[0] : String(val);
+            });
+            setFieldErrors(formatted);
+            setError('Please correct the highlighted fields.');
+          } else {
+            setError(message);
+          }
+        } catch (e) {
+          // If not JSON, show as generic error
           setError(message);
-          toast.error(message);
         }
       } else {
         setError('Registration failed. Please try again.');
-        toast.error('Registration failed');
       }
       setStatus('idle');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const InputError = ({ name }: { name: string }) => {
+    if (!fieldErrors[name]) return null;
+    return (
+      <p className="mt-1 text-xs font-medium text-red-500 animate-in fade-in slide-in-from-top-1">
+        {fieldErrors[name]}
+      </p>
+    );
   };
 
   return (
@@ -145,10 +176,11 @@ export default function Register() {
                   name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none"
+                  className={`w-full px-4 py-2 border ${fieldErrors.first_name ? 'border-red-500' : 'border-[#08A6F6]/30'} rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none`}
                   placeholder="First Name"
                   required
                 />
+                <InputError name="first_name" />
               </div>
               <div>
                 <label htmlFor="last_name" className="block text-sm font-medium text-[#013C5E] mb-1">
@@ -160,10 +192,11 @@ export default function Register() {
                   name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none"
+                  className={`w-full px-4 py-2 border ${fieldErrors.last_name ? 'border-red-500' : 'border-[#08A6F6]/30'} rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none`}
                   placeholder="Last Name"
                   required
                 />
+                <InputError name="last_name" />
               </div>
             </div>
 
@@ -177,10 +210,11 @@ export default function Register() {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none"
+                className={`w-full px-4 py-2 border ${fieldErrors.username ? 'border-red-500' : 'border-[#08A6F6]/30'} rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none`}
                 placeholder="Username"
                 required
               />
+              <InputError name="username" />
             </div>
 
             <div>
@@ -193,10 +227,11 @@ export default function Register() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none"
+                className={`w-full px-4 py-2 border ${fieldErrors.email ? 'border-red-500' : 'border-[#08A6F6]/30'} rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none`}
                 placeholder="you@example.com"
                 required
               />
+              <InputError name="email" />
             </div>
 
             <div>
@@ -209,10 +244,11 @@ export default function Register() {
                 name="phone_number"
                 value={formData.phone_number}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none"
+                className={`w-full px-4 py-2 border ${fieldErrors.phone_number ? 'border-red-500' : 'border-[#08A6F6]/30'} rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none`}
                 placeholder="+254712345678"
                 required
               />
+              <InputError name="phone_number" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,10 +263,11 @@ export default function Register() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none pr-10"
+                    className={`w-full px-4 py-2 border ${fieldErrors.password ? 'border-red-500' : 'border-[#08A6F6]/30'} rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none pr-10`}
                     placeholder="••••••••"
                     required
                   />
+                  <InputError name="password" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -255,10 +292,11 @@ export default function Register() {
                     name="password_confirm"
                     value={formData.password_confirm}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-[#08A6F6]/30 rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none pr-10"
+                    className={`w-full px-4 py-2 border ${fieldErrors.password_confirm ? 'border-red-500' : 'border-[#08A6F6]/30'} rounded-lg focus:ring-2 focus:ring-[#08A6F6] focus:outline-none pr-10`}
                     placeholder="••••••••"
                     required
                   />
+                  <InputError name="password_confirm" />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
