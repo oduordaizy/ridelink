@@ -19,6 +19,21 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def is_profile_complete(self):
+        # Base check for all users (e.g., profile picture)
+        if not self.profile_picture or 'default-profile.png' in self.profile_picture.name:
+            return False
+            
+        if self.user_type == 'driver':
+            try:
+                return self.driver_profile.is_complete
+            except Driver.DoesNotExist:
+                return False
+        
+        # Passengers are always "complete" for now
+        return True
+
     class Meta:
         db_table = 'users'
 
@@ -32,6 +47,16 @@ class Driver(models.Model):
     # is_available = models.BooleanField(default=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     
+    @property
+    def is_complete(self):
+        required_fields = [
+            self.license_number, 
+            self.vehicle_model, 
+            self.vehicle_color, 
+            self.vehicle_plate
+        ]
+        return all(field and str(field).strip() != '' for field in required_fields)
+
     class Meta:
         db_table = 'driver_profiles'
 

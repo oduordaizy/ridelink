@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { FaArrowLeft, FaLocationDot, FaMapLocationDot, FaCalendarDays, FaClock, FaUsers, FaMoneyBill, FaXmark, FaImage } from "react-icons/fa6"
+import { FaArrowLeft, FaLocationDot, FaMapLocationDot, FaCalendarDays, FaClock, FaUsers, FaMoneyBill, FaXmark, FaImage, FaUserPen, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6"
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
@@ -42,9 +42,12 @@ const ImagePreview = ({ file }: { file: File }) => {
 };
 
 export default function CreateRidePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateUser } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<RideFormData>({
     departure_location: '',
@@ -60,8 +63,43 @@ export default function CreateRidePage() {
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/auth/login');
+      return;
     }
-  }, [user, isLoading, router]);
+
+    const checkProfile = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setIsProfileComplete(data.is_profile_complete);
+
+          // Determine missing fields for UI guidance
+          const missing = [];
+          if (!data.profile_picture || data.profile_picture.includes('default-profile.png')) missing.push("Profile Picture");
+          if (!data.license_number) missing.push("Driving License Number");
+          if (!data.vehicle_model) missing.push("Vehicle Model");
+          if (!data.vehicle_color) missing.push("Vehicle Color");
+          if (!data.vehicle_plate) missing.push("Vehicle Plate Number");
+          setMissingFields(missing);
+
+          // Keep AuthContext in sync
+          updateUser(data);
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    if (user) {
+      checkProfile();
+    }
+  }, [user, isLoading, router, updateUser]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const target = e.target;
@@ -153,7 +191,7 @@ export default function CreateRidePage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('Ride Creation Error Data:', errorData);
-        
+
         // Handle DRF field-specific errors
         if (typeof errorData === 'object' && !errorData.detail) {
           const fieldErrors = Object.entries(errorData)
@@ -162,12 +200,12 @@ export default function CreateRidePage() {
               return `${fieldName}: ${Array.isArray(messages) ? messages[0] : messages}`;
             })
             .join('\n');
-          
+
           if (fieldErrors) {
             throw new Error(fieldErrors);
           }
         }
-        
+
         throw new Error(errorData.detail || 'Failed to create ride');
       }
 
@@ -194,7 +232,7 @@ export default function CreateRidePage() {
     }
   }, [user, formData, router]);
 
-  if (isLoading) {
+  if (isLoading || profileLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#08A6F6] border-t-transparent"></div>
@@ -204,6 +242,49 @@ export default function CreateRidePage() {
 
   if (!user) {
     return null;
+  }
+
+  // Blocking UI if profile is incomplete
+  if (isProfileComplete === false) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+          <div className="bg-amber-50 p-8 text-center border-b border-amber-100">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-4">
+              <FaTriangleExclamation className="text-amber-600 text-3xl" />
+            </div>
+            <h2 className="text-2xl font-bold text-amber-900 mb-2">Complete Your Profile</h2>
+            <p className="text-amber-700">To maintain safety and trust on Travas, drivers must complete their profile before posting rides.</p>
+          </div>
+
+          <div className="p-8">
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Required Information</h3>
+            <ul className="space-y-3 mb-8">
+              {missingFields.map((field, i) => (
+                <li key={i} className="flex items-center gap-3 text-gray-700">
+                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                  {field}
+                </li>
+              ))}
+            </ul>
+
+            <Link href="/dashboard/driver/profile" className="block w-full">
+              <button className="w-full py-4 bg-[#08A6F6] hover:bg-[#00204a] text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 group">
+                <FaUserPen />
+                Complete Profile Now
+              </button>
+            </Link>
+
+            <button
+              onClick={() => router.push('/dashboard/driver')}
+              className="w-full mt-4 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

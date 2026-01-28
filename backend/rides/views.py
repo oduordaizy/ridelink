@@ -60,6 +60,31 @@ class RideViewSet(viewsets.ModelViewSet):
     ordering_fields = ['departure_time', 'price', 'available_seats']
     ordering = ['departure_time']
 
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_profile_complete:
+            missing = []
+            if not user.profile_picture or 'default-profile.png' in user.profile_picture.name:
+                missing.append("Profile Picture")
+            
+            if user.user_type == 'driver':
+                try:
+                    profile = user.driver_profile
+                    if not profile.license_number: missing.append("License Number")
+                    if not profile.vehicle_model: missing.append("Vehicle Model")
+                    if not profile.vehicle_color: missing.append("Vehicle Color")
+                    if not profile.vehicle_plate: missing.append("Vehicle Plate")
+                except Driver.DoesNotExist:
+                    missing.append("Driver Profile Information")
+
+            return Response({
+                "error": "Profile Incomplete",
+                "detail": "Please complete your profile before posting a ride.",
+                "missing_fields": missing
+            }, status=status.HTTP_403_FORBIDDEN)
+            
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(driver=self.request.user)
         # Invalidate cache when new ride is created
