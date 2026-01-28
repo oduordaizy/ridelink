@@ -128,9 +128,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check token expiration every minute
     const interval = setInterval(checkTokenExpiration, 60000);
 
+    // Sync across tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'access_token') {
+        if (!e.newValue) {
+          // Token removed in another tab
+          setToken(null);
+          setUser(null);
+          router.push('/auth/login');
+        } else if (e.newValue !== token) {
+          // Token changed to a different one (another user logged in)
+          // We must force a refresh or logout to avoid identity confusion
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
     return () => {
       window.fetch = originalFetch;
       clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [checkTokenExpiration, clearAuthAndRedirect]);
 

@@ -43,7 +43,7 @@ interface Ride {
 type PaymentMethod = 'wallet' | 'mpesa' | 'card';
 
 const Page = () => {
-  const { user, isLoading, logout } = useAuth()
+  const { user, token, isLoading, logout } = useAuth()
   const router = useRouter()
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -71,7 +71,7 @@ const Page = () => {
 
       const response = await fetch(`${API_BASE_URL}/rides/`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -119,7 +119,7 @@ const Page = () => {
 
       const response = await fetch(`${API_BASE_URL}/rides/?${queryParams.toString()}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -154,7 +154,6 @@ const Page = () => {
 
   const fetchWalletBalance = async () => {
     try {
-      const token = localStorage.getItem('access_token');
       if (token) {
         const response = await paymentAPI.getWalletBalance(token);
         // Handle both possible response structures
@@ -225,7 +224,6 @@ const Page = () => {
       return;
     }
 
-    const token = localStorage.getItem('access_token');
     if (!token) {
       toast.error('Please log in to make a payment');
       return;
@@ -314,7 +312,6 @@ const Page = () => {
       return;
     }
 
-    const token = localStorage.getItem('access_token');
     if (!token) {
       toast.error('Please log in to make a payment');
       return;
@@ -367,7 +364,7 @@ const Page = () => {
       });
       toast('Your booking will be confirmed once payment is received.', {
         duration: 6000,
-        icon: 'ℹ️',
+        icon: '??',
       });
       setShowMpesaForm(false);
       setShowPaymentModal(false);
@@ -504,7 +501,7 @@ const Page = () => {
 
                 <div className="flex items-center gap-2 text-gray-700">
                   <span className="font-medium text-primary-dark">{selectedRide.departure_location}</span>
-                  <span className="text-gray-400">→</span>
+                  <span className="text-gray-400">?</span>
                   <span className="font-medium text-primary-dark">{selectedRide.destination}</span>
                 </div>
               </div>
@@ -590,7 +587,7 @@ const Page = () => {
                           )}
                         </div>
                       </div>
-                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">?</span>
                     </button>
 
                     <button
@@ -604,7 +601,7 @@ const Page = () => {
                         </div>
                         <span className="font-semibold text-gray-800">M-Pesa</span>
                       </div>
-                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">?</span>
                     </button>
 
                     <button
@@ -618,7 +615,7 @@ const Page = () => {
                         </div>
                         <span className="font-semibold text-gray-800">Card</span>
                       </div>
-                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">?</span>
                     </button>
                   </div>
                 )}

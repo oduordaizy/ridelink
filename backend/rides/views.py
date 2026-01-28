@@ -140,6 +140,12 @@ class RideViewSet(viewsets.ModelViewSet):
                 'error': f'Only {ride.available_seats} seat(s) available'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Prevent driver from booking their own ride
+        if ride.driver == request.user:
+            return Response({
+                'error': 'You cannot book your own ride'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # Check if user already has a booking for this ride
         existing_booking = Booking.objects.filter(
             ride=ride,
