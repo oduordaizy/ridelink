@@ -33,7 +33,7 @@ class RideFilter(django_filters.FilterSet):
         model = Ride
         fields = [
             'departure_location', 'destination', 'min_price', 'max_price',
-            'min_seats', 'date_after', 'date_before', 'status'
+            'min_seats', 'date_after', 'date_before', 'status', 'driver'
         ]
 
 class IsDriverOrReadOnly(permissions.BasePermission):
@@ -113,7 +113,8 @@ class RideViewSet(viewsets.ModelViewSet):
             # Default for drivers is to see all their rides
             return queryset
             
-        return queryset
+        # If user has no valid type, return empty for safety
+        return Ride.objects.none()
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def book(self, request, pk=None):

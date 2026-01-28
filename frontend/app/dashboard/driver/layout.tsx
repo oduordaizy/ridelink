@@ -40,10 +40,13 @@ const DriverLayout = ({
     { id: 'profile', icon: User, label: 'Profile', href: '/dashboard/driver/profile' },
   ];
 
-  // Set client-side rendering
+  // Set client-side rendering and role check
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    if (user && user.user_type !== 'driver') {
+      router.push('/dashboard/passenger');
+    }
+  }, [user, router]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
