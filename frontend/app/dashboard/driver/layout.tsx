@@ -24,7 +24,7 @@ const DriverLayout = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, switchRole } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
@@ -163,6 +163,20 @@ const DriverLayout = ({
                     Settings
                   </Link>
                   <button
+                    onClick={async () => {
+                      setIsProfileOpen(false);
+                      try {
+                        await switchRole();
+                        router.push('/dashboard/passenger');
+                      } catch (error) {
+                        console.error('Failed to switch to passenger mode:', error);
+                      }
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-[#08A6F6] font-medium hover:bg-gray-100 border-t border-gray-100"
+                  >
+                    Switch to Passenger Mode
+                  </button>
+                  <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-xl"
                   >
@@ -258,16 +272,29 @@ const DriverLayout = ({
           </div>
 
           {/* Logout Button */}
-          <div className="p-4">
-            <button
-              type="button"
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Logout</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#08A6F6] hover:bg-blue-50 transition-colors font-medium border-t border-gray-100"
+            onClick={async () => {
+              try {
+                await switchRole();
+                router.push('/dashboard/passenger');
+              } catch (error) {
+                console.error('Failed to switch to passenger mode:', error);
+              }
+            }}
+          >
+            <User className="w-5 h-5" />
+            <span className="font-medium">Switch to Passenger</span>
+          </button>
+          <button
+            type="button"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </aside>
 

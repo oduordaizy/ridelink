@@ -130,6 +130,24 @@ export const authAPI = {
     }
 
     return response.json();
+  },
+
+  // Switch user role
+  async switchRole(token: string): Promise<{ message: string, user: AuthResponse['user'] }> {
+    const response = await fetch(`${API_BASE_URL}/auth/switch-role/`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to switch role');
+    }
+
+    return response.json();
   }
 };
 

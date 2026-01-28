@@ -15,6 +15,7 @@ interface AuthContextType {
   verifyOtp: (email: string, otp: string) => Promise<AuthResponse['user']>;
   logout: () => void;
   updateUser: (userData: AuthResponse['user']) => void;
+  switchRole: () => Promise<AuthResponse['user']>;
   isLoading: boolean;
 }
 
@@ -202,6 +203,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
+  const switchRole = async () => {
+    if (!token) throw new Error('Not authenticated');
+    try {
+      const response = await authAPI.switchRole(token);
+      updateUser(response.user);
+      return response.user;
+    } catch (error) {
+      toast.error('Failed to switch role');
+      throw error;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -212,6 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     verifyOtp,
     logout,
     updateUser,
+    switchRole,
     isLoading,
   };
 

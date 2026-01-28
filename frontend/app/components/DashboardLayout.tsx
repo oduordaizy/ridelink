@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { IoNotificationsOff, IoMenu, IoClose } from 'react-icons/io5';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
 
 interface User {
   first_name?: string;
@@ -27,6 +28,8 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
+  const { switchRole } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -125,8 +128,22 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
             ))}
           </nav>
 
-          {/* Logout Button */}
-          <div className="px-4 py-4 border-t border-[#E5E7EB]">
+          {/* Footer Actions */}
+          <div className="px-4 py-4 border-t border-[#E5E7EB] space-y-1">
+            <button
+              className="w-full px-4 py-3 text-left text-[#08A6F6] hover:bg-blue-50 rounded-lg transition-colors font-medium"
+              onClick={async () => {
+                setSidebarOpen(false);
+                try {
+                  await switchRole();
+                  router.push('/dashboard/driver');
+                } catch (error) {
+                  console.error('Failed to switch to driver mode:', error);
+                }
+              }}
+            >
+              Switch to Driver Mode
+            </button>
             <button
               className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
               onClick={() => {
@@ -215,6 +232,20 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
                 >
                   View Profile
                 </Link>
+                <button
+                  className="block w-full text-left px-4 py-2.5 text-sm text-[#08A6F6] font-medium hover:bg-[#C0DFED]/30 transition-colors border-t border-[#E5E7EB]"
+                  onClick={async () => {
+                    setDropdownOpen(false);
+                    try {
+                      await switchRole();
+                      router.push('/dashboard/driver');
+                    } catch (error) {
+                      console.error('Failed to switch to driver mode:', error);
+                    }
+                  }}
+                >
+                  Switch to Driver Mode
+                </button>
                 <button
                   className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-[#E5E7EB]"
                   onClick={() => {

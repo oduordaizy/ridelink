@@ -180,3 +180,32 @@ def verify_otp(request):
         'user': UserProfileSerializer(user).data
     })
  
+class SwitchRoleView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserProfileSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        from .models import Driver, Passenger
+        
+        # Determine target role
+        new_role = 'driver' if user.user_type == 'passenger' else 'passenger'
+        
+        # Update role
+        user.user_type = new_role
+        user.save(update_fields=['user_type'])
+        
+        # Ensure profiles exist
+        if new_role == 'driver' and not hasattr(user, 'driver_profile'):
+            Driver.objects.get_or_create(user=user)
+        elif new_role == 'passenger' and not hasattr(user, 'passenger_profile'):
+            Passenger.objects.get_or_create(user=user)
+            
+        serializer = self.get_serializer(user)
+        return Response({
+            'message': f'Successfully switched to {new_role} mode',
+            'user': serializer.data
+        }, status=status.HTTP_200_OK)
