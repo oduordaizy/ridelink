@@ -8,6 +8,8 @@ from .models import User
 from rest_framework import generics, status, permissions
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser, FormParser
 import requests
 
@@ -253,6 +255,12 @@ def reset_password(request):
         
     if user.otp_created_at and timezone.now() > user.otp_created_at + timedelta(minutes=10):
         return Response({'error': 'OTP has expired'}, status=status.HTTP_200_OK)
+        
+    # Validate password strength
+    try:
+        validate_password(new_password, user=user)
+    except ValidationError as e:
+        return Response({'error': list(e.messages)}, status=status.HTTP_200_OK)
         
     # Reset password
     user.set_password(new_password)

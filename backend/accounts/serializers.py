@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from .models import User, Driver, Passenger
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -25,6 +27,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             
         if errors:
             raise serializers.ValidationError(errors)
+            
+        # Password strength validation
+        try:
+            # We create a dummy user instance for context-aware validation if needed
+            validate_password(attrs['password'], user=User(username=attrs.get('username')))
+        except ValidationError as e:
+            raise serializers.ValidationError({"password": list(e.messages)})
             
         return attrs
     

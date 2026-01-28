@@ -66,8 +66,14 @@ export const authAPI = {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Registration failed');
+      const errorData = await response.json().catch(() => ({}));
+      const anyData = errorData as any;
+      const errorMessage = anyData.message ||
+        (anyData.error && (Array.isArray(anyData.error) ? anyData.error[0] : anyData.error)) ||
+        (anyData.non_field_errors && anyData.non_field_errors[0]) ||
+        (Object.values(anyData)[0] && Array.isArray(Object.values(anyData)[0]) ? (Object.values(anyData)[0] as any)[0] : Object.values(anyData)[0]) ||
+        'Registration failed';
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -170,13 +176,20 @@ export const authAPI = {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to reset password');
+      const errorData = await response.json().catch(() => ({}));
+      const anyData = errorData as any;
+      const errorMessage = anyData.message ||
+        (anyData.error && (Array.isArray(anyData.error) ? anyData.error[0] : anyData.error)) ||
+        (anyData.non_field_errors && anyData.non_field_errors[0]) ||
+        (Object.values(anyData)[0] && Array.isArray(Object.values(anyData)[0]) ? (Object.values(anyData)[0] as any)[0] : Object.values(anyData)[0]) ||
+        'Failed to reset password';
+      throw new Error(errorMessage);
     }
 
-    const responseData = await response.json();
+    const responseData = await response.json().catch(() => ({}));
     if (responseData.error) {
-      throw new Error(responseData.error);
+      const errorMessage = Array.isArray(responseData.error) ? responseData.error[0] : responseData.error;
+      throw new Error(errorMessage);
     }
     return responseData;
   },
