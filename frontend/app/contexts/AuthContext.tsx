@@ -46,23 +46,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Function to clear auth state and redirect to login
   const clearAuthAndRedirect = useCallback((message?: string) => {
+    // 1. Clear internal states immediately
     setToken(null);
     setUser(null);
     tokenRef.current = null;
 
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+    // 2. Clear ALL potential auth-related indicators in storage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_type');
+      localStorage.removeItem('auth_timestamp');
+
+      // Clear any session-specific flags
+      sessionStorage.clear();
+    }
 
     if (message) {
       toast.error(`Session Expired: ${message}`);
     }
 
-    // Redirect to login page
+    // 3. Final Fail-safe: Force a total browser reload to clear React memory
+    // and all component-level states (like Navbars/Sidebars)
     if (typeof window !== 'undefined') {
-      router.push('/auth/login');
+      // Redirect happens after reload via the dashbord layouts
+      window.location.href = '/auth/login';
     }
-  }, [router]);
+  }, []); // Remove router dependency to avoid re-renders during cleanup
 
   // Check token expiration
   const checkTokenExpiration = useCallback(() => {

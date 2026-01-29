@@ -43,7 +43,7 @@ export default function Navbar() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            {user ? (
+            {user && user.id ? (
               <div className="flex items-center space-x-3">
                 <Link
                   href="/dashboard"
@@ -136,7 +136,7 @@ export default function Navbar() {
           </div>
           <div className="pt-4 pb-3 border-t border-[#E5E7EB]">
             <div className="flex flex-col space-y-2 px-3">
-              {user ? (
+              {user && user.id ? (
                 <>
                   <div className="flex items-center gap-2 px-4 py-2 bg-[#C0DFED] rounded-lg mb-2">
                     <div className="w-8 h-8 rounded-full bg-[#08A6F6] flex items-center justify-center text-white text-sm font-semibold">

@@ -58,6 +58,8 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
 
   const isActive = (path: string) => pathname === path;
 
+  const hasUser = !!(user && (user as any).id);
+
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Overlay for mobile sidebar */}
@@ -212,12 +214,14 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
           <div className="relative" ref={dropdownRef}>
             <button
               className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:ring-offset-2 hover:shadow-lg transition-all duration-200 hover:scale-105"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              onClick={() => {
+                if (hasUser) setDropdownOpen(!dropdownOpen);
+              }}
               aria-label="User menu"
             >
               {getInitials(user?.first_name, user?.last_name)}
             </button>
-            {dropdownOpen && (
+            {dropdownOpen && hasUser && (
               <div className="absolute right-0 mt-3 w-48 bg-white border border-[#E5E7EB] rounded-xl shadow-xl z-20 overflow-hidden">
                 <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#C0DFED]/20">
                   <p className="text-sm font-semibold text-[#00204a]">
