@@ -25,7 +25,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'registering' | 'sending_otp' | 'success'>('idle');
   const { register, sendOtp } = useAuth();
@@ -55,7 +55,7 @@ export default function Register() {
     setStatus('registering');
 
     if (formData.password !== formData.password_confirm) {
-      setFieldErrors({ password_confirm: 'Passwords do not match' });
+      setFieldErrors({ password_confirm: ['Passwords do not match'] });
       setIsLoading(false);
       setStatus('idle');
       return;
@@ -95,10 +95,9 @@ export default function Register() {
         try {
           if (message.includes('{')) {
             const parsed = JSON.parse(message);
-            // Convert array messages to single strings
-            const formatted: Record<string, string> = {};
+            const formatted: Record<string, string[]> = {};
             Object.entries(parsed).forEach(([key, val]) => {
-              formatted[key] = Array.isArray(val) ? val[0] : String(val);
+              formatted[key] = Array.isArray(val) ? val : [String(val)];
             });
             setFieldErrors(formatted);
             setError('Please correct the highlighted fields.');
@@ -119,11 +118,16 @@ export default function Register() {
   };
 
   const InputError = ({ name }: { name: string }) => {
-    if (!fieldErrors[name]) return null;
+    if (!fieldErrors[name] || fieldErrors[name].length === 0) return null;
     return (
-      <p className="mt-1 text-xs font-medium text-red-500 animate-in fade-in slide-in-from-top-1">
-        {fieldErrors[name]}
-      </p>
+      <div className="mt-1.5 space-y-1 animate-in fade-in slide-in-from-top-1">
+        {fieldErrors[name].map((msg, i) => (
+          <p key={i} className="text-[11px] leading-tight font-medium text-red-500 flex items-start gap-1.5">
+            <span className="mt-1 block w-1 h-1 rounded-full bg-red-500 shrink-0" />
+            {msg}
+          </p>
+        ))}
+      </div>
     );
   };
 

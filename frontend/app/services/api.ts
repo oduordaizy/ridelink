@@ -67,6 +67,12 @@ export const authAPI = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+
+      // For validation errors (400), pass the whole object through
+      if (response.status === 400) {
+        throw new Error(JSON.stringify(errorData));
+      }
+
       const anyData = errorData as any;
       const errorMessage = anyData.message ||
         (anyData.error && (Array.isArray(anyData.error) ? anyData.error[0] : anyData.error)) ||
