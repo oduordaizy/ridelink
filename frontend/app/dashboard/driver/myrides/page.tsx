@@ -359,7 +359,7 @@ const Page = () => {
             <p className="text-xs md:text-sm text-gray-600">Total Earnings</p>
             <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-[#08A6F6]" />
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900">${stats.totalEarnings.toFixed(0)}</p>
+          <p className="text-2xl md:text-3xl font-bold text-gray-900">KSh {stats.totalEarnings.toLocaleString()}</p>
         </div>
       </div>
 
@@ -440,7 +440,7 @@ const Page = () => {
                       {statusConfig[status]?.label || ride.status}
                     </span>
                     <span className="text-xl font-bold text-[#08A6F6]">
-                      ${Number(ride.price).toFixed(0)}
+                      KSh {Number(ride.price).toLocaleString()}
                     </span>
                   </div>
 

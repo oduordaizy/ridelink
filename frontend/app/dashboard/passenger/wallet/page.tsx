@@ -290,7 +290,7 @@ export default function DriverWallet() {
                   <span className="text-2xl">Loading...</span>
                 </div>
               ) : (
-                `KES ${(balance || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`
+                `KSh ${(balance || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`
               )}
             </div>
             <p className="text-xs md:text-sm opacity-80">Last updated: {new Date().toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>
@@ -309,15 +309,15 @@ export default function DriverWallet() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6">
           <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
             <p className="text-gray-600 text-xs md:text-sm mb-1">This Month</p>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">KES 12,450</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800">KSh 12,450</p>
           </div>
           <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
             <p className="text-gray-600 text-xs md:text-sm mb-1">Total Top-ups</p>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">KES 45,200</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800">KSh 45,200</p>
           </div>
           <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
             <p className="text-gray-600 text-xs md:text-sm mb-1">Pending</p>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">KES 0.00</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800">KSh 0.00</p>
           </div>
         </div>
 
@@ -357,7 +357,7 @@ export default function DriverWallet() {
                 <div className="text-right flex-shrink-0">
                   <p className={`font-bold text-base md:text-lg ${transaction.type === 'top-up' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                    {transaction.type === 'top-up' ? '+' : ''}KES {Math.abs(transaction.amount).toLocaleString()}
+                    {transaction.type === 'top-up' ? '+' : ''}KSh {Math.abs(transaction.amount).toLocaleString()}
                   </p>
                   <span className="text-xs text-gray-500 capitalize">{transaction.status}</span>
                 </div>
@@ -386,7 +386,7 @@ export default function DriverWallet() {
                 Enter Amount
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-gray-500 font-semibold">KES</span>
+                <span className="absolute left-4 top-3 text-gray-500 font-semibold">KSh</span>
                 <input
                   type="number"
                   value={topUpAmount}
@@ -485,7 +485,7 @@ export default function DriverWallet() {
                   Processing...
                 </>
               ) : (
-                `Top Up KES ${topUpAmount || '0'}`
+                `Top Up KSh ${topUpAmount || '0'}`
               )}
             </button>
           </div>
