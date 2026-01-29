@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI, AuthResponse, RegisterData } from '../services/api';
 import { toast } from 'react-toastify';
@@ -37,10 +37,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  const tokenRef = useRef<string | null>(null);
+
+  // Sync tokenRef with token state
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+
   // Function to clear auth state and redirect to login
   const clearAuthAndRedirect = useCallback((message?: string) => {
     setToken(null);
     setUser(null);
+    tokenRef.current = null;
+
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
@@ -59,45 +68,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkTokenExpiration = useCallback(() => {
     const storedToken = localStorage.getItem('access_token');
     if (!storedToken) {
-      // Clear auth state but don't redirect - let individual pages handle redirects
-      setToken(null);
-      setUser(null);
+      if (tokenRef.current) {
+        setToken(null);
+        setUser(null);
+        tokenRef.current = null;
+      }
       return false;
     }
 
     try {
       const parts = storedToken.split('.');
-      if (parts.length !== 3) {
-        throw new Error('Invalid token format');
-      }
+      if (parts.length !== 3) throw new Error('Invalid format');
 
-      // Handle URL-safe base64 and decoding safely
-      const base64Url = parts[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const payload = JSON.parse(atob(base64));
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
       const isExpired = payload.exp * 1000 < Date.now();
 
       if (isExpired) {
-        // Clear expired token
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        clearAuthAndRedirect('Your session has expired. Please log in again.');
         return false;
       }
       return true;
     } catch (error) {
-      console.error('Error checking token:', error);
-      // Clear invalid token
-      setToken(null);
-      setUser(null);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
+      clearAuthAndRedirect();
       return false;
     }
-  }, []);
+  }, [clearAuthAndRedirect]);
 
   // Check auth state on mount
   useEffect(() => {
@@ -105,7 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('user');
 
     if (storedToken && storedUser) {
-      if (checkTokenExpiration()) {
+      tokenRef.current = storedToken;
+      const isOk = checkTokenExpiration();
+      if (isOk) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       }
@@ -117,16 +114,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const originalFetch = window.fetch;
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const response = await originalFetch(input, init);
-
       if (response.status === 401) {
         clearAuthAndRedirect('Your session has expired. Please log in again.');
       }
-
       return response;
     };
 
-    // Check token expiration every minute
-    const interval = setInterval(checkTokenExpiration, 60000);
+    // Check token expiration every 30 seconds
+    const interval = setInterval(checkTokenExpiration, 30000);
 
     // Sync across tabs
     const handleStorageChange = (e: StorageEvent) => {
@@ -135,11 +130,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Token removed in another tab (logout)
           setToken(null);
           setUser(null);
-          // Force reload to clear all states and navbar
+          tokenRef.current = null;
           window.location.reload();
-        } else if (e.newValue !== token) {
-          // Token changed to a different one (another user logged in)
-          // We must force a refresh or logout to avoid identity confusion
+        } else if (e.newValue !== tokenRef.current) {
+          // Token changed (different user)
           window.location.reload();
         }
       }

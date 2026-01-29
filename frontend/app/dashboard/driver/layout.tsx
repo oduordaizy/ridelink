@@ -43,7 +43,11 @@ const DriverLayout = ({
   // Set client-side rendering and role check
   useEffect(() => {
     setIsClient(true);
-    if (user && user.user_type !== 'driver') {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (user.user_type !== 'driver') {
       router.push('/dashboard/passenger');
     }
   }, [user, router]);
