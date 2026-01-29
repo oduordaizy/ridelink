@@ -356,6 +356,20 @@ const DriverLayout = ({
                           Settings
                         </Link>
                         <button
+                          onClick={async () => {
+                            setIsProfileOpen(false);
+                            try {
+                              await switchRole();
+                              router.push('/dashboard/passenger');
+                            } catch (error) {
+                              console.error('Failed to switch to passenger mode:', error);
+                            }
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-[#08A6F6] font-medium hover:bg-gray-100 border-t border-gray-100"
+                        >
+                          Switch to Passenger Mode
+                        </button>
+                        <button
                           onClick={handleLogout}
                           className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-xl"
                         >
