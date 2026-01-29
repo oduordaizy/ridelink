@@ -60,6 +60,8 @@ export default function CreateRidePage() {
     vehicle_images: [],
   });
 
+  const hasCheckedProfile = useRef(false);
+
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/auth/login');
@@ -67,6 +69,9 @@ export default function CreateRidePage() {
     }
 
     const checkProfile = async () => {
+      if (hasCheckedProfile.current) return;
+      hasCheckedProfile.current = true;
+
       try {
         const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
           headers: {
@@ -96,7 +101,7 @@ export default function CreateRidePage() {
       }
     };
 
-    if (user) {
+    if (user && !hasCheckedProfile.current) {
       checkProfile();
     }
   }, [user, isLoading, router, updateUser]);
