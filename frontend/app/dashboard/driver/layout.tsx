@@ -162,13 +162,6 @@ const DriverLayout = ({
                   >
                     Profile
                   </Link>
-                  <Link
-                    href="/dashboard/driver/settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    Settings
-                  </Link>
                   <button
                     onClick={async () => {
                       setIsProfileOpen(false);
@@ -315,8 +308,7 @@ const DriverLayout = ({
                 {pathname === '/dashboard/driver' ? 'Dashboard' :
                   pathname.includes('/myrides') ? 'My Rides' :
                     pathname.includes('/wallet') ? 'Wallet' :
-                      pathname.includes('/profile') ? 'Profile' :
-                        pathname.includes('/settings') ? 'Settings' : 'Dashboard'}
+                      pathname.includes('/profile') ? 'Profile' : 'Dashboard'}
               </h1>
 
               <div className="flex items-center gap-4">
@@ -347,13 +339,6 @@ const DriverLayout = ({
                           onClick={() => setIsProfileOpen(false)}
                         >
                           Profile
-                        </Link>
-                        <Link
-                          href="/dashboard/driver/settings"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsProfileOpen(false)}
-                        >
-                          Settings
                         </Link>
                         <button
                           onClick={async () => {
