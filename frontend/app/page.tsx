@@ -28,7 +28,7 @@ export default function Home() {
         <section className="relative w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 mb-16 sm:mb-24" data-aos="fade-up">
           <div className="flex-1 text-center md:text-left space-y-6 sm:space-y-8">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#00204a] leading-[1.1]">
-              Effortless <span className="bg-linear-to-br from-[#08A6F6] to-[#003870] bg-clip-text text-transparent">Ridesharing</span> for Everyone
+              Effortless <span className="bg-linear-to-br from-[#08A6F6] to-[#003870] bg-clip-text text-transparent">Ridesharing</span> with Travas
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-[#003870]/70 leading-relaxed max-w-xl mx-auto md:mx-0">
               Connect drivers with empty seats to passengers seeking affordable, convenient rides. Post, search, and book trips in real time—securely and easily.
@@ -202,10 +202,11 @@ export default function Home() {
               "@context": "https://schema.org",
               "@type": "WebSite",
               name: "Travas",
+              alternateName: ["Travas Ridesharing", "Travas Kenya"],
               url: "https://travas.co.ke",
               potentialAction: {
                 "@type": "SearchAction",
-                target: "https://travas.co.ke/search?q={search_term_string}",
+                target: "https://travas.co.ke/dashboard/passenger?q={search_term_string}",
                 "query-input": "required name=search_term_string",
               },
             }),

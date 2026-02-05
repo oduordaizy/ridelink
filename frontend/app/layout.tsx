@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Travas - Reliable Ridesharing in Kenya",
+    default: "Travas | Reliable Ridesharing in Kenya",
     template: "%s | Travas",
   },
   description: "Connecting with drivers and passengers for affordable, secure, and convenient rides across Kenya. Save money and travel comfortably with Travas.",
@@ -89,23 +89,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <ToastContainer position="top-right" autoClose={3000} />
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                "name": "Travas",
-                "alternateName": "Travas Ridesharing",
-                "url": "https://travas.co.ke",
-                "potentialAction": {
-                  "@type": "SearchAction",
-                  "target": "https://travas.co.ke/dashboard/passenger?q={search_term_string}",
-                  "query-input": "required name=search_term_string"
-                }
-              }),
-            }}
-          />
+          {/* WebSite and Organization JSON-LD is consolidated in page.tsx for better homepage signal */}
         </AuthProvider>
       </body>
     </html>
