@@ -194,15 +194,14 @@ class RideViewSet(viewsets.ModelViewSet):
                     status='pending'
                 )
                 
-                # Reduce seats immediately to prevent overbooking
-                # This is idempotent and handles the lock internally
-                booking.reduce_seats()
-                
                 message = ""
                 extra_data = {}
 
                 # Handle payment method
                 if payment_method == 'wallet':
+                    # Reduce seats immediately for wallet payment
+                    booking.reduce_seats()
+                    
                     # Process wallet payment immediately
                     try:
                         wallet = Wallet.objects.select_for_update().get(user=request.user)
