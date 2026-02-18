@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: '/private/',
         },
-        sitemap: 'https://travas.co.ke/sitemap.xml',
+        sitemap: 'https://itravas.com/sitemap.xml',
     }
 }

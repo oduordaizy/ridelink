@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
-export const alt = 'Travas - Ridesharing for Everyone'
+export const alt = 'iTravas - Ridesharing for Everyone'
 export const size = {
     width: 1200,
     height: 630,
@@ -40,7 +40,7 @@ export default function Image() {
                 >
                     <img
                         src={`data:image/png;base64,${LOGO_BASE64}`}
-                        alt="Travas"
+                        alt="iTravas"
                         style={{ width: '200px', height: 'auto' }}
                     />
                 </div>
@@ -52,7 +52,7 @@ export default function Image() {
                         textAlign: 'center',
                     }}
                 >
-                    Travas
+                    iTravas
                 </div>
                 <div
                     style={{

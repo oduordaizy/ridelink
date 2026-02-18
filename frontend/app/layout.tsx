@@ -17,30 +17,30 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Travas | Reliable Ridesharing in Kenya",
-    template: "%s | Travas",
+    default: "iTravas | Reliable Ridesharing in Kenya",
+    template: "%s | iTravas",
   },
-  description: "Connecting with drivers and passengers for affordable, secure, and convenient rides across Kenya. Save money and travel comfortably with Travas.",
-  applicationName: "Travas",
+  description: "Connecting with drivers and passengers for affordable, secure, and convenient rides across Kenya. Save money and travel comfortably with iTravas.",
+  applicationName: "iTravas",
   other: {
-    "apple-mobile-web-app-title": "Travas",
+    "apple-mobile-web-app-title": "iTravas",
   },
-  keywords: ["ridesharing", "carpooling", "Kenya travel", "affordable rides", "Travas", "transport", "Nairobi rides", "Mombasa rides"],
-  authors: [{ name: "Travas Team", url: "https://travas.co.ke" }],
-  creator: "Travas",
-  metadataBase: new URL("https://travas.co.ke"),
+  keywords: ["ridesharing", "carpooling", "Kenya travel", "affordable rides", "iTravas", "transport", "Nairobi rides", "Mombasa rides"],
+  authors: [{ name: "iTravas Team", url: "https://itravas.com" }],
+  creator: "iTravas",
+  metadataBase: new URL("https://itravas.com"),
   manifest: "/manifest.json",
   openGraph: {
-    title: "Travas - Reliable Ridesharing in Kenya",
+    title: "iTravas - Reliable Ridesharing in Kenya",
     description: "Connecting with drivers and passengers for affordable, secure, and convenient rides across Kenya.",
-    url: "https://travas.co.ke",
-    siteName: "Travas",
+    url: "https://itravas.com",
+    siteName: "iTravas",
     images: [
       {
         url: "/opengraph-image.png",
         width: 1200,
         height: 630,
-        alt: "Travas Ridesharing Application",
+        alt: "iTravas Ridesharing Application",
       },
     ],
     locale: "en_KE",
@@ -48,10 +48,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Travas - Reliable Ridesharing in Kenya",
-    description: "Find affordable and secure rides across Kenya with Travas.",
+    title: "iTravas - Reliable Ridesharing in Kenya",
+    description: "Find affordable and secure rides across Kenya with iTravas.",
     images: ["/twitter-image.png"],
-    creator: "@travas_ke",
+    creator: "@itravas",
   },
   robots: {
     index: true,
@@ -65,12 +65,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://travas.co.ke",
-  },
-  icons: {
-    icon: "/logo2.png",
-    shortcut: "/logo2.png",
-    apple: "/logo2.png",
+    canonical: "https://itravas.com",
   },
 };
 

@@ -28,7 +28,7 @@ export default function Home() {
         <section className="relative w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 mb-16 sm:mb-24" data-aos="fade-up">
           <div className="flex-1 text-center md:text-left space-y-6 sm:space-y-8">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#00204a] leading-[1.1]">
-              Effortless <span className="bg-linear-to-br from-[#08A6F6] to-[#003870] bg-clip-text text-transparent">Ridesharing</span> with Travas
+              Effortless <span className="bg-linear-to-br from-[#08A6F6] to-[#003870] bg-clip-text text-transparent">Ridesharing</span> with iTravas
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-[#003870]/70 leading-relaxed max-w-xl mx-auto md:mx-0">
               Connect drivers with empty seats to passengers seeking affordable, convenient rides. Post, search, and book trips in real time—securely and easily.
@@ -77,7 +77,7 @@ export default function Home() {
         <section className="w-full max-w-6xl mb-16 sm:mb-24">
           <div className="text-center mb-10 sm:mb-16" data-aos="fade-up">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#00204a] mb-3 sm:mb-4">
-              Why Choose <span className="text-[#08A6F6]">Travas</span>?
+              Why Choose <span className="text-[#08A6F6]">iTravas</span>?
             </h2>
             <p className="text-base sm:text-lg text-[#003870]/70 max-w-2xl mx-auto px-4">
               Experience ridesharing reimagined with features designed for your convenience
@@ -182,7 +182,7 @@ export default function Home() {
                 Ready to Start Your Journey?
               </h2>
               <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed">
-                Join thousands of users who save money and reduce their carbon footprint with Travas.
+                Join thousands of users who save money and reduce their carbon footprint with iTravas.
               </p>
               <Link
                 href="/auth/register"
@@ -201,12 +201,12 @@ export default function Home() {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: "Travas",
-              alternateName: ["Travas Ridesharing", "Travas Kenya"],
-              url: "https://travas.co.ke",
+              name: "iTravas",
+              alternateName: ["iTravas Ridesharing", "iTravas Kenya"],
+              url: "https://itravas.com",
               potentialAction: {
                 "@type": "SearchAction",
-                target: "https://travas.co.ke/dashboard/passenger?q={search_term_string}",
+                target: "https://itravas.com/dashboard/passenger?q={search_term_string}",
                 "query-input": "required name=search_term_string",
               },
             }),
@@ -218,20 +218,20 @@ export default function Home() {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              name: "Travas",
-              alternateName: "Travas Ridesharing",
-              url: "https://travas.co.ke",
+              name: "iTravas",
+              alternateName: "iTravas Ridesharing",
+              url: "https://itravas.com",
               logo: {
                 "@type": "ImageObject",
-                url: "https://travas.co.ke/logo2.png",
+                url: "https://itravas.com/logo2.png",
                 width: "512",
                 height: "512"
               },
               description: "Reliable ridesharing platform in Kenya connecting drivers and passengers for affordable, secure, and convenient rides.",
               sameAs: [
-                "https://facebook.com/travas",
-                "https://twitter.com/travas_ke",
-                "https://instagram.com/travas_ke",
+                "https://facebook.com/itravas",
+                "https://twitter.com/itravas",
+                "https://instagram.com/itravas",
               ],
               contactPoint: {
                 "@type": "ContactPoint",
@@ -253,19 +253,19 @@ export default function Home() {
                   "@type": "ListItem",
                   "position": 1,
                   "name": "Home",
-                  "item": "https://travas.co.ke"
+                  "item": "https://itravas.com"
                 },
                 {
                   "@type": "ListItem",
                   "position": 2,
                   "name": "Find Ride",
-                  "item": "https://travas.co.ke/dashboard/passenger"
+                  "item": "https://itravas.com/dashboard/passenger"
                 },
                 {
                   "@type": "ListItem",
                   "position": 3,
                   "name": "Post Ride",
-                  "item": "https://travas.co.ke/dashboard/driver"
+                  "item": "https://itravas.com/dashboard/driver"
                 }
               ]
             }),

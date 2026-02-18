@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "How It Works | Travas",
-  description: "Discover how Travas makes ridesharing simple, secure, and rewarding for both drivers and passengers in Kenya.",
+  title: "How It Works | iTravas",
+  description: "Discover how iTravas makes ridesharing simple, secure, and rewarding for both drivers and passengers in Kenya.",
   alternates: {
     canonical: "/how-it-works",
   },
@@ -24,10 +24,10 @@ export default function HowItWorks() {
             </svg>
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-primary mb-6 relative z-10">
-            How Travas Works
+            How iTravas Works
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto relative z-10">
-            Travas makes shared travel simple, secure, and rewarding for both drivers and passengers. Here&apos;s how you can get started:
+            iTravas makes shared travel simple, secure, and rewarding for both drivers and passengers. Here&apos;s how you can get started:
           </p>
           <div className="flex justify-center relative z-10 mb-2">
             <svg width="220" height="120" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -71,7 +71,7 @@ export default function HowItWorks() {
         <section className="max-w-2xl w-full text-center mb-20 px-4">
           <h2 className="text-3xl font-bold text-foreground mb-4">Ready to Get Started?</h2>
           <p className="text-muted-foreground mb-6">
-            Join Travas today and experience a smarter, friendlier way to travel—whether you&apos;re behind the wheel or along for the ride.
+            Join iTravas today and experience a smarter, friendlier way to travel—whether you&apos;re behind the wheel or along for the ride.
           </p>
           <Link
             href="/auth/register"

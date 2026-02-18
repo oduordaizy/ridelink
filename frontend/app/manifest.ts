@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'Travas',
-        short_name: 'Travas',
+        name: 'iTravas',
+        short_name: 'iTravas',
         description: 'Connect with drivers and passengers for affordable, secure rides.',
         start_url: '/',
         display: 'standalone',

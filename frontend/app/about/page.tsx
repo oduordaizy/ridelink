@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "About Us | Travas",
-  description: "Learn more about Travas, our mission to make shared travel effortless, affordable, and sustainable across Kenya.",
+  title: "About Us | iTravas",
+  description: "Learn more about iTravas, our mission to make shared travel effortless, affordable, and sustainable across Kenya.",
   alternates: {
     canonical: "/about",
   },
@@ -65,10 +65,10 @@ export default function About() {
             </svg>
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-primary mb-6 relative z-10">
-            About Travas
+            About iTravas
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto relative z-10">
-            Travas is on a mission to make shared travel effortless, affordable, and sustainable. We connect drivers with empty seats to passengers seeking convenient rides, making every journey more social and eco-friendly.
+            iTravas is on a mission to make shared travel effortless, affordable, and sustainable. We connect drivers with empty seats to passengers seeking convenient rides, making every journey more social and eco-friendly.
           </p>
           <div className="flex justify-center relative z-10">
             <svg width="220" height="120" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -116,9 +116,9 @@ export default function About() {
 
         {/* Community CTA Section */}
         <section className="w-full max-w-2xl text-center mb-20 px-4">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Join the Travas Community</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-4">Join the iTravas Community</h2>
           <p className="text-muted-foreground mb-6">
-            Whether you&apos;re a driver or a passenger, Travas is here to make your journey better. Sign up today and be part of a smarter, friendlier way to travel.
+            Whether you&apos;re a driver or a passenger, iTravas is here to make your journey better. Sign up today and be part of a smarter, friendlier way to travel.
           </p>
           <Link
             href="/auth/register"

@@ -26,7 +26,7 @@ Driver Details:
 - Name: {booking.ride.driver.first_name} {booking.ride.driver.last_name}
 - Phone: {booking.ride.driver.phone_number or 'Not provided'}
 
-Thank you for choosing Travas!
+Thank you for choosing iTravas!
 """
     
     email_from = settings.EMAIL_HOST_USER
@@ -58,7 +58,7 @@ Booking Details:
 Log in to your dashboard to manage your rides.
 
 Thank you,
-Travas Team
+iTravas Team
 """
     
     email_from = settings.EMAIL_HOST_USER

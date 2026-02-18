@@ -14,12 +14,12 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,travas.co.ke,www.travas.co.ke,.travas.co.ke").split(",") if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,itravas.com,www.itravas.com,.itravas.com").split(",") if host.strip()]
 # Add common variants explicitly just in case
-if 'travas.co.ke' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('travas.co.ke')
-    ALLOWED_HOSTS.append('www.travas.co.ke')
-    ALLOWED_HOSTS.append('api.travas.co.ke')
+if 'itravas.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('itravas.com')
+    ALLOWED_HOSTS.append('www.itravas.com')
+    ALLOWED_HOSTS.append('api.itravas.com')
 
 # Application definition
 INSTALLED_APPS = [
@@ -194,15 +194,15 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://ridelink-9x6t.vercel.app",
     "https://ridelink-9x6t-lf4ce7pme-daisys-projects-7ca04aa0.vercel.app",
-    "https://travas.co.ke",
-    "https://www.travas.co.ke",
+    "https://itravas.com",
+    "https://www.itravas.com",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://ridelink-uxya.onrender.com/",
     "https://ridelink-9x6t-lf4ce7pme-daisys-projects-7ca04aa0.vercel.app",
-    "https://travas.co.ke",
-    "https://www.travas.co.ke",
+    "https://itravas.com",
+    "https://www.itravas.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

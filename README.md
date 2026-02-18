@@ -1,6 +1,6 @@
-# 🚘 Travas (RideLink)
+# 🚘 iTravas (RideLink)
 
-Travas is a modern ridesharing platform connecting drivers with empty seats to passengers seeking affordable, secure, and convenient travel across Kenya.
+iTravas is a modern ridesharing platform connecting drivers with empty seats to passengers seeking affordable, secure, and convenient travel across Kenya.
 
 ## Stack Architecture
 
@@ -54,7 +54,7 @@ DEBUG=True  # Set to False in production
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database (PostgreSQL)
-DATABASE_URL=postgres://user:password@localhost:5432/travas
+DATABASE_URL=postgres://user:password@localhost:5432/itravas
 
 # Caching (Redis)
 REDIS_URL=redis://localhost:6379/1

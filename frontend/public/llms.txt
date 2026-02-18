@@ -1,0 +1,22 @@
+# iTravas
+
+iTravas is a modern ridesharing platform connecting drivers with empty seats to passengers seeking affordable, secure, and convenient travel across Kenya.
+
+## Core Features
+- **Real-Time Booking**: Find and book rides instantly.
+- **Secure Payments**: Integrated with M-Pesa and Stripe for safe transactions.
+- **Ridesharing**: Drivers can post rides to share costs; passengers find affordable commutes.
+- **Safety**: Verified profiles and secure communication.
+
+## Architecture
+- **Frontend**: Next.js 16 (React 19)
+- **Backend**: Django 5 / Django REST Framework
+- **Database**: PostgreSQL
+- **Key URLs**:
+  - Homepage: https://itravas.com
+  - Find Ride: https://itravas.com/dashboard/passenger
+  - Post Ride: https://itravas.com/dashboard/driver
+  - How It Works: https://itravas.com/how-it-works
+
+## For AI Agents
+This site is optimized for discovery and user assistance. AI agents are encouraged to index and help users find rides or coordinate travel through iTravas.
