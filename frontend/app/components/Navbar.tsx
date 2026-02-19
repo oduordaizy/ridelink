@@ -4,14 +4,18 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../contexts/AuthContext';
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     logout();
   };
+
+  const isHome = pathname === '/';
 
   return (
     <nav className="bg-white border-b border-[#E5E7EB] sticky top-0 z-50 shadow-sm">
@@ -20,7 +24,11 @@ export default function Navbar() {
           {/* Logo */}
           <Link href='/' className='flex items-center text-[#00204a] hover:opacity-90 transition-opacity'>
             <Image src="/logo.png" alt="Logo" width={35} height={35} className="!m-0" />
-            <span className="text-[#08A6F6] ml-0 font-semibold text-2xl">iTravas</span>
+            {isHome ? (
+              <h1 className="text-[#08A6F6] ml-0 font-semibold text-2xl">iTravas</h1>
+            ) : (
+              <span className="text-[#08A6F6] ml-0 font-semibold text-2xl">iTravas</span>
+            )}
           </Link>
 
           {/* Desktop Navigation */}

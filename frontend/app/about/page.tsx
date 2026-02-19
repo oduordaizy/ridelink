@@ -87,7 +87,7 @@ export default function About() {
             <h2 className="text-3xl font-bold text-foreground mb-4">Our Vision</h2>
             <p className="text-lg text-muted-foreground mb-6">We envision a world where every car trip is optimized for community and the environment. By making it easy to share rides, we help reduce traffic, lower costs, and cut carbon emissions—one trip at a time.</p>
             <h2 className="text-3xl font-bold text-foreground mb-4">Our Story</h2>
-            <p className="text-lg text-muted-foreground">Founded by passionate travelers and tech enthusiasts, Travas was born from the desire to make travel more social, affordable, and sustainable. We believe every journey is an opportunity to connect and make a difference.</p>
+            <p className="text-lg text-muted-foreground">Founded by passionate travelers and tech enthusiasts, iTravas was born from the desire to make travel more social, affordable, and sustainable. We believe every journey is an opportunity to connect and make a difference.</p>
           </div>
           <div className="flex-1 flex justify-center">
             <svg width="240" height="180" viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg">
