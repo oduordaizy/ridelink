@@ -79,7 +79,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#08A6F6] to-[#00204a]">
-            <Link href='/' className='pacifico-regular flex items-center'>
+            <Link href='/' className='flex items-center'>
               <Image
                 src="/logo.png"
                 alt="Logo"
@@ -87,7 +87,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
                 height={30}
                 className="!m-0"
               />
-              <span className="ml-1 font-semibold text-xl text-white">
+              <span className="ml-1 font-semibold text-xl text-[#08A6F6]">
                 iTravas
               </span>
             </Link>
@@ -180,7 +180,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               height={30}
               className="!m-0 transition-transform group-hover:scale-105"
             />
-            <span className="ml-0 font-semibold text-2xl text-[#08A6F6]">
+            <span className="ml-0 text-2xl text-[#08A6F6]">
               iTravas
             </span>
           </Link>

@@ -51,7 +51,7 @@ function VerifyOTPContent() {
     return (
         <main className="min-h-screen flex items-center justify-center bg-[#F8FAFC] py-12 px-6">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
-                <Image src="/logo.png" alt="Travas Logo" width={60} height={60} className="mx-auto mb-4" />
+                <Image src="/logo.png" alt="iTravas Logo" width={60} height={60} className="mx-auto mb-4" />
                 <h1 className="text-2xl font-bold text-[#013C5E] mb-2">Verify Your Email</h1>
                 <p className="text-gray-600 mb-6">Enter the code sent to {email}</p>
 

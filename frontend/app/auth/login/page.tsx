@@ -54,7 +54,7 @@ export default function Login() {
         <div className="hidden md:flex w-1/2 relative">
           <Image
             src="/login-image.png"
-            alt="Travas carpool illustration"
+            alt="iTravas carpool illustration"
             fill
             className="object-cover"
           />
@@ -71,13 +71,13 @@ export default function Login() {
             <div className="flex flex-col items-center mb-8">
               <Image
                 src="/logo.png"
-                alt="Travas Logo"
+                alt="iTravas Logo"
                 width={60}
                 height={60}
                 className="mb-3"
               />
               <h1 className="text-3xl md:text-4xl font-bold text-[#013C5E] text-center">
-                Welcome to Travas
+                Welcome to iTravas
               </h1>
               <p className="text-[#08A6F6] mt-2 text-sm">
                 Log in to start your journey 🚗

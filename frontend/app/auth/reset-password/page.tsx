@@ -67,7 +67,7 @@ function ResetPasswordForm() {
                 <div className="flex justify-center mb-3">
                     <Image
                         src="/logo.png"
-                        alt="Travas Logo"
+                        alt="iTravas Logo"
                         width={60}
                         height={60}
                     />

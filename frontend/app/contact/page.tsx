@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Contact Us | Travas",
-  description: "Get in touch with the Travas team. We're here to help with your questions, feedback, or support needs.",
+  title: "Contact Us | iTravas",
+  description: "Get in touch with the iTravas team. We're here to help with your questions, feedback, or support needs.",
   alternates: {
     canonical: "/contact",
   },
@@ -20,7 +20,7 @@ const Contact = () => {
         <section className="max-w-3xl w-full text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4">Contact Us</h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-6">
-            Have questions, feedback, or need help? Reach out to the Travas team—we&apos;re here to help you on your journey.
+            Have questions, feedback, or need help? Reach out to the iTravas team—we&apos;re here to help you on your journey.
           </p>
         </section>
 
@@ -65,7 +65,9 @@ const Contact = () => {
           </form>
 
           <div className="mt-8 text-center text-muted-foreground">
-            <p>Or email us at <a href="mailto:support@travas.com" className="text-primary hover:underline">support@travas.com</a></p>
+            <p>Or email us at <a href="mailto:contact@itravas.com
+" className="text-primary hover:underline">contact@itravas.com
+            </a></p>
             <p className="mt-2">Nairobi, Kenya</p>
           </div>
         </section>
@@ -79,7 +81,7 @@ const Contact = () => {
             href="/how-it-works"
             className="inline-block px-6 py-3 rounded-lg text-primary hover:bg-primary/10 transition-colors"
           >
-            Learn how Travas works →
+            Learn how iTravas works →
           </Link>
         </section>
       </main>
