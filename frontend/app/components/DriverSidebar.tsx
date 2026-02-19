@@ -119,7 +119,7 @@ function SidebarContent({ pathname }: { pathname: string }) {
     <nav className="space-y-1">
       <Link href='/' className='pacifico-regular flex items-center text-[#0086CA]'>
         <Image src="/logo.png" alt="Logo" width={40} height={40} className="!m-0" />
-        <span className="ml-0 font-semibold text-xl">Travas</span>
+        <span className="ml-0 font-semibold text-xl">iTravas</span>
       </Link>
 
       {navItems.map((item) => (

@@ -88,7 +88,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
                 className="!m-0"
               />
               <span className="ml-1 font-semibold text-xl text-white">
-                Travas
+                iTravas
               </span>
             </Link>
             <button
@@ -181,7 +181,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               className="!m-0 transition-transform group-hover:scale-105"
             />
             <span className="ml-0 font-semibold text-2xl text-[#08A6F6]">
-              Travas
+              iTravas
             </span>
           </Link>
         </div>

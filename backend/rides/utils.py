@@ -1,10 +1,11 @@
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+import threading
 
 def send_booking_confirmation_email(booking):
     """
-    Send a booking confirmation email to the passenger.
+    Send a booking confirmation email to the passenger in a background thread.
     """
     subject = f'Booking Confirmed - Ride from {booking.ride.departure_location} to {booking.ride.destination}'
     
@@ -32,16 +33,20 @@ Thank you for choosing iTravas!
     email_from = settings.EMAIL_HOST_USER
     recipient_list = [booking.user.email]
     
-    try:
-        send_mail(subject, message, email_from, recipient_list)
-        return True
-    except Exception as e:
-        print(f"Error sending booking confirmation email: {e}")
-        return False
+    def send():
+        try:
+            send_mail(subject, message, email_from, recipient_list)
+        except Exception as e:
+            print(f"Error sending booking confirmation email: {e}")
+
+    # Send in background to avoid blocking the user
+    thread = threading.Thread(target=send)
+    thread.start()
+    return True
 
 def send_new_booking_notification_to_driver(booking):
     """
-    Send an email notification to the driver about a new booking (pending or confirmed).
+    Send an email notification to the driver about a new booking in a background thread.
     """
     subject = f'New Booking Request - Ride to {booking.ride.destination}'
     
@@ -64,9 +69,13 @@ iTravas Team
     email_from = settings.EMAIL_HOST_USER
     recipient_list = [booking.ride.driver.email]
     
-    try:
-        send_mail(subject, message, email_from, recipient_list)
-        return True
-    except Exception as e:
-        print(f"Error sending driver notification email: {e}")
-        return False
+    def send():
+        try:
+            send_mail(subject, message, email_from, recipient_list)
+        except Exception as e:
+            print(f"Error sending driver notification email: {e}")
+
+    # Send in background to avoid blocking the user
+    thread = threading.Thread(target=send)
+    thread.start()
+    return True
