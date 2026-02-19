@@ -12,7 +12,7 @@ def send_otp_email(user, otp):
     """Send OTP to the user's email."""
     subject = 'Your Verification Code for iTravas'
     message = f'Hi {user.username},\\n\\nYour verification code is: {otp}\\n\\nThis code will expire in 10 minutes.\\n\\nThank you,\\niTravas Team'
-    email_from = settings.EMAIL_HOST_USER
+    email_from = settings.DEFAULT_FROM_EMAIL
     recipient_list = [user.email]
     
     try:

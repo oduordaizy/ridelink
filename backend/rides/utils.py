@@ -30,7 +30,7 @@ Driver Details:
 Thank you for choosing iTravas!
 """
     
-    email_from = settings.EMAIL_HOST_USER
+    email_from = settings.DEFAULT_FROM_EMAIL
     recipient_list = [booking.user.email]
     
     def send():
@@ -66,7 +66,7 @@ Thank you,
 iTravas Team
 """
     
-    email_from = settings.EMAIL_HOST_USER
+    email_from = settings.DEFAULT_FROM_EMAIL
     recipient_list = [booking.ride.driver.email]
     
     def send():
