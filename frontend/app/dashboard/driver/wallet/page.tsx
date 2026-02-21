@@ -70,6 +70,8 @@ export default function DriverWallet() {
 
   const [balance, setBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -77,32 +79,40 @@ export default function DriverWallet() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
-  // Fetch wallet balance on component mount
+  // Fetch wallet data on component mount
   useEffect(() => {
-    const fetchWalletBalance = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/payments/wallet/balance/`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        });
+    const fetchWalletData = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch wallet balance');
+      try {
+        // Fetch Balance
+        const balanceRes = await fetch(`${API_BASE_URL}/payments/wallet/balance/`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (balanceRes.ok) {
+          const balanceData = await balanceRes.json();
+          setBalance(balanceData.balance);
         }
 
-        const data = await response.json();
-        setBalance(data.balance);
+        // Fetch Transactions
+        const transactionsRes = await fetch(`${API_BASE_URL}/payments/wallet/transactions/`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (transactionsRes.ok) {
+          const transactionsData = await transactionsRes.json();
+          setTransactions(transactionsData.data || []);
+        }
       } catch (error) {
-        console.error('Error fetching wallet balance:', error);
-        showToast('Failed to load wallet balance', 'error');
-        setBalance(0);
+        console.error('Error fetching wallet data:', error);
+        showToast('Failed to load wallet data', 'error');
       } finally {
         setIsLoadingBalance(false);
+        setIsLoadingTransactions(false);
       }
     };
 
-    fetchWalletBalance();
+    fetchWalletData();
   }, []);
 
   // Show toast notification
@@ -110,14 +120,6 @@ export default function DriverWallet() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
-
-  // Mock transaction history
-  const [transactions] = useState([
-    { id: 1, type: 'top-up', amount: 1000, method: 'M-Pesa', date: '2024-12-04', status: 'completed' },
-    { id: 2, type: 'top-up', amount: 500, method: 'Card', date: '2024-12-03', status: 'completed' },
-    { id: 3, type: 'deduction', amount: -200, method: 'Commission', date: '2024-12-02', status: 'completed' },
-    { id: 4, type: 'top-up', amount: 1500, method: 'M-Pesa', date: '2024-12-01', status: 'completed' },
-  ]);
 
   const handleTopUp = async () => {
     if (!topUpAmount || !paymentMethod) {
@@ -329,40 +331,57 @@ export default function DriverWallet() {
           </div>
 
           <div className="space-y-2 md:space-y-3">
-            {transactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div
-                    className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${transaction.type === 'top-up' ? 'bg-green-100' : 'bg-red-100'
-                      }`}
-                  >
-                    {transaction.type === 'top-up' ? (
-                      <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-                    ) : (
-                      <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 rotate-180" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-gray-800 text-sm md:text-base truncate">
-                      {transaction.type === 'top-up' ? 'Top Up' : 'Deduction'}
-                    </p>
-                    <p className="text-xs md:text-sm text-gray-600 truncate">
-                      {transaction.method} • {transaction.date}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className={`font-bold text-base md:text-lg ${transaction.type === 'top-up' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {transaction.type === 'top-up' ? '+' : ''}KSh {Math.abs(transaction.amount).toLocaleString()}
-                  </p>
-                  <span className="text-xs text-gray-500 capitalize">{transaction.status}</span>
-                </div>
+            {isLoadingTransactions ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                <p>Loading transactions...</p>
               </div>
-            ))}
+            ) : transactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <History className="w-12 h-12 mb-2 opacity-20" />
+                <p>No transactions found</p>
+              </div>
+            ) : (
+              transactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100"
+                >
+                  <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                    <div
+                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${tx.amount >= 0 ? 'bg-green-100' : 'bg-red-100'
+                        }`}
+                    >
+                      {tx.tx_type === 'credit' || tx.amount >= 0 ? (
+                        <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                      ) : (
+                        <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 rotate-180" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[#00204a] text-sm md:text-base truncate">
+                        {tx.amount >= 0 ? 'Top Up' : 'Payment/Commission'}
+                      </p>
+                      <p className="text-xs md:text-sm text-gray-500 truncate font-medium">
+                        {tx.mpesa_receipt_number || 'STK Push'} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`font-bold text-base md:text-lg ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {tx.amount >= 0 ? '+' : ''}KSh {Math.abs(tx.amount).toLocaleString()}
+                    </p>
+                    <span className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${tx.status === 'success' ? 'bg-green-100 text-green-700' :
+                      tx.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                      {tx.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

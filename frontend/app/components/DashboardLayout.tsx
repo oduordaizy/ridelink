@@ -172,7 +172,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
             <IoMenu className="text-2xl" />
           </button>
 
-          <Link href='/' className='pacifico-regular flex items-center group'>
+          <Link href='/' className='flex items-center group'>
             <Image
               src="/logo.png"
               alt="Logo"
