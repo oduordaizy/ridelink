@@ -3,10 +3,11 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     RegisterView, LoginView, UserProfileView, ProfileView, 
     logout, send_otp, verify_otp, SwitchRoleView,
-    forgot_password, reset_password
+    forgot_password, reset_password, ContactView
 )
 
 urlpatterns = [
+    path('contact/', ContactView.as_view(), name='contact_form'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),

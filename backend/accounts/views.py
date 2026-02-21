@@ -5,6 +5,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
 from .models import User
+from django.core.mail import send_mail
+from django.conf import settings
 from rest_framework import generics, status, permissions
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
@@ -268,3 +270,31 @@ def reset_password(request):
     user.save()
     
     return Response({'message': 'Password reset successfully. You can now log in.'})
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ContactView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        name = request.data.get('name')
+        email = request.data.get('email')
+        message = request.data.get('message')
+
+        if not name or not email or not message:
+            return Response({'error': 'All fields are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            subject = f"New Contact Form Submission from {name}"
+            full_message = f"Name: {name}\nEmail: {email}\n\nMessage:\n{message}"
+            
+            send_mail(
+                subject,
+                full_message,
+                settings.DEFAULT_FROM_EMAIL,
+                ['contact@itravas.com'],
+                fail_silently=False,
+            )
+            return Response({'message': 'Thank you for your message. We will get back to you soon.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"Error sending contact email: {e}")
+            return Response({'error': 'Failed to send message. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
