@@ -53,6 +53,14 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-3">
             {user && user.id ? (
               <div className="flex items-center space-x-3">
+                {user.is_staff && (
+                  <Link
+                    href="/dashboard/admin"
+                    className="text-[#08A6F6] hover:bg-[#F5F5F5] px-4 py-2 rounded-lg text-sm font-bold transition-all border border-[#08A6F6]/20"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
                 <Link
                   href="/dashboard"
                   className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] px-4 py-2 rounded-lg text-sm font-medium transition-all"
@@ -154,6 +162,14 @@ export default function Navbar() {
                       Welcome, {user.first_name}!
                     </span>
                   </div>
+                  {user.is_staff && (
+                    <Link
+                      href="/dashboard/admin"
+                      className="text-[#08A6F6] hover:bg-[#F5F5F5] block px-4 py-2.5 rounded-lg font-bold transition-all text-left"
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
                   <Link
                     href="/dashboard"
                     className="text-[#484848] hover:text-[#08A6F6] hover:bg-[#F5F5F5] px-4 py-2.5 rounded-lg font-medium transition-all text-left"

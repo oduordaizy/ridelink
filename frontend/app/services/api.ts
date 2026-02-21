@@ -28,6 +28,8 @@ export interface AuthResponse {
     phone_number: string;
     user_type: string;
     is_verified: boolean;
+    is_staff: boolean;
+    is_superuser: boolean;
   };
 }
 
@@ -469,6 +471,45 @@ export const paymentAPI = {
       throw new Error(errorData.detail || 'Failed to fetch wallet transactions');
     }
 
+    return response.json();
+  },
+};
+
+// Admin API functions
+export const adminAPI = {
+  async getStats(token: string) {
+    const response = await fetch(`${API_BASE_URL}/admin/stats/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch admin statistics');
+    return response.json();
+  },
+
+  async getUsers(token: string, userType?: 'driver' | 'passenger') {
+    const url = new URL(`${API_BASE_URL}/admin/users/`);
+    if (userType) url.searchParams.append('user_type', userType);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch users');
+    return response.json();
+  },
+
+  async getTransactions(token: string) {
+    const response = await fetch(`${API_BASE_URL}/admin/transactions/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch transactions');
     return response.json();
   },
 };
