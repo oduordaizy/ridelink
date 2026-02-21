@@ -180,7 +180,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               height={30}
               className="!m-0 transition-transform group-hover:scale-105"
             />
-            <span className="ml-0 text-2xl text-[#08A6F6]">
+            <span className="ml-0 text-2xl font-semibold text-[#08A6F6]">
               iTravas
             </span>
           </Link>

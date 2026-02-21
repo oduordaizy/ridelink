@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
     IoStatsChart,
@@ -27,12 +28,10 @@ export default function AdminSidebar() {
 
     return (
         <aside className="w-64 bg-[#00204a] text-white min-h-screen flex flex-col shadow-xl">
-            <div className="p-6 flex items-center space-x-2 border-b border-white/10">
-                <div className="w-8 h-8 bg-[#08A6F6] rounded-lg flex items-center justify-center">
-                    <IoSyncCircle className="text-2xl text-white" />
-                </div>
-                <span className="text-xl font-bold tracking-tight">Admin <span className="text-[#08A6F6]">Panel</span></span>
-            </div>
+            <Link href="/" className="p-6 flex items-center space-x-2 border-b border-white/10 group">
+                <Image src="/logo.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
+                <span className="text-xl font-semibold text-[#08A6F6] tracking-tight">iTravas Admin</span>
+            </Link>
 
             <nav className="flex-1 mt-6 px-4 space-y-1">
                 {menuItems.map((item) => {
