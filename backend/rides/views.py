@@ -16,7 +16,7 @@ from .serializers import (
     RideListSerializer, RideDetailSerializer,
     BookingSerializer, 
 )
-from payments.models import Wallet
+from payments.models import Wallet, Transaction
 
 
 
@@ -221,6 +221,17 @@ class RideViewSet(viewsets.ModelViewSet):
                     booking.is_paid = True
                     booking.status = 'confirmed'
                     booking.save(update_fields=['is_paid', 'status'])
+
+                    # Create a Transaction record for the wallet deduction
+                    Transaction.objects.create(
+                        wallet=wallet,
+                        amount=-total_amount,
+                        status="success",
+                        result_code=0,
+                        result_desc=f"Ride Payment for Booking #{booking.id}",
+                        completed_at=timezone.now(),
+                        booking=booking
+                    )
                     
                     # Send confirmation email
                     from .utils import send_booking_confirmation_email
