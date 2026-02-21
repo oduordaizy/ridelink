@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/', include('rides.urls')),
     path('', home),
     path('api/payments/', include('payments.urls')),
+    path('api/admin/', include('admin_dashboard.urls')),
     path('api/', include('stripe_payments.urls'))
 ]
 

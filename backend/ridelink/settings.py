@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'rides',
     'payments',
     'django_daraja',
-    'stripe_payments'  
+    'stripe_payments',
+    'admin_dashboard',
 ]
 
 MIDDLEWARE = [
