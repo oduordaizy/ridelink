@@ -121,6 +121,26 @@ export default function PassengerWallet() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Calculate stats from transactions
+  const stats = {
+    thisMonth: transactions
+      .filter(tx => {
+        const txDate = new Date(tx.created_at);
+        const now = new Date();
+        return tx.status === 'success' &&
+          tx.amount > 0 &&
+          txDate.getMonth() === now.getMonth() &&
+          txDate.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, tx) => sum + tx.amount, 0),
+    totalTopups: transactions
+      .filter(tx => tx.status === 'success' && tx.amount > 0)
+      .reduce((sum, tx) => sum + tx.amount, 0),
+    pending: transactions
+      .filter(tx => tx.status === 'pending')
+      .reduce((sum, tx) => sum + tx.amount, 0)
+  };
+
   const handleTopUp = async () => {
     if (!topUpAmount || !paymentMethod) {
       showToast('Please enter amount and select payment method', 'error');
@@ -310,16 +330,22 @@ export default function PassengerWallet() {
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6">
           <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-            <p className="text-gray-600 text-xs md:text-sm mb-1">This Month</p>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">KSh 12,450</p>
+            <p className="text-gray-600 text-xs md:text-sm mb-1 uppercase font-bold tracking-tighter">This Month</p>
+            <p className="text-xl md:text-2xl font-bold text-[#00204a]">
+              KSh {stats.thisMonth.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+            </p>
           </div>
           <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-            <p className="text-gray-600 text-xs md:text-sm mb-1">Total Top-ups</p>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">KSh 45,200</p>
+            <p className="text-gray-600 text-xs md:text-sm mb-1 uppercase font-bold tracking-tighter">Total Top-ups</p>
+            <p className="text-xl md:text-2xl font-bold text-[#00204a]">
+              KSh {stats.totalTopups.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+            </p>
           </div>
           <div className="bg-white rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-            <p className="text-gray-600 text-xs md:text-sm mb-1">Pending</p>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">KSh 0.00</p>
+            <p className="text-gray-600 text-xs md:text-sm mb-1 uppercase font-bold tracking-tighter">Pending</p>
+            <p className="text-xl md:text-2xl font-bold text-[#08A6F6]">
+              KSh {stats.pending.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+            </p>
           </div>
         </div>
 
