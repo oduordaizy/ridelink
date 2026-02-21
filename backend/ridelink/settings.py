@@ -200,10 +200,11 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://ridelink-uxya.onrender.com/",
+    "https://ridelink-uxya.onrender.com",
     "https://ridelink-9x6t-lf4ce7pme-daisys-projects-7ca04aa0.vercel.app",
     "https://itravas.com",
     "https://www.itravas.com",
+    "https://api.itravas.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

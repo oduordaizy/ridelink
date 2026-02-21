@@ -12,6 +12,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser, FormParser
 import requests
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 
 # Create your views here.
@@ -27,10 +29,12 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserRegistrationSerializer
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserLoginSerializer
@@ -118,6 +122,7 @@ from .utils import generate_otp, send_otp_email
 from django.utils import timezone
 from datetime import timedelta
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_otp(request):
@@ -140,6 +145,7 @@ def send_otp(request):
     else:
         return Response({'error': 'Failed to send OTP'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def verify_otp(request):
@@ -204,6 +210,7 @@ class SwitchRoleView(generics.UpdateAPIView):
             'user': serializer.data
         }, status=status.HTTP_200_OK)
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def forgot_password(request):
@@ -227,6 +234,7 @@ def forgot_password(request):
     else:
         return Response({'error': 'Failed to send OTP'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def reset_password(request):
