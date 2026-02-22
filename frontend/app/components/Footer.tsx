@@ -1,14 +1,25 @@
 import React from 'react'
+import Image from 'next/image'
+
 
 export default function Footer() {
   return (
     <footer className="bg-[#00204a] border-t border-gray-800 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Section 1: Branding */}
-          <div className="flex flex-col space-y-2">
-            <div className="text-white font-bold text-xl">
-              iTravas
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center space-x-0.5">
+              <Image
+                src="/footer-logo.png"
+                alt="iTravas Logo"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+              <div className="text-white font-bold text-xl">
+                iTravas
+              </div>
             </div>
             <p className="text-gray-300 text-xs max-w-[250px] leading-relaxed">
               Connecting drivers and passengers for affordable, secure, and convenient rides across Kenya.
@@ -31,8 +42,18 @@ export default function Footer() {
           <div className="flex flex-col space-y-4">
             <h3 className="text-white font-bold">Support</h3>
             <ul className="flex flex-col space-y-2">
-              <li><a href="/contact" className="text-gray-300 hover:text-[#08A6F6] transition-colors text-sm">Contact</a></li>
+              <li><a href="/contact" className="text-gray-300 hover:text-[#08A6F6] transition-colors text-sm">Contact Form</a></li>
               <li><a href="mailto:contact@itravas.com" className="text-gray-300 hover:text-[#08A6F6] transition-colors text-sm">contact@itravas.com</a></li>
+              <li><a href="tel:+254700000000" className="text-gray-300 hover:text-[#08A6F6] transition-colors text-sm">+254 700 000 000</a></li>
+            </ul>
+          </div>
+
+          {/* Section 4: Legal */}
+          <div className="flex flex-col space-y-4">
+            <h3 className="text-white font-bold">Legal</h3>
+            <ul className="flex flex-col space-y-2">
+              <li><a href="/" className="text-gray-300 hover:text-[#08A6F6] transition-colors text-sm">Privacy Policy</a></li>
+              <li><a href="/" className="text-gray-300 hover:text-[#08A6F6] transition-colors text-sm">Terms of Service</a></li>
             </ul>
           </div>
         </div>
