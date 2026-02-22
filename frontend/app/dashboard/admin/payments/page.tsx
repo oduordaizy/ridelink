@@ -6,6 +6,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { adminAPI } from '../../../services/api';
 import { IoCash, IoTime, IoCheckmarkCircle, IoCloseCircle } from 'react-icons/io5';
+import TransactionModal from './TransactionModal';
+
 
 interface Transaction {
     id: number;
@@ -22,6 +24,7 @@ export default function AdminPayments() {
     const router = useRouter();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
     useEffect(() => {
         if (!authLoading) {
@@ -74,7 +77,11 @@ export default function AdminPayments() {
                             ) : transactions.length === 0 ? (
                                 <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400">No transactions recorded.</td></tr>
                             ) : transactions.map((t) => (
-                                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                                <tr
+                                    key={t.id}
+                                    className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                                    onClick={() => setSelectedTransaction(t)}
+                                >
                                     <td className="px-6 py-4 text-sm font-mono text-gray-500">#{t.id}</td>
                                     <td className="px-6 py-4 text-sm font-bold text-[#00204a]">{t.user}</td>
                                     <td className="px-6 py-4 text-sm font-bold text-[#08A6F6]">KSh {t.amount}</td>
@@ -95,6 +102,13 @@ export default function AdminPayments() {
                     </table>
                 </div>
             </div>
+
+            {selectedTransaction && (
+                <TransactionModal
+                    transaction={selectedTransaction}
+                    onClose={() => setSelectedTransaction(null)}
+                />
+            )}
         </AdminLayout>
     );
 }
