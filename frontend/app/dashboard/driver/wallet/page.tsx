@@ -153,8 +153,8 @@ export default function DriverWallet() {
       return;
     }
 
-    if (amount < 10) {
-      showToast('Minimum top-up amount is KES 10', 'error');
+    if (amount < 1) {
+      showToast('Minimum top-up amount is KES 1', 'error');
       return;
     }
 

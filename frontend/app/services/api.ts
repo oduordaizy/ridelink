@@ -1,5 +1,28 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL + '/api';
 
+/**
+ * Helper to construct absolute media URLs.
+ * Handles cases where the backend might return a full URL or just a relative path.
+ */
+export const getMediaUrl = (path: string | null | undefined, type: 'profile' | 'vehicle' = 'profile'): string | undefined => {
+  if (!path || path.includes('default-profile.png')) {
+    return undefined;
+  }
+
+  // If it's already an absolute URL, return it
+  if (path.startsWith('http')) {
+    return path;
+  }
+
+  // If it's a media path, prepend the base URL (removing /api from it)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
+
+  // Ensure the path starts with a slash
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  return `${baseUrl}${normalizedPath}`;
+};
+
 export interface LoginData {
   username: string;
   password: string;
@@ -27,6 +50,7 @@ export interface AuthResponse {
     last_name: string;
     phone_number: string;
     user_type: string;
+    profile_picture?: string;
     is_verified: boolean;
     is_staff: boolean;
     is_superuser: boolean;

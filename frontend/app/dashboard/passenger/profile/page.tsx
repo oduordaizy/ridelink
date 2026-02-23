@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/app/contexts/AuthContext';
 import Footer from '@/app/components/Footer';
-import { API_BASE_URL } from '@/app/services/api';
+import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import { FaCamera, FaUser, FaPhone, FaVenusMars } from 'react-icons/fa';
 
 
@@ -178,10 +178,12 @@ export default function PassengerProfilePage() {
           <div className="flex flex-col items-center mb-10">
             <div className="relative group">
               <Avatar className="w-32 h-32 border-4 border-white shadow-2xl">
-                <AvatarImage
-                  src={newProfilePicture ? URL.createObjectURL(newProfilePicture) : (passenger.profile_picture || '/default-profile.png')}
-                  className="object-cover"
-                />
+                {getMediaUrl(passenger.profile_picture) || newProfilePicture ? (
+                  <AvatarImage
+                    src={newProfilePicture ? URL.createObjectURL(newProfilePicture) : getMediaUrl(passenger.profile_picture)}
+                    className="object-cover"
+                  />
+                ) : null}
                 <AvatarFallback className="bg-green-100 text-green-700 text-3xl font-bold">
                   {passenger.first_name?.[0]}{passenger.last_name?.[0]}
                 </AvatarFallback>

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaArrowLeft, FaChevronLeft, FaPhone, FaEnvelope, FaInfoCircle, FaImage } from 'react-icons/fa';
 import Link from 'next/link';
-import { API_BASE_URL } from '@/app/services/api';
+import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface BookingDetail {
@@ -255,7 +255,7 @@ export default function BookingDetailPage() {
                                     {booking.ride_details.images.map((img) => (
                                         <div key={img.id} className="aspect-square rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-zoom-in">
                                             <img
-                                                src={img.image}
+                                                src={getMediaUrl(img.image, 'vehicle')}
                                                 alt="Vehicle"
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
@@ -270,15 +270,15 @@ export default function BookingDetailPage() {
                     <div className="space-y-6">
                         <div className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-gray-100 text-center">
                             <div className="relative inline-block mb-4">
-                                {booking.ride_details.driver.profile_picture ? (
+                                {getMediaUrl(booking.ride_details.driver.profile_picture) ? (
                                     <img
-                                        src={booking.ride_details.driver.profile_picture}
+                                        src={getMediaUrl(booking.ride_details.driver.profile_picture)}
                                         alt={booking.ride_details.driver.username}
                                         className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mx-auto"
                                     />
                                 ) : (
                                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-lg mx-auto">
-                                        {booking.ride_details.driver.username.charAt(0).toUpperCase()}
+                                        {booking.ride_details.driver.first_name ? booking.ride_details.driver.first_name.charAt(0).toUpperCase() : booking.ride_details.driver.username.charAt(0).toUpperCase()}
                                     </div>
                                 )}
                                 <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>

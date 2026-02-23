@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { IoWallet, IoCard } from "react-icons/io5";
 import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner, FaChevronDown, FaChevronUp, FaUser, FaStar, FaPhone, FaInfoCircle, FaClock, FaImage } from "react-icons/fa";
 import { FaMoneyBillWave as IoCash } from "react-icons/fa";
-import { paymentAPI, API_BASE_URL } from '@/app/services/api';
+import { paymentAPI, API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface Ride {
@@ -777,16 +777,16 @@ const Page = () => {
                         {/* Driver Header */}
                         <div className="flex items-center gap-4 mb-6">
                           <div className="relative">
-                            {ride.driver.profile_picture ? (
+                            {getMediaUrl(ride.driver.profile_picture) ? (
                               <img
-                                src={ride.driver.profile_picture}
+                                src={getMediaUrl(ride.driver.profile_picture)}
                                 alt={ride.driver.username}
                                 className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="w-14 h-14 rounded-full bg-linear-to-br from-primary to-blue-600 flex items-center justify-center text-white border-2 border-white shadow-md">
-                                <FaUser />
+                              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white border-2 border-white shadow-md font-bold text-lg">
+                                {ride.driver.first_name ? ride.driver.first_name.charAt(0).toUpperCase() : ride.driver.username.charAt(0).toUpperCase()}
                               </div>
                             )}
                           </div>

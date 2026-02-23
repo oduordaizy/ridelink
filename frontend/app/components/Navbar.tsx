@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { authAPI, getMediaUrl } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { usePathname } from 'next/navigation';
 
@@ -68,8 +69,16 @@ export default function Navbar() {
                   My Dashboard
                 </Link>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-[#C0DFED] rounded-lg">
-                  <div className="w-7 h-7 rounded-full bg-[#08A6F6] flex items-center justify-center text-white text-xs font-semibold">
-                    {user.first_name.charAt(0).toUpperCase()}
+                  <div className="w-7 h-7 rounded-full overflow-hidden border border-[#08A6F6]/20 flex items-center justify-center bg-[#08A6F6] text-white text-[10px] font-bold">
+                    {getMediaUrl(user.profile_picture) ? (
+                      <img
+                        src={getMediaUrl(user.profile_picture)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{user.first_name.charAt(0).toUpperCase()}</span>
+                    )}
                   </div>
                   <span className="text-[#003870] text-sm font-medium">
                     {user.first_name}
@@ -155,8 +164,16 @@ export default function Navbar() {
               {user && user.id ? (
                 <>
                   <div className="flex items-center gap-2 px-4 py-2 bg-[#C0DFED] rounded-lg mb-2">
-                    <div className="w-8 h-8 rounded-full bg-[#08A6F6] flex items-center justify-center text-white text-sm font-semibold">
-                      {user.first_name.charAt(0).toUpperCase()}
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-[#08A6F6]/20 flex items-center justify-center bg-[#08A6F6] text-white text-xs font-bold">
+                      {getMediaUrl(user.profile_picture) ? (
+                        <img
+                          src={getMediaUrl(user.profile_picture)}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{user.first_name.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
                     <span className="text-[#003870] text-sm font-medium">
                       Welcome, {user.first_name}!

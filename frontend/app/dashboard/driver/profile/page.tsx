@@ -1,5 +1,5 @@
 'use client'
-import { API_BASE_URL } from '@/app/services/api';
+import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 
 import { useEffect, useState, ChangeEvent } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -143,14 +143,16 @@ export default function DriverProfilePage() {
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               <div className="relative">
                 <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-white shadow-xl">
-                  <AvatarImage
-                    src={
-                      newProfilePicture
-                        ? URL.createObjectURL(newProfilePicture)
-                        : driver?.profile_picture || "/default-profile.png"
-                    }
-                    alt="Profile picture"
-                  />
+                  {newProfilePicture || getMediaUrl(driver?.profile_picture) ? (
+                    <AvatarImage
+                      src={
+                        newProfilePicture
+                          ? URL.createObjectURL(newProfilePicture)
+                          : getMediaUrl(driver?.profile_picture)
+                      }
+                      alt="Profile picture"
+                    />
+                  ) : null}
                   <AvatarFallback className="text-2xl bg-white text-[#08A6F6]">
                     {(driver?.first_name?.[0] || "") + (driver?.last_name?.[0] || "")}
                   </AvatarFallback>

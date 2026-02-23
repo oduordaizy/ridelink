@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, LogOut, Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { authAPI, getMediaUrl } from "@/app/services/api";
 import {
   FaHome,
   FaCarAlt,
@@ -68,11 +69,13 @@ export default function DriverSidebar() {
       <div className="border-t border-gray-200 pt-4 mt-4 w-full">
         <div className="flex items-center px-4 py-3 hover:bg-gray-50 rounded-md transition-colors cursor-pointer">
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage
-              src="/default-profile.png"
-              alt={user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'User'}
-              className="object-cover"
-            />
+            {getMediaUrl(user?.profile_picture) ? (
+              <AvatarImage
+                src={getMediaUrl(user?.profile_picture)}
+                alt={user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'User'}
+                className="object-cover"
+              />
+            ) : null}
             <AvatarFallback className="bg-blue-100 text-blue-700">
               {user?.first_name ? (
                 <span className="text-sm font-medium">

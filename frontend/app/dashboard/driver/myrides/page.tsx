@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-import { API_BASE_URL } from '@/app/services/api';
+import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import {
   Car,
   MapPin,
@@ -606,7 +606,7 @@ const Page = () => {
                     {selectedRide.images.map((img) => (
                       <div key={img.id} className="aspect-video rounded-xl overflow-hidden border border-gray-100 group relative">
                         <img
-                          src={img.image}
+                          src={getMediaUrl(img.image, 'vehicle')}
                           alt="Vehicle"
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
@@ -647,8 +647,8 @@ const Page = () => {
                       <div key={booking.id} className="p-4 rounded-xl border border-gray-100 hover:border-[#08A6F6] transition-colors bg-white shadow-sm flex items-center justify-between group">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 overflow-hidden">
-                            {booking.user.profile_picture ? (
-                              <img src={booking.user.profile_picture} alt={booking.user.username} className="w-full h-full object-cover" />
+                            {getMediaUrl(booking.user.profile_picture) ? (
+                              <img src={getMediaUrl(booking.user.profile_picture)} alt={booking.user.username} className="w-full h-full object-cover" />
                             ) : (
                               <User className="w-5 h-5 text-[#08A6F6]" />
                             )}
