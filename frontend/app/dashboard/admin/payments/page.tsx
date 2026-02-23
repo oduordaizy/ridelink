@@ -25,6 +25,7 @@ export default function AdminPayments() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+    const [mpesaBalance, setMpesaBalance] = useState<any>(null);
 
     useEffect(() => {
         if (!authLoading) {
@@ -39,10 +40,14 @@ export default function AdminPayments() {
                     return;
                 }
                 try {
-                    const data = await adminAPI.getTransactions(token);
-                    setTransactions(data);
+                    const [transactionData, balanceData] = await Promise.all([
+                        adminAPI.getTransactions(token),
+                        adminAPI.getMpesaBalance(token).catch(() => null)
+                    ]);
+                    setTransactions(transactionData);
+                    setMpesaBalance(balanceData);
                 } catch (error) {
-                    console.error('Failed to load transactions:', error);
+                    console.error('Failed to load dashboard data:', error);
                 } finally {
                     setLoading(false);
                 }
@@ -57,6 +62,23 @@ export default function AdminPayments() {
                 <div>
                     <h1 className="text-2xl font-bold text-[#00204a]">Financial Reports</h1>
                     <p className="text-gray-500 text-sm">Monitor all platform transactions and payment health.</p>
+                </div>
+
+                {/* M-Pesa Balance Card */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-[#00204a] text-white p-6 rounded-3xl shadow-lg border-b-4 border-[#08A6F6]">
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="text-blue-200 text-sm font-bold uppercase tracking-wider">M-Pesa Balance</span>
+                            <div className="p-2 bg-white/10 rounded-full">
+                                <IoCash className="text-xl" />
+                            </div>
+                        </div>
+                        <div className="text-3xl font-bold">
+                            {mpesaBalance ? `KSh ${parseFloat(mpesaBalance.AccountBalance || 0).toLocaleString()}` : '---'}
+                        </div>
+                        <p className="text-blue-200 text-xs mt-2 italic">Live from Safaricom</p>
+                    </div>
+                    {/* Placeholder for other stats if needed */}
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

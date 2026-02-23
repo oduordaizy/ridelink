@@ -512,4 +512,39 @@ export const adminAPI = {
     if (!response.ok) throw new Error('Failed to fetch transactions');
     return response.json();
   },
+
+  async getMpesaStatus(token: string, transactionId: number) {
+    const response = await fetch(`${API_BASE_URL}/admin/mpesa/status/${transactionId}/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch M-Pesa status');
+    return response.json();
+  },
+
+  async initiateReversal(token: string, transactionId: number, amount: number, reason: string) {
+    const response = await fetch(`${API_BASE_URL}/admin/mpesa/reversal/${transactionId}/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ amount, reason }),
+    });
+    if (!response.ok) throw new Error('Failed to initiate reversal');
+    return response.json();
+  },
+
+  async getMpesaBalance(token: string) {
+    const response = await fetch(`${API_BASE_URL}/admin/mpesa/balance/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch M-Pesa balance');
+    return response.json();
+  },
 };

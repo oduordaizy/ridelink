@@ -41,6 +41,11 @@ export const metadata: Metadata = {
   creator: "iTravas",
   metadataBase: new URL("https://itravas.com"),
   manifest: "/manifest.json",
+  icons: {
+    icon: "/page-logo.png",
+    shortcut: "/page-logo.png",
+    apple: "/page-logo.png",
+  },
   openGraph: {
     title: "iTravas",
     description: "Connecting drivers and passengers for affordable, secure, and convenient rides across Kenya.",

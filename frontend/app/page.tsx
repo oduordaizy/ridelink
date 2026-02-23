@@ -223,7 +223,7 @@ export default function Home() {
               url: "https://itravas.com",
               logo: {
                 "@type": "ImageObject",
-                url: "https://itravas.com/logo2.png",
+                url: "https://itravas.com/page-logo.png",
                 width: "512",
                 height: "512"
               },
