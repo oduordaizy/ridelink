@@ -111,7 +111,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
         "Password": password,
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
-        "Amount": str(int(amount)),
+        "Amount": int(amount),
         "PartyA": phone_number,
         "PartyB": shortcode,
         "PhoneNumber": phone_number,
@@ -176,7 +176,7 @@ def mpesa_reversal(transaction_id, amount, receiver_party, reason):
         "SecurityCredential": security_credential,
         "CommandID": "TransactionReversal",
         "TransactionID": transaction_id,
-        "Amount": str(int(amount)),
+        "Amount": int(amount),
         "ReceiverParty": receiver_party,
         "RecieverIdentifierType": "11", # 11 for Organization
         "ResultURL": settings.CALLBACK_URL,
