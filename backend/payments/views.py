@@ -7,7 +7,7 @@ from django.utils import timezone
 from decimal import Decimal
 import json
 from .models import Transaction, Wallet
-from .mpesa import lipa_na_mpesa
+from .mpesa import lipa_na_mpesa, query_stk_status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -133,6 +133,31 @@ def wallet_balance(request):
     except Exception as e:
         return Response(
             {"error": f"An error occurred while fetching wallet balance: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def query_mpesa_status(request):
+    """
+    API endpoint to query the status of an STK push transaction
+    """
+    checkout_request_id = request.query_params.get('checkout_request_id')
+    
+    if not checkout_request_id:
+        return Response(
+            {"error": "checkout_request_id is required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    try:
+        response = query_stk_status(checkout_request_id)
+        return Response(response, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Error querying M-Pesa status: {str(e)}")
+        return Response(
+            {"error": f"Failed to query status: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

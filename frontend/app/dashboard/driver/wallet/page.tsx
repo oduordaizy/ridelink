@@ -5,6 +5,7 @@ import { CreditCard, Smartphone, Wallet, ArrowUpCircle, History, X, CheckCircle,
 import React from 'react';
 import { API_BASE_URL } from '@/app/services/api';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { STKPushQueryLoading, PaymentSuccess } from '@/components/mpesa/MpesaStatus';
 
 // Add animation styles
 const styles = `
@@ -77,6 +78,9 @@ export default function DriverWallet() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [mpesaPhone, setMpesaPhone] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [stkQueryLoading, setStkQueryLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
 
   // Fetch wallet data on component mount
@@ -139,6 +143,53 @@ export default function DriverWallet() {
     pending: transactions
       .filter(tx => tx.status === 'pending')
       .reduce((sum, tx) => sum + tx.amount, 0)
+  };
+
+  const stkPushQueryWithIntervals = (CheckoutRequestID: string) => {
+    let reqcount = 0;
+    const timer = setInterval(async () => {
+      reqcount += 1;
+
+      if (reqcount === 15) {
+        clearInterval(timer);
+        setStkQueryLoading(false);
+        setIsProcessing(false);
+        showToast("You took too long to pay. Please try again.", "error");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/payments/mpesa/query/?checkout_request_id=${CheckoutRequestID}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          }
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.ResultCode === '0') {
+          clearInterval(timer);
+          setStkQueryLoading(false);
+          setSuccess(true);
+          setIsProcessing(false);
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        } else if (data.ResultCode) {
+          clearInterval(timer);
+          setStkQueryLoading(false);
+          setIsProcessing(false);
+          showToast(data.ResultDesc || 'Payment failed', 'error');
+        }
+      } catch (error) {
+        console.error('Query error:', error);
+      }
+    }, 2000);
   };
 
   const handleTopUp = async () => {
@@ -244,15 +295,8 @@ export default function DriverWallet() {
         }
 
         const data = await response.json();
-        showToast(`M-Pesa STK Push sent to ${mpesaPhone}. Check your phone to complete payment.`, 'success');
-
-        // Close modal after success
-        setTimeout(() => {
-          setShowTopUpModal(false);
-          setTopUpAmount('');
-          setPaymentMethod('');
-          setMpesaPhone('');
-        }, 2000);
+        setStkQueryLoading(true);
+        stkPushQueryWithIntervals(data.checkout_request_id);
       }
 
     } catch (error) {
@@ -425,114 +469,122 @@ export default function DriverWallet() {
 
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Top Up Wallet</h2>
 
-            {/* Amount Input */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Enter Amount
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-gray-500 font-semibold">KSh</span>
-                <input
-                  type="number"
-                  value={topUpAmount}
-                  onChange={(e) => setTopUpAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full pl-16 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none text-lg"
-                />
-              </div>
-            </div>
+            {stkQueryLoading ? (
+              <STKPushQueryLoading number={mpesaPhone} />
+            ) : success ? (
+              <PaymentSuccess />
+            ) : (
+              <>
+                {/* Amount Input */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Enter Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3 text-gray-500 font-semibold">KSh</span>
+                    <input
+                      type="number"
+                      value={topUpAmount}
+                      onChange={(e) => setTopUpAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full pl-16 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none text-lg"
+                    />
+                  </div>
+                </div>
 
-            {/* Quick Amount Buttons */}
-            <div className="grid grid-cols-4 gap-2 mb-6">
-              {quickAmounts.map((amount) => (
+                {/* Quick Amount Buttons */}
+                <div className="grid grid-cols-4 gap-2 mb-6">
+                  {quickAmounts.map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setTopUpAmount(amount.toString())}
+                      className="py-2 px-3 bg-[#C0DFED] text-[#003870] rounded-lg hover:bg-[#08A6F6] hover:text-white transition-colors text-sm font-semibold"
+                    >
+                      {amount}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Payment Method Selection */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Select Payment Method
+                  </label>
+
+                  <div className="space-y-3">
+                    {/* Card Payment */}
+                    <button
+                      onClick={() => setPaymentMethod('card')}
+                      className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'card'
+                        ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'card' ? 'bg-[#08A6F6]' : 'bg-gray-100'
+                        }`}>
+                        <CreditCard className={`w-6 h-6 ${paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
+                          }`} />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-gray-800">Card Payment</p>
+                        <p className="text-sm text-gray-600">Pay with Visa, Mastercard</p>
+                      </div>
+                    </button>
+
+                    {/* M-Pesa Payment */}
+                    <button
+                      onClick={() => setPaymentMethod('mpesa')}
+                      className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'mpesa'
+                        ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'mpesa' ? 'bg-[#08A6F6]' : 'bg-gray-100'
+                        }`}>
+                        <Smartphone className={`w-6 h-6 ${paymentMethod === 'mpesa' ? 'text-white' : 'text-gray-600'
+                          }`} />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-gray-800">M-Pesa</p>
+                        <p className="text-sm text-gray-600">Pay via STK Push</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* M-Pesa Phone Number */}
+                {paymentMethod === 'mpesa' && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      M-Pesa Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={mpesaPhone}
+                      onChange={(e) => setMpesaPhone(e.target.value)}
+                      placeholder="254712345678"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                {/* Submit Button */}
                 <button
-                  key={amount}
-                  onClick={() => setTopUpAmount(amount.toString())}
-                  className="py-2 px-3 bg-[#C0DFED] text-[#003870] rounded-lg hover:bg-[#08A6F6] hover:text-white transition-colors text-sm font-semibold"
+                  onClick={handleTopUp}
+                  disabled={isProcessing}
+                  className="w-full bg-[#08A6F6] text-white font-semibold py-4 rounded-xl hover:bg-[#00204a] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {amount}
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    `Top Up KSh ${topUpAmount || '0'}`
+                  )}
                 </button>
-              ))}
-            </div>
-
-            {/* Payment Method Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Select Payment Method
-              </label>
-
-              <div className="space-y-3">
-                {/* Card Payment */}
-                <button
-                  onClick={() => setPaymentMethod('card')}
-                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'card'
-                    ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
-                    : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'card' ? 'bg-[#08A6F6]' : 'bg-gray-100'
-                    }`}>
-                    <CreditCard className={`w-6 h-6 ${paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
-                      }`} />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-800">Card Payment</p>
-                    <p className="text-sm text-gray-600">Pay with Visa, Mastercard</p>
-                  </div>
-                </button>
-
-                {/* M-Pesa Payment */}
-                <button
-                  onClick={() => setPaymentMethod('mpesa')}
-                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'mpesa'
-                    ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
-                    : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'mpesa' ? 'bg-[#08A6F6]' : 'bg-gray-100'
-                    }`}>
-                    <Smartphone className={`w-6 h-6 ${paymentMethod === 'mpesa' ? 'text-white' : 'text-gray-600'
-                      }`} />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-800">M-Pesa</p>
-                    <p className="text-sm text-gray-600">Pay via STK Push</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* M-Pesa Phone Number */}
-            {paymentMethod === 'mpesa' && (
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  M-Pesa Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={mpesaPhone}
-                  onChange={(e) => setMpesaPhone(e.target.value)}
-                  placeholder="254712345678"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none"
-                />
-              </div>
+              </>
             )}
-
-            {/* Submit Button */}
-            <button
-              onClick={handleTopUp}
-              disabled={isProcessing}
-              className="w-full bg-[#08A6F6] text-white font-semibold py-4 rounded-xl hover:bg-[#00204a] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                `Top Up KSh ${topUpAmount || '0'}`
-              )}
-            </button>
           </div>
         </div>
       )}

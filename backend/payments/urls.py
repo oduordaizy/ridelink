@@ -10,6 +10,7 @@ urlpatterns = [
     path('wallet/transactions/', views.wallet_transactions, name='wallet_transactions'),
     path('wallet/topup/', views.topup_wallet, name='topup_wallet'),
     
-    # MPESA callback (for server-to-server communication)
+    # MPESA operations
     path('mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),
+    path('mpesa/query/', views.query_mpesa_status, name='query_mpesa_status'),
 ]
