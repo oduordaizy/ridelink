@@ -68,20 +68,24 @@ def topup_wallet(request):
             )
             
             # Initiate MPESA payment FIRST to get the IDs
+            # NOTE: AccountReference is limited to 12 chars by Safaricom
+            branded_ref = f"iTravas-{user.id}"[:12]
             response = lipa_na_mpesa(
                 phone_number=phone_number,
                 amount=amount,
-                account_reference="01102676865001",
-                transaction_desc=f"Wallet Top Up - {user.id}"
+                account_reference=branded_ref, 
+                transaction_desc=f"ACC:01102676865001"
             )
             
             # Handle MPESA API response
             if "error" in response:
+                logger.error(f"M-Pesa STK Push Error for user {user.id}: {response.get('error')}")
                 return Response(
                     {"error": f"Payment initiation failed: {response.get('error')}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
+            logger.info(f"M-Pesa STK Push Success for user {user.id}: CheckoutRequestID={response.get('CheckoutRequestID')}")
             # Create transaction with the IDs from MPESA response
             transaction_obj = Transaction.objects.create(
                 wallet=wallet,
