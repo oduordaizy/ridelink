@@ -153,6 +153,18 @@ def query_mpesa_status(request):
         
     try:
         response = query_stk_status(checkout_request_id)
+        
+        # Sync with local database if result is found
+        result_code = response.get('ResultCode')
+        if result_code is not None:
+            transaction_obj = Transaction.objects.filter(checkout_request_id=checkout_request_id).first()
+            if transaction_obj:
+                process_stk_result(
+                    transaction_obj, 
+                    result_code, 
+                    response.get('ResultDesc', 'Query Result')
+                )
+                
         return Response(response, status=status.HTTP_200_OK)
     except Exception as e:
         logger.error(f"Error querying M-Pesa status: {str(e)}")
@@ -230,140 +242,119 @@ def wallet_transactions(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+def process_stk_result(transaction_obj, result_code, result_desc, callback_metadata=None):
+    """
+    Shared logic to handle M-Pesa STK result (success or failure).
+    Updates transaction status, wallet balance, and confirms bookings.
+    Returns True if processed, False if already handled.
+    """
+    if transaction_obj.status != "pending":
+        logger.info(f"Transaction {transaction_obj.checkout_request_id} already processed with status {transaction_obj.status}")
+        return False
+        
+    transaction_obj.result_code = result_code
+    transaction_obj.result_desc = result_desc
+    transaction_obj.completed_at = timezone.now()
+
+    if str(result_code) == "0":
+        # Success logic
+        amount = transaction_obj.amount
+        mpesa_receipt = None
+        
+        if callback_metadata:
+            # Extract from callback metadata format
+            items = callback_metadata.get('Item', [])
+            for item in items:
+                if item.get('Name') == 'Amount':
+                    amount = Decimal(str(item.get('Value', amount)))
+                elif item.get('Name') == 'MpesaReceiptNumber':
+                    mpesa_receipt = item.get('Value', '')
+        
+        with db_transaction.atomic():
+            transaction_obj.status = "success"
+            if mpesa_receipt:
+                transaction_obj.mpesa_receipt_number = mpesa_receipt
+            transaction_obj.save()
+            
+            wallet = transaction_obj.wallet
+            wallet.balance += amount
+            wallet.save()
+            
+            logger.info(f"Successfully processed payment for {wallet.user.username}: {mpesa_receipt or 'N/A'} for KES {amount}")
+            
+            # Booking confirmation logic
+            try:
+                from rides.models import Booking
+                
+                # Check specific booking or fallback
+                pending_booking = transaction_obj.booking
+                if not pending_booking:
+                    pending_booking = Booking.objects.filter(
+                        user=wallet.user,
+                        status='pending',
+                        is_paid=False
+                    ).select_related('ride').first()
+                
+                if pending_booking and pending_booking.status == 'pending':
+                    expected_amount = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
+                    if amount >= expected_amount:
+                        # Confirm the booking
+                        pending_booking.confirm_payment()
+                        
+                        # Deduct from wallet immediately (Debit)
+                        wallet.balance -= expected_amount
+                        wallet.save()
+                        
+                        # Create a debit transaction for the booking
+                        Transaction.objects.create(
+                            wallet=wallet,
+                            amount=-expected_amount,
+                            status="success",
+                            result_code=0,
+                            result_desc=f"Payment for Booking #{pending_booking.id}",
+                            completed_at=timezone.now(),
+                            booking=pending_booking
+                        )
+                        logger.info(f"Confirmed booking {pending_booking.id} and deducted KES {expected_amount}")
+            except Exception as e:
+                logger.error(f"Error in booking confirmation: {str(e)}", exc_info=True)
+    else:
+        # Failure logic
+        transaction_obj.status = "failed"
+        transaction_obj.save()
+        logger.warning(f"Payment failed/cancelled for {transaction_obj.checkout_request_id}: {result_desc}")
+        
+    return True
+
 @csrf_exempt
 def mpesa_callback(request):
     """Handle M-Pesa STK Push callback"""
     try:
-        # Log the raw request body for debugging
         raw_body = request.body.decode('utf-8')
-        logger.info(f"M-Pesa Callback Received: {raw_body}")
-        
         data = json.loads(raw_body)
         stk_callback = data.get('Body', {}).get('stkCallback', {})
         
-        # Log the callback data
-        logger.info(f"M-Pesa Callback Data: {json.dumps(data, indent=2)}")
-        
-        # Check if this is a valid callback
         if not stk_callback:
-            logger.error("Invalid callback format - missing stkCallback")
+            logger.error("Invalid callback format")
             return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid callback format"})
         
         checkout_request_id = stk_callback.get('CheckoutRequestID')
         result_code = stk_callback.get('ResultCode')
         result_desc = stk_callback.get('ResultDesc')
+        metadata = stk_callback.get('CallbackMetadata')
         
-        # Find transaction by CheckoutRequestID (Unique identifier)
-        transaction_obj = Transaction.objects.filter(
-            checkout_request_id=checkout_request_id
-        ).first()
-
+        transaction_obj = Transaction.objects.filter(checkout_request_id=checkout_request_id).first()
         if not transaction_obj:
-            logger.error(f"Transaction not found for CheckoutRequestID: {checkout_request_id}")
-            # We still return success to Safaricom to acknowledge receipt
-            return JsonResponse({"ResultCode": 0, "ResultDesc": "Transaction not found"})
+            logger.error(f"Transaction not found: {checkout_request_id}")
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
             
-        # Update common fields regardless of success/failure
-        transaction_obj.result_code = result_code
-        transaction_obj.result_desc = result_desc
-        transaction_obj.completed_at = timezone.now()
-
-        # If the payment was successful
-        if result_code == 0:
-            try:
-                # Extract transaction details
-                callback_metadata = stk_callback.get('CallbackMetadata', {})
-                items = callback_metadata.get('Item', [])
-                
-                # Extract values from callback items
-                amount = None
-                mpesa_receipt = None
-                phone = None
-                
-                for item in items:
-                    if item.get('Name') == 'Amount':
-                        amount = Decimal(str(item.get('Value', 0)))
-                    elif item.get('Name') == 'MpesaReceiptNumber':
-                        mpesa_receipt = item.get('Value', '')
-                    elif item.get('Name') == 'PhoneNumber':
-                        phone = str(item.get('Value', ''))
-                
-                # Update transaction status
-                with db_transaction.atomic():
-                    # Reload transaction to lock it? (Not strictly necessary if single thread, but good practice)
-                    transaction_obj.status = "success"
-                    transaction_obj.mpesa_receipt_number = mpesa_receipt
-                    transaction_obj.save()
-                    
-                    # Update wallet balance (Credit)
-                    wallet = transaction_obj.wallet
-                    wallet.balance += amount
-                    wallet.save()
-                    
-                    logger.info(f"Successfully processed payment: {mpesa_receipt} for KES {amount}")
-                
-                # Check if this is a booking payment
-                try:
-                    from rides.models import Booking
-                    
-                    # 1. Use specific booking linked to transaction if available
-                    pending_booking = None
-                    if transaction_obj.booking:
-                        pending_booking = transaction_obj.booking
-                    else:
-                        # Fallback: Find pending booking for this user with matching amount
-                        pending_booking = Booking.objects.filter(
-                            user=wallet.user,
-                            status='pending',
-                            is_paid=False
-                        ).select_related('ride').first()
-                    
-                    if pending_booking and pending_booking.status == 'pending':
-                        # Check if amount matches or is enough
-                        expected_amount = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
-                        # allow some tolerance or just check if it covers it
-                        if amount >= expected_amount:
-                           with db_transaction.atomic():
-                                # Confirm the booking
-                                pending_booking.confirm_payment()
-                                
-                                # Deduct from wallet immediately (Debit)
-                                wallet.balance -= expected_amount
-                                wallet.save()
-                                
-                                # Create a debit transaction for the booking
-                                Transaction.objects.create(
-                                    wallet=wallet,
-                                    amount=-expected_amount,
-                                    status="success",
-                                    result_code=0,
-                                    result_desc=f"Payment for Booking #{pending_booking.id}",
-                                    completed_at=timezone.now(),
-                                    booking=pending_booking
-                                )
-                                
-                                logger.info(f"Confirmed booking {pending_booking.id} and deducted KES {expected_amount} from wallet")
-                except Exception as e:
-                    logger.error(f"Error checking for booking confirmation: {str(e)}", exc_info=True)
-                
-                return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
-                
-            except Exception as e:
-                logger.error(f"Error processing successful payment: {str(e)}", exc_info=True)
-                transaction_obj.result_desc = f"System Error: {str(e)}"
-                transaction_obj.status = "failed"
-                transaction_obj.save()
-                return JsonResponse({"ResultCode": 1, "ResultDesc": f"Error: {str(e)}"})
+        process_stk_result(transaction_obj, result_code, result_desc, metadata)
         
-        else:
-            # Payment failed or was cancelled
-            logger.warning(f"Payment failed for {checkout_request_id}: {result_desc}")
-            
-            # Update the transaction status
-            transaction_obj.status = "failed"
-            transaction_obj.save()
-            
-            return JsonResponse({"ResultCode": 0, "ResultDesc": "Callback processed"})
+        return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
+        
+    except Exception as e:
+        logger.error(f"Callback error: {str(e)}", exc_info=True)
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Internal Error"})
     
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in callback: {str(e)}")
