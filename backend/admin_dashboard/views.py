@@ -84,6 +84,47 @@ def admin_transactions(request):
 
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
+def mpesa_status(request, transaction_id):
+    """Query Safaricom for the latest status of a transaction."""
+    from payments.mpesa import query_stk_status
+    try:
+        tx = Transaction.objects.get(id=transaction_id)
+        if not tx.mpesa_checkout_id:
+            return Response({'error': 'No checkout ID found'}, status=400)
+        
+        result = query_stk_status(tx.mpesa_checkout_id)
+        return Response(result)
+    except Transaction.DoesNotExist:
+        return Response({'error': 'Transaction not found'}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def mpesa_reversal_view(request, transaction_id):
+    """Initiate a reversal for a successful transaction."""
+    from payments.mpesa import mpesa_reversal
+    try:
+        tx = Transaction.objects.get(id=transaction_id)
+        amount = request.data.get('amount', tx.amount)
+        reason = request.data.get('reason', 'Admin reversal')
+        
+        if tx.status != 'success':
+            return Response({'error': 'Only successful transactions can be reversed'}, status=400)
+            
+        result = mpesa_reversal(tx.mpesa_receipt_number, amount, settings.MPESA_SHORTCODE, reason)
+        return Response(result)
+    except Transaction.DoesNotExist:
+        return Response({'error': 'Transaction not found'}, status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def mpesa_balance(request):
+    """Fetch the current M-Pesa organization balance."""
+    from payments.mpesa import get_account_balance
+    result = get_account_balance()
+    return Response(result)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
 def admin_users(request):
     """List users for admin management, with optional type filtering."""
     user_type = request.query_params.get('user_type')

@@ -71,8 +71,8 @@ def topup_wallet(request):
             response = lipa_na_mpesa(
                 phone_number=phone_number,
                 amount=amount,
-                account_reference=f"WALLET_{user.id}",
-                transaction_desc="Wallet Top Up"
+                account_reference="01102676865001",
+                transaction_desc=f"Wallet Top Up - {user.id}"
             )
             
             # Handle MPESA API response

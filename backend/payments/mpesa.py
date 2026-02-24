@@ -18,12 +18,24 @@ def get_mpesa_urls():
     if env == 'production':
         return {
             "oauth": "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-            "stk_push": "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+            "stk_push": "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+            "stk_query": "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query",
+            "reversal": "https://api.safaricom.co.ke/mpesa/reversal/v1/request",
+            "c2b_register": "https://api.safaricom.co.ke/mpesa/c2b/v2/registerurl",
+            "transaction_status": "https://api.safaricom.co.ke/mpesa/transactionstatus/v1/query",
+            "account_balance": "https://api.safaricom.co.ke/mpesa/accountbalance/v1/query",
+            "b2c": "https://api.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
         }
     else:
         return {
             "oauth": "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-            "stk_push": "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+            "stk_push": "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+            "stk_query": "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query",
+            "reversal": "https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request",
+            "c2b_register": "https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl",
+            "transaction_status": "https://sandbox.safaricom.co.ke/mpesa/transactionstatus/v1/query",
+            "account_balance": "https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query",
+            "b2c": "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
         }
 
 def get_access_token():
@@ -145,3 +157,97 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
             error_msg += f" - {e.response.status_code}: {e.response.text}"
         logger.error(error_msg)
         return {"error": error_msg, "code": "REQUEST_FAILED"}
+
+def mpesa_reversal(transaction_id, amount, receiver_party, reason):
+    """
+    Initiate a reversal for a specific transaction.
+    """
+    shortcode = settings.MPESA_SHORTCODE
+    initiator = settings.MPESA_INITIATOR_USERNAME
+    security_credential = settings.MPESA_INITIATOR_SECURITY_CREDENTIAL
+    
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    access_token = get_access_token()
+    if not access_token:
+        return {"error": "Authentication failed"}
+
+    payload = {
+        "Initiator": initiator,
+        "SecurityCredential": security_credential,
+        "CommandID": "TransactionReversal",
+        "TransactionID": transaction_id,
+        "Amount": str(int(amount)),
+        "ReceiverParty": receiver_party,
+        "RecieverIdentifierType": "11", # 11 for Organization
+        "ResultURL": settings.CALLBACK_URL,
+        "QueueTimeOutURL": settings.CALLBACK_URL,
+        "Remarks": reason[:100],
+        "Occasion": "Reversal"
+    }
+
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    
+    try:
+        response = requests.post(get_mpesa_urls()["reversal"], json=payload, headers=headers, timeout=30)
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+def query_stk_status(checkout_request_id):
+    """
+    Query the status of an STK push transaction.
+    """
+    shortcode = settings.MPESA_SHORTCODE
+    passkey = settings.MPESA_PASSKEY
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
+    
+    access_token = get_access_token()
+    if not access_token:
+        return {"error": "Authentication failed"}
+
+    payload = {
+        "BusinessShortCode": shortcode,
+        "Password": password,
+        "Timestamp": timestamp,
+        "CheckoutRequestID": checkout_request_id
+    }
+
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    
+    try:
+        response = requests.post(get_mpesa_urls()["stk_query"], json=payload, headers=headers, timeout=30)
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+def get_account_balance():
+    """
+    Fetch the current Paybill/BuyGoods account balance.
+    """
+    shortcode = settings.MPESA_SHORTCODE
+    initiator = settings.MPESA_INITIATOR_USERNAME
+    security_credential = settings.MPESA_INITIATOR_SECURITY_CREDENTIAL
+    
+    access_token = get_access_token()
+    if not access_token:
+        return {"error": "Authentication failed"}
+
+    payload = {
+        "Initiator": initiator,
+        "SecurityCredential": security_credential,
+        "CommandID": "AccountBalance",
+        "PartyA": shortcode,
+        "IdentifierType": "4", # 4 for Shortcode
+        "Remarks": "Balance Check",
+        "QueueTimeOutURL": settings.CALLBACK_URL,
+        "ResultURL": settings.CALLBACK_URL
+    }
+
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    
+    try:
+        response = requests.post(get_mpesa_urls()["account_balance"], json=payload, headers=headers, timeout=30)
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}

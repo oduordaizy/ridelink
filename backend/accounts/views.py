@@ -51,7 +51,7 @@ class LoginView(generics.GenericAPIView):
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
-            'user': UserProfileSerializer(user).data
+            'user': UserProfileSerializer(user, context={'request': request}).data
         })
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
@@ -179,7 +179,7 @@ def verify_otp(request):
         'message': 'Email verified successfully',
         'refresh': str(refresh),
         'access': str(refresh.access_token),
-        'user': UserProfileSerializer(user).data
+        'user': UserProfileSerializer(user, context={'request': request}).data
     })
  
 class SwitchRoleView(generics.UpdateAPIView):
