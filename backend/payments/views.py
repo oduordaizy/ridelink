@@ -67,14 +67,20 @@ def topup_wallet(request):
                 defaults={'balance': 2600.00}
             )
             
-            # Initiate MPESA payment FIRST to get the IDs
-            # NOTE: AccountReference is limited to 12 chars by Safaricom
-            branded_ref = f"iTravas-{user.id}"[:12]
+            # Custom reference: iTra-First3phone..last3phone
+            # NOTE: AccountReference is limited to 12 chars
+            phone = str(phone_number).strip()
+            # If it's a 254... number, get digits after 254
+            f3 = phone[3:6] if phone.startswith('254') and len(phone) >= 6 else phone[:3]
+            l3 = phone[-3:]
+            # e.g. iTra-712..89 (12 chars)
+            branded_ref = f"iTra-{f3}..{l3}"[:12]
+            
             response = lipa_na_mpesa(
                 phone_number=phone_number,
                 amount=amount,
                 account_reference=branded_ref, 
-                transaction_desc=f"ACC:01102676865001"
+                transaction_desc=branded_ref # Use same for desc (limit 13)
             )
             
             # Handle MPESA API response
@@ -248,8 +254,13 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
     Updates transaction status, wallet balance, and confirms bookings.
     Returns True if processed, False if already handled.
     """
-    if transaction_obj.status != "pending":
-        logger.info(f"Transaction {transaction_obj.checkout_request_id} already processed with status {transaction_obj.status}")
+    if transaction_obj.status == "success":
+        logger.info(f"Transaction {transaction_obj.checkout_request_id} already marked as success.")
+        return False
+        
+    # Allow success to override failed (e.g. if polling was wrong/premature)
+    if transaction_obj.status == "failed" and str(result_code) != "0":
+        logger.info(f"Transaction {transaction_obj.checkout_request_id} already marked as failed.")
         return False
         
     transaction_obj.result_code = result_code
