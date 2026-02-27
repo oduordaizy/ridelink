@@ -462,6 +462,7 @@ const Page = () => {
                   setShowPaymentModal(false);
                   setSelectedRide(null);
                   setNumberOfSeats(1);
+                  setShowMpesaForm(false);
                 }}
                 className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
               >
@@ -513,6 +514,7 @@ const Page = () => {
                     rideId={selectedRide.id}
                     amount={selectedRide.price * numberOfSeats}
                     token={localStorage.getItem('access_token') || ''}
+                    seats={numberOfSeats}
                     onSuccess={() => { }}
                     onCancel={() => setShowMpesaForm(false)}
                   />

@@ -2,10 +2,10 @@
 
 import { cookies } from 'next/headers';
 
-export async function stkPushQuery(checkoutRequestId: string) {
+export async function stkPushQuery(checkoutRequestId: string, passedToken?: string) {
     try {
         const cookieStore = await cookies();
-        const token = cookieStore.get('access_token')?.value;
+        const token = passedToken || cookieStore.get('access_token')?.value;
 
         // Fallback URL if env is not perfect
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://itravas.com';

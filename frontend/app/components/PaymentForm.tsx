@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FaPhone, FaSpinner, FaChevronRight } from 'react-icons/fa';
-import { paymentAPI } from '@/app/services/api';
+import { paymentAPI, API_BASE_URL } from '@/app/services/api';
 import { stkPushQuery } from '@/app/actions/stkPushQuery';
 import STKPushQueryLoading from './StkQueryLoading';
 import PaymentSuccess from './Success';
@@ -14,9 +14,10 @@ interface PaymentFormProps {
     token: string;
     onSuccess?: () => void;
     onCancel?: () => void;
+    seats?: number;
 }
 
-const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSuccess, onCancel }) => {
+const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSuccess, onCancel, seats = 1 }) => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [loading, setLoading] = useState(false);
     const [stkQueryLoading, setStkQueryLoading] = useState(false);
@@ -37,15 +38,20 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
                 return;
             }
 
-            const { data, error } = await stkPushQuery(checkoutRequestId);
+            const { data, error } = await stkPushQuery(checkoutRequestId, token);
 
             if (error) {
-                // If it's a "Wait" error from M-Pesa, keep polling
-                if (error.response?.data?.errorCode !== "500.001.1001") {
+                // If it's a "Wait" error from M-Pesa (500.001.1001), keep polling
+                const errorData = error.response?.data;
+                const errorCode = errorData?.errorCode || errorData?.ResultCode;
+
+                if (errorCode !== "500.001.1001") {
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
-                    setErrorMessage(error?.response?.data?.errorMessage || "An error occurred while checking status");
+                    // Provide a more descriptive error if available
+                    const errorMessage = errorData?.errorMessage || errorData?.error || errorData?.ResultDesc || "An error occurred while checking status";
+                    setErrorMessage(errorMessage);
                 }
             }
 
@@ -74,10 +80,32 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
         setLoading(true);
 
         try {
+            // First, create the booking to get a valid booking_id
+            const bookingRes = await fetch(`${API_BASE_URL}/rides/${rideId}/book/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    payment_method: 'mpesa',
+                    no_of_seats: seats
+                }),
+            });
+
+            if (!bookingRes.ok) {
+                const errorData = await bookingRes.json();
+                throw new Error(errorData.error || 'Failed to create booking');
+            }
+
+            const bookingData = await bookingRes.json();
+            const actualBookingId = bookingData.booking_id || bookingData.id;
+
+            // Then initiate M-Pesa payment
             const res = await paymentAPI.initiateMpesaPayment(token, {
                 phone_number: phoneNumber,
                 amount: amount,
-                booking_id: rideId, // Using rideId as booking_id for now if booking is created after payment, or if booking exists
+                booking_id: actualBookingId,
             });
 
             if (res.checkout_request_id) {
@@ -89,8 +117,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
             }
         } catch (error: any) {
             setLoading(false);
-            setErrorMessage(error.message || 'Failed to initiate payment');
-            toast.error(error.message || 'Failed to initiate payment');
+            const msg = error.message || 'Failed to initiate payment';
+            setErrorMessage(msg);
+            toast.error(msg);
         }
     };
 
