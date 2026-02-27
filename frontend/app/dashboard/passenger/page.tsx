@@ -881,7 +881,7 @@ const Page = () => {
                                 {ride.images.map((img) => (
                                   <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden border border-gray-100">
                                     <img
-                                      src={img.image}
+                                      src={getMediaUrl(img.image, 'vehicle')}
                                       alt="Vehicle"
                                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                                       loading="lazy"

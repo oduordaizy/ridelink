@@ -9,18 +9,32 @@ export const getMediaUrl = (path: string | null | undefined, type: 'profile' | '
     return undefined;
   }
 
-  // If it's already an absolute URL, return it
+  let cleanPath = path;
+
+  // If it's an absolute URL, strip the origin to force use of our configured BASE_URL
   if (path.startsWith('http')) {
-    return path;
+    try {
+      const url = new URL(path);
+      cleanPath = url.pathname;
+    } catch (e) {
+      // Fallback if URL parsing fails
+      cleanPath = path.replace(/^https?:\/\/[^/]+/, '');
+    }
   }
 
-  // If it's a media path, prepend the base URL (removing /api from it)
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
-
   // Ensure the path starts with a slash
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const normalizedPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
 
-  return `${baseUrl}${normalizedPath}`;
+  // If the path doesn't include /media/ but is likely a media file, it might be missing from backend serialization
+  // Most Django ImageFields return paths relative to MEDIA_ROOT (e.g., 'profile_pictures/image.jpg')
+  // We need to ensure /media/ is present if the backend doesn't provide it
+  let finalPath = normalizedPath;
+  if (!finalPath.startsWith('/media/') && !finalPath.includes('/static/')) {
+    finalPath = `/media${finalPath}`;
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
+  return `${baseUrl}${finalPath}`;
 };
 
 export interface LoginData {
