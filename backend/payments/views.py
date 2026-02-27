@@ -69,15 +69,20 @@ def topup_wallet(request):
             )
             
             # Custom reference: iTra-First3phone..last3phone
+            # Custom reference: User's phone number as requested
             # NOTE: AccountReference is limited to 12 chars
             phone = str(phone_number).strip().replace('+', '')
+            if phone.startswith('0'):
+                phone = '254' + phone[1:]
+            elif not phone.startswith('254'):
+                phone = '254' + phone
             branded_ref = phone[:12]
             
             response = lipa_na_mpesa(
                 phone_number=phone_number,
                 amount=amount,
                 account_reference=branded_ref, 
-                transaction_desc=branded_ref # Use same for desc (limit 13)
+                transaction_desc=f"Ride {branded_ref}"[:13]
             )
             
             # Handle MPESA API response
@@ -251,34 +256,38 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
     Updates transaction status, wallet balance, and confirms bookings.
     Returns True if processed, False if already handled.
     """
-    if transaction_obj.status == "success":
-        logger.info(f"Transaction {transaction_obj.checkout_request_id} already marked as success.")
-        return False
+    with db_transaction.atomic():
+        # Get fresh copy and lock it
+        transaction_obj = Transaction.objects.select_for_update().get(id=transaction_obj.id)
         
-    # Allow success to override failed (e.g. if polling was wrong/premature)
-    if transaction_obj.status == "failed" and str(result_code) != "0":
-        logger.info(f"Transaction {transaction_obj.checkout_request_id} already marked as failed.")
-        return False
-        
-    transaction_obj.result_code = result_code
-    transaction_obj.result_desc = result_desc
-    transaction_obj.completed_at = timezone.now()
+        if transaction_obj.status == "success":
+            logger.info(f"Transaction {transaction_obj.checkout_request_id} already marked as success.")
+            return False
+            
+        # Allow success to override failed (e.g. if polling was wrong/premature)
+        if transaction_obj.status == "failed" and str(result_code) != "0":
+            logger.info(f"Transaction {transaction_obj.checkout_request_id} already marked as failed.")
+            return False
+            
+        transaction_obj.result_code = result_code
+        transaction_obj.result_desc = result_desc
+        transaction_obj.completed_at = timezone.now()
 
-    if str(result_code) == "0":
-        # Success logic
-        amount = transaction_obj.amount
-        mpesa_receipt = None
-        
-        if callback_metadata:
-            # Extract from callback metadata format
-            items = callback_metadata.get('Item', [])
-            for item in items:
-                if item.get('Name') == 'Amount':
-                    amount = Decimal(str(item.get('Value', amount)))
-                elif item.get('Name') == 'MpesaReceiptNumber':
-                    mpesa_receipt = item.get('Value', '')
-        
-        with db_transaction.atomic():
+        if str(result_code) == "0":
+            # Success logic
+            amount = transaction_obj.amount
+            mpesa_receipt = None
+            
+            if callback_metadata:
+                # Extract from callback metadata format
+                items = callback_metadata.get('Item', [])
+                logger.info(f"Processing callback metadata for {transaction_obj.checkout_request_id}: {json.dumps(items)}")
+                for item in items:
+                    if item.get('Name') == 'Amount':
+                        amount = Decimal(str(item.get('Value', amount)))
+                    elif item.get('Name') == 'MpesaReceiptNumber':
+                        mpesa_receipt = item.get('Value', '')
+            
             transaction_obj.status = "success"
             if mpesa_receipt:
                 transaction_obj.mpesa_receipt_number = mpesa_receipt
@@ -343,32 +352,33 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         )
             except Exception as e:
                 logger.error(f"Error in booking confirmation: {str(e)}", exc_info=True)
-    else:
-        # Failure logic
-        transaction_obj.status = "failed"
-        transaction_obj.save()
-        logger.warning(f"Payment failed/cancelled for {transaction_obj.checkout_request_id}: {result_desc}")
-        
-        # Notification for payment failure
-        Notification.objects.create(
-            user=transaction_obj.wallet.user,
-            title="Payment Failed",
-            message=f"Your payment of KES {transaction_obj.amount} failed or was cancelled. Reason: {result_desc}",
-            notification_type="error"
-        )
-        
-    return True
+        else:
+            # Failure logic
+            transaction_obj.status = "failed"
+            transaction_obj.save()
+            logger.warning(f"Payment failed/cancelled for {transaction_obj.checkout_request_id}: {result_desc}")
+            
+            # Notification for payment failure
+            Notification.objects.create(
+                user=transaction_obj.wallet.user,
+                title="Payment Failed",
+                message=f"Your payment of KES {transaction_obj.amount} failed or was cancelled. Reason: {result_desc}",
+                notification_type="error"
+            )
+            
+        return True
 
 @csrf_exempt
 def mpesa_callback(request):
     """Handle M-Pesa STK Push callback"""
     try:
         raw_body = request.body.decode('utf-8')
+        logger.info(f"M-Pesa Callback received: {raw_body}")
         data = json.loads(raw_body)
         stk_callback = data.get('Body', {}).get('stkCallback', {})
         
         if not stk_callback:
-            logger.error("Invalid callback format")
+            logger.error(f"Invalid callback format: {raw_body}")
             return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid callback format"})
         
         checkout_request_id = stk_callback.get('CheckoutRequestID')
