@@ -7,6 +7,7 @@ import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner, FaC
 import { FaMoneyBillWave as IoCash } from "react-icons/fa";
 import { paymentAPI, API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
+import PaymentForm from '@/app/components/PaymentForm';
 
 interface Ride {
   id: number;
@@ -507,62 +508,14 @@ const Page = () => {
               </div>
 
               <div className="space-y-3">
-                {showMpesaForm ? (
-                  <div className="space-y-4 animate-in slide-in-from-right duration-200">
-                    <div>
-                      <label htmlFor="mpesa-phone" className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        M-Pesa Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        id="mpesa-phone"
-                        value={mpesaPhone}
-                        onChange={(e) => setMpesaPhone(e.target.value)}
-                        placeholder="e.g., 254712345678"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:bg-white transition-all bg-gray-50"
-                        disabled={isProcessingPayment}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="mpesa-amount" className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Amount (KSh)
-                      </label>
-                      <input
-                        type="number"
-                        id="mpesa-amount"
-                        value={mpesaAmount}
-                        onChange={(e) => setMpesaAmount(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#08A6F6] focus:border-transparent transition-all bg-gray-50"
-                        disabled={isProcessingPayment}
-                      />
-                    </div>
-                    <div className="flex space-x-3 pt-2">
-                      <button
-                        onClick={processMpesaPayment}
-                        disabled={isProcessingPayment || !mpesaPhone || !mpesaAmount}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold shadow-lg transform transition active:scale-95 ${isProcessingPayment || !mpesaPhone || !mpesaAmount
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
-                          : 'bg-green-600 text-white hover:bg-green-700 shadow-green-200'
-                          }`}
-                      >
-                        {isProcessingPayment ? (
-                          <span className="flex items-center justify-center">
-                            <FaSpinner className="animate-spin mr-2" />
-                            Processing...
-                          </span>
-                        ) : (
-                          `Pay KSh ${(selectedRide.price * numberOfSeats).toLocaleString()}`
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setShowMpesaForm(false)}
-                        disabled={isProcessingPayment}
-                        className="px-6 py-3 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 font-medium transition-colors"
-                      >
-                        Back
-                      </button>
-                    </div>
-                  </div>
+                {showMpesaForm && selectedRide ? (
+                  <PaymentForm
+                    rideId={selectedRide.id}
+                    amount={selectedRide.price * numberOfSeats}
+                    token={localStorage.getItem('access_token') || ''}
+                    onSuccess={() => { }}
+                    onCancel={() => setShowMpesaForm(false)}
+                  />
                 ) : (
                   <div className="space-y-3">
                     <button
