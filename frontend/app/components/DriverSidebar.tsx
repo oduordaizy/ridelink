@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,6 +14,7 @@ import {
   FaHome,
   FaCarAlt,
   FaWallet,
+  FaBell,
   FaUser,
   FaUserCircle
 } from "react-icons/fa";
@@ -22,6 +24,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard/driver", icon: <FaHome className="mr-3 h-5 w-5" /> },
   { label: "My Rides", href: "/dashboard/driver/myrides", icon: <FaCarAlt className="mr-3 h-5 w-5" /> },
   { label: "Wallet", href: "/dashboard/driver/wallet", icon: <FaWallet className="mr-3 h-5 w-5" /> },
+  { label: "Notifications", href: "/dashboard/driver/notifications", icon: <FaBell className="mr-3 h-5 w-5" /> },
   { label: "Profile", href: "/dashboard/driver/profile", icon: <FaUser className="mr-3 h-5 w-5" /> },
 ];
 
@@ -29,6 +32,26 @@ export default function DriverSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          const notifications = await authAPI.getNotifications(token);
+          const unread = notifications.filter((n: any) => !n.is_read).length;
+          setUnreadCount(unread);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSignOut = () => {
     logout();
@@ -54,14 +77,14 @@ export default function DriverSidebar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64">
-              <SidebarContent pathname={pathname} />
+              <SidebarContent pathname={pathname} unreadCount={unreadCount} />
             </SheetContent>
           </Sheet>
         </div>
 
         {/* Desktop Sidebar */}
         <div className="hidden md:block w-full">
-          <SidebarContent pathname={pathname} />
+          <SidebarContent pathname={pathname} unreadCount={unreadCount} />
         </div>
       </div>
 
@@ -117,11 +140,11 @@ export default function DriverSidebar() {
   );
 }
 
-function SidebarContent({ pathname }: { pathname: string }) {
+function SidebarContent({ pathname, unreadCount }: { pathname: string, unreadCount: number }) {
   return (
     <nav className="space-y-1">
       <Link href='/' className='pacifico-regular flex items-center text-[#0086CA]'>
-        <Image src="/logo.png" alt="Logo" width={40} height={40} className="!m-0" />
+        <Image src="/logo1.png" alt="Logo" width={40} height={40} className="!m-0" />
         {/* <span className="ml-0 font-semibold text-xl">iTravas</span> */}
       </Link>
 
@@ -129,13 +152,20 @@ function SidebarContent({ pathname }: { pathname: string }) {
         <Link
           key={item.href}
           href={item.href}
-          className={`flex items-center px-4 py-3 rounded-md text-sm ${pathname === item.href
+          className={`flex items-center justify-between px-4 py-3 rounded-md text-sm ${pathname === item.href
             ? "bg-blue-100 text-blue-800 font-medium"
-            : "hover:[#005792] text-gray-700"
+            : "hover:bg-gray-100 text-gray-700"
             }`}
         >
-          {item.icon}
-          {item.label}
+          <div className="flex items-center">
+            {item.icon}
+            {item.label}
+          </div>
+          {item.label === "Notifications" && unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </Link>
       ))}
     </nav>

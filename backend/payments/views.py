@@ -8,6 +8,7 @@ from decimal import Decimal
 import json
 from .models import Transaction, Wallet
 from .mpesa import lipa_na_mpesa, query_stk_status
+from accounts.models import Notification
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -289,6 +290,14 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
             
             logger.info(f"Successfully processed payment for {wallet.user.username}: {mpesa_receipt or 'N/A'} for KES {amount}")
             
+            # Notification for top-up success
+            Notification.objects.create(
+                user=wallet.user,
+                title="Wallet Top-up Success",
+                message=f"Your wallet has been topped up with KES {amount}. Receipt: {mpesa_receipt or 'N/A'}",
+                notification_type="success"
+            )
+
             # Booking confirmation logic
             try:
                 from rides.models import Booking
@@ -323,6 +332,15 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             booking=pending_booking
                         )
                         logger.info(f"Confirmed booking {pending_booking.id} and deducted KES {expected_amount}")
+                        
+                        # Notification for booking success
+                        ride = pending_booking.ride
+                        Notification.objects.create(
+                            user=wallet.user,
+                            title="Ride Booking Confirmed",
+                            message=f"Your booking for ride from {ride.pickup_location} to {ride.destination} has been confirmed. KES {expected_amount} deducted from wallet.",
+                            notification_type="success"
+                        )
             except Exception as e:
                 logger.error(f"Error in booking confirmation: {str(e)}", exc_info=True)
     else:
@@ -330,6 +348,14 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
         transaction_obj.status = "failed"
         transaction_obj.save()
         logger.warning(f"Payment failed/cancelled for {transaction_obj.checkout_request_id}: {result_desc}")
+        
+        # Notification for payment failure
+        Notification.objects.create(
+            user=transaction_obj.wallet.user,
+            title="Payment Failed",
+            message=f"Your payment of KES {transaction_obj.amount} failed or was cancelled. Reason: {result_desc}",
+            notification_type="error"
+        )
         
     return True
 

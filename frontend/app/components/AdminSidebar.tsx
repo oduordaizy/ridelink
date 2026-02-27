@@ -29,7 +29,7 @@ export default function AdminSidebar() {
     return (
         <aside className="w-64 bg-[#00204a] text-white min-h-screen flex flex-col shadow-xl">
             <Link href="/" className="p-6 flex items-center space-x-2 border-b border-white/10 group">
-                <Image src="/logo.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
+                <Image src="/logo1.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
                 <span className="text-xl font-semibold text-[#08A6F6] tracking-tight">iTravas Admin</span>
             </Link>
 

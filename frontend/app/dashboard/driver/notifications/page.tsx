@@ -1,5 +1,5 @@
-import NoNotifications from '@/app/components/NoNotifications';
+import NotificationList from '@/app/components/NotificationList';
 
 export default function DriverNotificationsPage() {
-    return <NoNotifications backHref="/dashboard/driver" />;
+    return <NotificationList backHref="/dashboard/driver" />;
 }

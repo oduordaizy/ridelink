@@ -1,5 +1,5 @@
-import NoNotifications from '@/app/components/NoNotifications';
+import NotificationList from '@/app/components/NotificationList';
 
 export default function PassengerNotificationsPage() {
-    return <NoNotifications backHref="/dashboard/passenger" />;
+    return <NotificationList backHref="/dashboard/passenger" />;
 }

@@ -298,3 +298,36 @@ class ContactView(generics.GenericAPIView):
         except Exception as e:
             print(f"Error sending contact email: {e}")
             return Response({'error': 'Failed to send message. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_notifications(request):
+    from .models import Notification
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')[:50]
+    data = [{
+        'id': n.id,
+        'title': n.title,
+        'message': n.message,
+        'type': n.notification_type,
+        'is_read': n.is_read,
+        'created_at': n.created_at.isoformat()
+    } for n in notifications]
+    return Response(data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, notification_id):
+    from .models import Notification
+    try:
+        notification = Notification.objects.get(id=notification_id, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return Response({'success': True})
+    except Notification.DoesNotExist:
+        return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_all_notifications_read(request):
+    from .models import Notification
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return Response({'success': True})

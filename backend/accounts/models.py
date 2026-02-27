@@ -68,3 +68,22 @@ class Passenger(models.Model):
     
     class Meta:
         db_table = 'passenger_profiles'
+
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('success', 'Success'),
+        ('error', 'Error'),
+        ('info', 'Info'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='info')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'notifications'
+        ordering = ['-created_at']

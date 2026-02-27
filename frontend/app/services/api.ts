@@ -256,6 +256,48 @@ export const authAPI = {
     }
 
     return response.json();
+  },
+
+  // Get notifications
+  async getNotifications(token: string) {
+    const response = await fetch(`${API_BASE_URL}/auth/notifications/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch notifications');
+    }
+
+    return response.json();
+  },
+
+  // Mark notification as read
+  async markNotificationRead(token: string, notificationId: number) {
+    const response = await fetch(`${API_BASE_URL}/auth/notifications/${notificationId}/read/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.ok;
+  },
+
+  // Mark all notifications as read
+  async markAllNotificationsRead(token: string) {
+    const response = await fetch(`${API_BASE_URL}/auth/notifications/read-all/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.ok;
   }
 };
 

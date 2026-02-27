@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { IoNotificationsOff, IoMenu, IoClose } from 'react-icons/io5';
+import { IoNotifications, IoMenu, IoClose } from 'react-icons/io5';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 
 interface User {
   id?: number;
@@ -31,6 +32,26 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
   const pathname = usePathname();
   const router = useRouter();
   const { switchRole } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          const notifications = await authAPI.getNotifications(token);
+          const unread = notifications.filter((n: any) => !n.is_read).length;
+          setUnreadCount(unread);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -54,6 +75,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
     { href: '/dashboard/passenger', label: 'Find Rides' },
     { href: '/dashboard/passenger/bookings', label: 'My Bookings' },
     { href: '/dashboard/passenger/wallet', label: 'Wallet' },
+    { href: '/dashboard/passenger/notifications', label: 'Notifications' },
     { href: '/dashboard/passenger/profile', label: 'Profile' },
   ];
 
@@ -209,7 +231,12 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
             className="relative p-2 rounded-lg hover:bg-[#F5F5F5] transition-colors group"
             aria-label="Notifications"
           >
-            <IoNotificationsOff className="text-2xl text-[#484848] group-hover:text-[#08A6F6] transition-colors" />
+            <IoNotifications className={`text-2xl transition-colors ${unreadCount > 0 ? 'text-[#08A6F6]' : 'text-[#484848]'}`} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-white animate-pulse">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Link>
 
           <div className="relative" ref={dropdownRef}>
