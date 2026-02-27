@@ -171,7 +171,8 @@ export default function DriverWallet() {
 
         const data = await response.json();
 
-        if (data.ResultCode == '0') {
+        // Check internal status from our database first as it's more reliable
+        if (data.internal_status === "success") {
           clearInterval(timer);
           setStkQueryLoading(false);
           setSuccess(true);
@@ -180,11 +181,32 @@ export default function DriverWallet() {
           setTimeout(() => {
             window.location.reload();
           }, 3000);
-        } else if (data.ResultCode) {
+          return;
+        } else if (data.internal_status === "failed") {
           clearInterval(timer);
           setStkQueryLoading(false);
           setIsProcessing(false);
-          showToast(data.ResultDesc || 'Payment failed', 'error');
+          showToast(data.internal_result_desc || data.ResultDesc || 'Payment failed', 'error');
+          return;
+        }
+
+        // Fallback to raw M-Pesa ResultCode
+        if (data.ResultCode !== undefined && data.ResultCode !== null) {
+          if (String(data.ResultCode) === "0") {
+            clearInterval(timer);
+            setStkQueryLoading(false);
+            setSuccess(true);
+            setIsProcessing(false);
+
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
+          } else {
+            clearInterval(timer);
+            setStkQueryLoading(false);
+            setIsProcessing(false);
+            showToast(data.ResultDesc || 'Payment failed', 'error');
+          }
         }
       } catch (error) {
         console.error('Query error:', error);

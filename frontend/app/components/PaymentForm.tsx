@@ -58,21 +58,38 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
             }
 
             if (data) {
-                // M-Pesa ResultCode can be string "0" or integer 0
-                if (String(data.ResultCode) === "0") {
+                // Check internal status from our database first as it's more reliable (updated via callback)
+                if (data.internal_status === "success") {
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
                     setSuccess(true);
                     if (onSuccess) onSuccess();
-                } else if (data.ResultCode !== undefined && data.ResultCode !== null) {
-                    // This handles cases where ResultCode is non-zero (failed, cancelled)
+                    return;
+                } else if (data.internal_status === "failed") {
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
-                    setErrorMessage(data?.ResultDesc || `Transaction failed (Error: ${data.ResultCode})`);
+                    setErrorMessage(data.internal_result_desc || data?.ResultDesc || "Transaction failed");
+                    return;
                 }
-                // If ResultCode is null but response is OK, it means it's still processing
+
+                // Fallback to raw M-Pesa ResultCode if internal_status is still pending
+                if (data.ResultCode !== undefined && data.ResultCode !== null) {
+                    if (String(data.ResultCode) === "0") {
+                        clearInterval(timer);
+                        setStkQueryLoading(false);
+                        setLoading(false);
+                        setSuccess(true);
+                        if (onSuccess) onSuccess();
+                    } else {
+                        clearInterval(timer);
+                        setStkQueryLoading(false);
+                        setLoading(false);
+                        setErrorMessage(data?.ResultDesc || `Transaction failed (Error: ${data.ResultCode})`);
+                    }
+                }
+                // If ResultCode is null and internal_status is pending, it means it's still processing
             }
         }, 3000); // Increased interval to 3s for better stability
     };
@@ -131,7 +148,16 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
     }
 
     if (success) {
-        return <PaymentSuccess />;
+        return (
+            <PaymentSuccess
+                title="Booking Successful! 🎉"
+                message={`Your ride booking for ${seats} seat(s) has been confirmed. You paid KES ${amount}.`}
+                viewLink="/dashboard/passenger/my-bookings"
+                viewLabel="View My Bookings"
+                continueLabel="Book Another Ride"
+                onContinue={() => window.location.reload()}
+            />
+        );
     }
 
     return (

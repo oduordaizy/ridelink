@@ -8,6 +8,7 @@ import { FaArrowLeft, FaLocationDot, FaMapLocationDot, FaCalendarDays, FaClock, 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
+import PaymentSuccess from '@/app/components/Success';
 
 
 interface RideFormData {
@@ -59,6 +60,7 @@ export default function CreateRidePage() {
     additional_info: '',
     vehicle_images: [],
   });
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const hasCheckedProfile = useRef(false);
 
@@ -217,6 +219,7 @@ export default function CreateRidePage() {
       await response.json();
       toast.success('Ride created successfully!');
 
+
       setFormData({
         departure_location: '',
         destination: '',
@@ -228,7 +231,9 @@ export default function CreateRidePage() {
         vehicle_images: []
       });
 
-      router.push('/dashboard/driver');
+      setShowSuccess(true);
+      // Removed immediate redirect
+      // router.push('/dashboard/driver');
     } catch (error) {
       console.error('Error creating ride:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create ride');
@@ -288,6 +293,21 @@ export default function CreateRidePage() {
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <PaymentSuccess
+          title="Ride Created! 🚗"
+          message="Your ride has been successfully scheduled and is now visible to passengers."
+          viewLink="/dashboard/driver/myrides"
+          viewLabel="View My Rides"
+          continueLabel="Create Another Ride"
+          onContinue={() => setShowSuccess(false)}
+        />
       </div>
     );
   }

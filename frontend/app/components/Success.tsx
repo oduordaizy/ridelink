@@ -1,22 +1,48 @@
 import { FaCheckCircle } from "react-icons/fa";
+import Link from "next/link";
 
-export default function PaymentSuccess() {
+interface SuccessProps {
+    title?: string;
+    message?: string;
+    viewLink?: string;
+    viewLabel?: string;
+    continueLabel?: string;
+    onContinue?: () => void;
+}
+
+export default function PaymentSuccess({
+    title = "Payment Successful",
+    message = "Your payment has been processed successfully. Thank you for using RideLink.",
+    viewLink = "/dashboard/passenger/bookings",
+    viewLabel = "View Bookings",
+    continueLabel = "Continue",
+    onContinue
+}: SuccessProps) {
     return (
-        <div className="space-y-4 text-center text-black p-10 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="space-y-6 text-center text-black p-10 bg-white rounded-3xl shadow-xl border border-gray-100 max-w-md mx-auto">
             <div className="flex justify-center">
-                <FaCheckCircle className="text-green-500 text-6xl" />
+                <div className="bg-green-100 p-4 rounded-full">
+                    <FaCheckCircle className="text-green-500 text-6xl" />
+                </div>
             </div>
-            <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-gray-800">Payment Successful</h1>
-                <p className="text-gray-600">Your payment has been processed successfully. Thank you for using RideLink.</p>
+            <div className="space-y-3">
+                <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+                <p className="text-gray-600 leading-relaxed">{message}</p>
             </div>
-            <div className="pt-4">
-                <button
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition-colors"
-                >
-                    View Bookings
-                </button>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                {onContinue && (
+                    <button
+                        onClick={onContinue}
+                        className="flex-1 px-6 py-4 bg-gray-100 text-gray-800 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                    >
+                        {continueLabel}
+                    </button>
+                )}
+                <Link href={viewLink} className="flex-1">
+                    <button className="w-full px-6 py-4 bg-[#08A6F6] text-white rounded-2xl font-bold hover:bg-[#00204a] shadow-lg transition-all">
+                        {viewLabel}
+                    </button>
+                </Link>
             </div>
         </div>
     );

@@ -8,6 +8,7 @@ import { FaMoneyBillWave as IoCash } from "react-icons/fa";
 import { paymentAPI, API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import PaymentForm from '@/app/components/PaymentForm';
+import PaymentSuccess from '@/app/components/Success';
 
 interface Ride {
   id: number;
@@ -64,6 +65,8 @@ const Page = () => {
   });
   const [expandedRideId, setExpandedRideId] = useState<number | null>(null);
   const [numberOfSeats, setNumberOfSeats] = useState(1);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [bookingSuccessMessage, setBookingSuccessMessage] = useState("");
 
   // Fetch all rides (initial load and after clearing search)
   const fetchAllRides = useCallback(async () => {
@@ -266,6 +269,9 @@ const Page = () => {
 
         // Refresh rides list
         fetchAllRides();
+
+        setBookingSuccessMessage(`Your ride booking for ${numberOfSeats} seat(s) to ${selectedRide.destination} has been confirmed. KES ${selectedRide.price * numberOfSeats} was deducted from your wallet.`);
+        setShowSuccessModal(true);
 
       } else if (method === 'card') {
         // Book ride with card payment
@@ -577,6 +583,20 @@ const Page = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 transition-all duration-300">
+          <PaymentSuccess
+            title="Booking Successful! 🎉"
+            message={bookingSuccessMessage}
+            viewLink="/dashboard/passenger/my-bookings"
+            viewLabel="View My Bookings"
+            continueLabel="Book Another Ride"
+            onContinue={() => setShowSuccessModal(false)}
+          />
         </div>
       )}
 

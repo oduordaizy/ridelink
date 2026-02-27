@@ -164,15 +164,23 @@ def query_mpesa_status(request):
         
         # Sync with local database if result is found
         result_code = response.get('ResultCode')
-        if result_code is not None:
-            transaction_obj = Transaction.objects.filter(checkout_request_id=checkout_request_id).first()
-            if transaction_obj:
-                process_stk_result(
-                    transaction_obj, 
-                    result_code, 
-                    response.get('ResultDesc', 'Query Result')
-                )
+        transaction_obj = Transaction.objects.filter(checkout_request_id=checkout_request_id).first()
+        
+        if result_code is not None and transaction_obj:
+            process_stk_result(
+                transaction_obj, 
+                result_code, 
+                response.get('ResultDesc', 'Query Result')
+            )
+            # Refetch to get updated status
+            transaction_obj.refresh_from_db()
                 
+        # Add internal status to response for frontend reliability
+        if transaction_obj:
+            response['internal_status'] = transaction_obj.status
+            response['internal_result_code'] = transaction_obj.result_code
+            response['internal_result_desc'] = transaction_obj.result_desc
+
         return Response(response, status=status.HTTP_200_OK)
     except Exception as e:
         logger.error(f"Error querying M-Pesa status: {str(e)}")
@@ -348,6 +356,14 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             user=wallet.user,
                             title="Ride Booking Confirmed",
                             message=f"Your booking for ride from {ride.pickup_location} to {ride.destination} has been confirmed. KES {expected_amount} deducted from wallet.",
+                            notification_type="success"
+                        )
+
+                        # Notification for the driver
+                        Notification.objects.create(
+                            user=ride.driver,
+                            title="New Confirmed Booking",
+                            message=f"A booking for your ride from {ride.departure_location} to {ride.destination} has been paid and confirmed.",
                             notification_type="success"
                         )
             except Exception as e:

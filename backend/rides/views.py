@@ -17,6 +17,7 @@ from .serializers import (
     BookingSerializer, 
 )
 from payments.models import Wallet, Transaction
+from accounts.models import Notification
 
 
 
@@ -221,6 +222,22 @@ class RideViewSet(viewsets.ModelViewSet):
                         booking=booking
                     )
                     
+                    # Notification for wallet payment success
+                    Notification.objects.create(
+                        user=request.user,
+                        title="Ride Booking Confirmed",
+                        message=f"Your booking for ride from {ride.departure_location} to {ride.destination} has been confirmed. KES {total_amount} deducted from your wallet balance.",
+                        notification_type="success"
+                    )
+
+                    # Notification for driver
+                    Notification.objects.create(
+                        user=ride.driver,
+                        title="New Confirmed Booking (Wallet)",
+                        message=f"A booking for your ride to {ride.destination} has been paid via wallet and confirmed.",
+                        notification_type="success"
+                    )
+                    
                     # Send confirmation email
                     from .utils import send_booking_confirmation_email
                     send_booking_confirmation_email(booking)
@@ -233,6 +250,14 @@ class RideViewSet(viewsets.ModelViewSet):
                     # Booking stays in pending status but seats are already reserved
                     message = 'Booking created. Awaiting payment confirmation.'
                     extra_data = {'status': 'pending_payment'}
+                    
+                    # Notification for driver about new pending booking
+                    Notification.objects.create(
+                        user=ride.driver,
+                        title="New Booking Request",
+                        message=f"{request.user.username} has requested {no_of_seats} seat(s) for your ride to {ride.destination}. Awaiting payment.",
+                        notification_type="info"
+                    )
                 
                 # Refresh ride to get updated available_seats for the response
                 ride.refresh_from_db()
