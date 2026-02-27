@@ -171,18 +171,6 @@ class RideViewSet(viewsets.ModelViewSet):
                 'error': 'You cannot book your own ride'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check if user already has a booking for this ride
-        existing_booking = Booking.objects.filter(
-            ride=ride,
-            user=request.user,
-            status__in=['pending', 'confirmed']
-        ).first()
-        
-        if existing_booking:
-            return Response({
-                'error': 'You already have a booking for this ride'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
         # Create booking with transaction
         try:
             with db_transaction.atomic():
