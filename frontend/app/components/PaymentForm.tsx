@@ -23,18 +23,20 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
     const [stkQueryLoading, setStkQueryLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [attempt, setAttempt] = useState(0);
 
     // Poll for STK status
-    let reqcount = 0;
     const stkPushQueryWithIntervals = (checkoutRequestId: string) => {
+        let currentAttempt = 0;
         const timer = setInterval(async () => {
-            reqcount += 1;
+            currentAttempt += 1;
+            setAttempt(currentAttempt);
 
-            if (reqcount === 15) {
+            if (currentAttempt >= 15) {
                 clearInterval(timer);
                 setStkQueryLoading(false);
                 setLoading(false);
-                setErrorMessage("You took too long to pay. Please try again.");
+                setErrorMessage("You took too long to pay. If you have paid, your balance will reflect shortly.");
                 return;
             }
 
@@ -45,33 +47,34 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
                 const errorData = error.response?.data;
                 const errorCode = errorData?.errorCode || errorData?.ResultCode;
 
-                if (errorCode !== "500.001.1001") {
+                if (errorCode && String(errorCode) !== "500.001.1001") {
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
-                    // Provide a more descriptive error if available
-                    const errorMessage = errorData?.errorMessage || errorData?.error || errorData?.ResultDesc || "An error occurred while checking status";
-                    setErrorMessage(errorMessage);
+                    const msg = errorData?.errorMessage || errorData?.error || errorData?.ResultDesc || "An error occurred while checking status";
+                    setErrorMessage(msg);
                 }
+                // If errorCode is null, it's a generic backend error, maybe transient? Let's keep polling for a few more times
             }
 
             if (data) {
-                if (data.ResultCode === "0") {
+                // M-Pesa ResultCode can be string "0" or integer 0
+                if (String(data.ResultCode) === "0") {
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
                     setSuccess(true);
                     if (onSuccess) onSuccess();
-                } else if (data.ResultCode) {
+                } else if (data.ResultCode !== undefined && data.ResultCode !== null) {
                     // This handles cases where ResultCode is non-zero (failed, cancelled)
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
-                    setErrorMessage(data?.ResultDesc || "Transaction failed or was cancelled");
+                    setErrorMessage(data?.ResultDesc || `Transaction failed (Error: ${data.ResultCode})`);
                 }
                 // If ResultCode is null but response is OK, it means it's still processing
             }
-        }, 2000);
+        }, 3000); // Increased interval to 3s for better stability
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +127,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
     };
 
     if (stkQueryLoading) {
-        return <STKPushQueryLoading number={phoneNumber} />;
+        return <STKPushQueryLoading number={phoneNumber} attempt={attempt} />;
     }
 
     if (success) {

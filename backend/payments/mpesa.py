@@ -223,9 +223,14 @@ def query_stk_status(checkout_request_id):
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
     
     try:
-        response = requests.post(get_mpesa_urls()["stk_query"], json=payload, headers=headers, timeout=30)
+        api_url = get_mpesa_urls()["stk_query"]
+        logger.info(f"Querying STK Status for {checkout_request_id} at {api_url}")
+        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
+        logger.info(f"STK Query Response status: {response.status_code}")
+        logger.info(f"STK Query Response body: {response.text}")
         return response.json()
     except Exception as e:
+        logger.error(f"STK Query Exception: {str(e)}")
         return {"error": str(e)}
 
 def get_account_balance():
