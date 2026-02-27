@@ -70,7 +70,7 @@ export default function Login() {
           <div className="w-full max-w-md bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl p-10 border border-[#08A6F6]/20">
             <div className="flex flex-col items-center mb-8">
               <Image
-                src="/logo.png"
+                src="/logo1.png"
                 alt="iTravas Logo"
                 width={60}
                 height={60}

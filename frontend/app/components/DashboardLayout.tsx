@@ -81,7 +81,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
           <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#08A6F6] to-[#00204a]">
             <Link href='/' className='flex items-center'>
               <Image
-                src="/logo.png"
+                src="/logo1.png"
                 alt="Logo"
                 width={30}
                 height={30}
@@ -174,7 +174,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
 
           <Link href='/' className='flex items-center group'>
             <Image
-              src="/logo.png"
+              src="/logo1.png"
               alt="Logo"
               width={30}
               height={30}

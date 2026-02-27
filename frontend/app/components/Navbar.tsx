@@ -24,7 +24,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href='/' className='flex items-center text-[#00204a] hover:opacity-90 transition-opacity'>
-            <Image src="/logo.png" alt="Logo" width={35} height={35} className="!m-0" />
+            <Image src="/logo1.png" alt="Logo" width={35} height={35} className="!m-0" />
             {isHome ? (
               <h1 className="text-[#08A6F6] ml-0 font-semibold text-2xl">iTravas</h1>
             ) : (
