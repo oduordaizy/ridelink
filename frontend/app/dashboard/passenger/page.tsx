@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { IoWallet, IoCard } from "react-icons/io5";
-import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner, FaChevronDown, FaChevronUp, FaUser, FaStar, FaPhone, FaInfoCircle, FaClock, FaImage } from "react-icons/fa";
+import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner, FaChevronDown, FaChevronUp, FaUser, FaStar, FaPhone, FaInfoCircle, FaClock, FaImage, FaChevronRight } from "react-icons/fa";
 import { FaMoneyBillWave as IoCash } from "react-icons/fa";
 import { paymentAPI, API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
@@ -364,7 +364,7 @@ const Page = () => {
       });
       toast('Your booking will be confirmed once payment is received.', {
         duration: 6000,
-        icon: '??',
+        icon: 'ℹ️',
       });
       setShowMpesaForm(false);
       setShowPaymentModal(false);
@@ -501,7 +501,7 @@ const Page = () => {
 
                 <div className="flex items-center gap-2 text-gray-700">
                   <span className="font-medium text-primary-dark">{selectedRide.departure_location}</span>
-                  <span className="text-gray-400">?</span>
+                  <FaChevronRight className="text-gray-300 text-xs" />
                   <span className="font-medium text-primary-dark">{selectedRide.destination}</span>
                 </div>
               </div>
@@ -587,7 +587,7 @@ const Page = () => {
                           )}
                         </div>
                       </div>
-                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">?</span>
+                      <FaChevronRight className="text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </button>
 
                     <button
@@ -601,7 +601,7 @@ const Page = () => {
                         </div>
                         <span className="font-semibold text-gray-800">M-Pesa</span>
                       </div>
-                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">?</span>
+                      <FaChevronRight className="text-gray-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
                     </button>
 
                     <button
@@ -615,7 +615,7 @@ const Page = () => {
                         </div>
                         <span className="font-semibold text-gray-800">Card</span>
                       </div>
-                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">?</span>
+                      <FaChevronRight className="text-gray-300 group-hover:text-[#08A6F6] group-hover:translate-x-1 transition-all" />
                     </button>
                   </div>
                 )}

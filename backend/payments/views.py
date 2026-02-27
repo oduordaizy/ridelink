@@ -69,12 +69,11 @@ def topup_wallet(request):
             
             # Custom reference: iTra-First3phone..last3phone
             # NOTE: AccountReference is limited to 12 chars
-            phone = str(phone_number).strip()
-            # If it's a 254... number, get digits after 254
-            f3 = phone[3:6] if phone.startswith('254') and len(phone) >= 6 else phone[:3]
-            l3 = phone[-3:]
-            # e.g. iTra-712..89 (12 chars)
-            branded_ref = f"iTra-{f3}..{l3}"[:12]
+            phone = str(phone_number).strip().replace('+', '')
+            # Use a cleaner reference without dots
+            # e.g. iTra-712345 (12 chars max)
+            clean_phone = phone[3:] if phone.startswith('254') else phone
+            branded_ref = f"iTra{clean_phone}"[:12]
             
             response = lipa_na_mpesa(
                 phone_number=phone_number,

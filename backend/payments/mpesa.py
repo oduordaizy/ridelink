@@ -128,6 +128,8 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
     try:
         # Make the API request
         api_url = get_mpesa_urls()["stk_push"]
+        logger.info(f"Initiating STK Push to {api_url}")
+        
         response = requests.post(
             api_url,
             json=payload,
@@ -135,24 +137,29 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
             timeout=30
         )
         
-        # Log the response
-        logger.info(f"MPESA API Response: {response.status_code} - {response.text}")
+        # Log the response status and full text for debugging
+        logger.info(f"MPESA API Response Status: {response.status_code}")
+        logger.info(f"MPESA API Response Body: {response.text}")
         
         # Check for HTTP errors
-        response.raise_for_status()
+        if response.status_code != 200:
+            error_data = response.json() if response.status_code == 400 or response.status_code == 500 else {"errorMessage": response.text}
+            error_msg = f"MPESA API error ({response.status_code}): {error_data.get('errorMessage', response.text)}"
+            logger.error(error_msg)
+            return {"error": error_msg, "code": error_data.get('errorCode', 'HTTP_ERROR')}
         
         response_data = response.json()
         
         # Check for API-level errors
         if 'errorCode' in response_data:
-            error_msg = f"MPESA API error: {response_data.get('errorMessage', 'Unknown error')}"
+            error_msg = f"MPESA API logic error: {response_data.get('errorMessage', 'Unknown error')}"
             logger.error(error_msg)
             return {"error": error_msg, "code": response_data.get('errorCode')}
             
         return response_data
         
     except requests.exceptions.RequestException as e:
-        error_msg = f"MPESA API request failed: {str(e)}"
+        error_msg = f"MPESA API request failed (Network/Timeout): {str(e)}"
         if hasattr(e, 'response') and e.response is not None:
             error_msg += f" - {e.response.status_code}: {e.response.text}"
         logger.error(error_msg)
