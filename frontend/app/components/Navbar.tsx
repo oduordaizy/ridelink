@@ -25,11 +25,11 @@ export default function Navbar() {
           {/* Logo */}
           <Link href='/' className='flex items-center text-[#00204a] hover:opacity-90 transition-opacity'>
             <Image src="/logo1.png" alt="Logo" width={35} height={35} className="!m-0" />
-            {isHome ? (
+            {/* {isHome ? (
               <h1 className="text-[#08A6F6] ml-0 font-semibold text-2xl">iTravas</h1>
             ) : (
               <span className="text-[#08A6F6] ml-0 font-semibold text-2xl">iTravas</span>
-            )}
+            )} */}
           </Link>
 
           {/* Desktop Navigation */}
