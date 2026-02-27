@@ -124,7 +124,7 @@ const DriverLayout = ({
             <Menu className="w-6 h-6 text-gray-700" />
           </button>
           <Link href="/" className="flex items-center gap-0">
-            <Image src="/logo.png" alt="iTravas Logo" width={32} height={32} />
+            <Image src="/logo1.png" alt="iTravas Logo" width={32} height={32} />
             <span className="text-xl font-semibold text-[#08A6F6]">iTravas</span>
           </Link>
         </div>
@@ -210,7 +210,7 @@ const DriverLayout = ({
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
           <Link href="/" className="flex items-center gap-0">
-            <Image src="/logo.png" alt="iTravas Logo" width={32} height={32} />
+            <Image src="/logo1.png" alt="iTravas Logo" width={32} height={32} />
             <span className="text-xl font-semibold text-[#08A6F6]">iTravas</span>
           </Link>
           <button
