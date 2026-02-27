@@ -11,15 +11,15 @@ export default function Footer() {
           <div className="flex flex-col space-y-4">
             <div className="flex items-center space-x-0.5">
               <Image
-                src="/footer-logo.png"
+                src="/logo1.png"
                 alt="iTravas Logo"
                 width={32}
                 height={32}
                 className="object-contain"
               />
-              <div className="text-white font-bold text-xl">
+              {/* <div className="text-white font-bold text-xl">
                 iTravas
-              </div>
+              </div> */}
             </div>
             <p className="text-gray-300 text-xs max-w-[250px] leading-relaxed">
               Connecting drivers and passengers for affordable, secure, and convenient rides across Kenya.
