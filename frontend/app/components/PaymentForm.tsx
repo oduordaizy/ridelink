@@ -28,11 +28,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
     // Poll for STK status
     const stkPushQueryWithIntervals = (checkoutRequestId: string) => {
         let currentAttempt = 0;
+        const STILL_PROCESSING_CODES = ['500.001.1001', '500.001.1000'];
+        const MAX_ATTEMPTS = 25; // 25 × 3s = 75 seconds total
+
         const timer = setInterval(async () => {
             currentAttempt += 1;
             setAttempt(currentAttempt);
 
-            if (currentAttempt >= 15) {
+            if (currentAttempt >= MAX_ATTEMPTS) {
                 clearInterval(timer);
                 setStkQueryLoading(false);
                 setLoading(false);
@@ -43,22 +46,23 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
             const { data, error } = await stkPushQuery(checkoutRequestId, token);
 
             if (error) {
-                // If it's a "Wait" error from M-Pesa (500.001.1001), keep polling
                 const errorData = error.response?.data;
-                const errorCode = errorData?.errorCode || errorData?.ResultCode;
+                const errorCode = String(errorData?.errorCode || '');
 
-                if (errorCode && String(errorCode) !== "500.001.1001") {
+                if (errorCode && !STILL_PROCESSING_CODES.includes(errorCode)) {
+                    // Only stop on a definitive failure code — not on 'still processing'
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
                     const msg = errorData?.errorMessage || errorData?.error || errorData?.ResultDesc || "An error occurred while checking status";
                     setErrorMessage(msg);
                 }
-                // If errorCode is null, it's a generic backend error, maybe transient? Let's keep polling for a few more times
+                // Otherwise (500.001.1001 or unknown transient), keep polling
+                return;
             }
 
             if (data) {
-                // Check internal status from our database first as it's more reliable (updated via callback)
+                // internal_status is set by our backend and is the most reliable source
                 if (data.internal_status === "success") {
                     clearInterval(timer);
                     setStkQueryLoading(false);
@@ -74,9 +78,21 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
                     return;
                 }
 
-                // Fallback to raw M-Pesa ResultCode if internal_status is still pending
-                if (data.ResultCode !== undefined && data.ResultCode !== null) {
-                    if (String(data.ResultCode) === "0") {
+                // If internal_status is 'pending', Daraja is still processing — keep polling
+                if (data.internal_status === 'pending') {
+                    return;
+                }
+
+                // Fallback: use raw M-Pesa ResultCode only when it's a definitive final code
+                const resultCode = data.ResultCode;
+                const mpesaErrorCode = String(data.errorCode || '');
+
+                if (STILL_PROCESSING_CODES.includes(mpesaErrorCode)) {
+                    return; // Still processing, keep polling
+                }
+
+                if (resultCode !== undefined && resultCode !== null) {
+                    if (String(resultCode) === "0") {
                         clearInterval(timer);
                         setStkQueryLoading(false);
                         setLoading(false);
@@ -86,12 +102,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
                         clearInterval(timer);
                         setStkQueryLoading(false);
                         setLoading(false);
-                        setErrorMessage(data?.ResultDesc || `Transaction failed (Error: ${data.ResultCode})`);
+                        setErrorMessage(data?.ResultDesc || `Transaction failed (Error: ${resultCode})`);
                     }
                 }
-                // If ResultCode is null and internal_status is pending, it means it's still processing
             }
-        }, 3000); // Increased interval to 3s for better stability
+        }, 3000);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

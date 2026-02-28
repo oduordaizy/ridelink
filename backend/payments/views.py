@@ -162,11 +162,20 @@ def query_mpesa_status(request):
     try:
         response = query_stk_status(checkout_request_id)
         
-        # Sync with local database if result is found
-        result_code = response.get('ResultCode')
+        # Get the transaction from our DB
         transaction_obj = Transaction.objects.filter(checkout_request_id=checkout_request_id).first()
-        
-        if result_code is not None and transaction_obj:
+
+        # Determine M-Pesa result code
+        # Daraja uses 'ResultCode' for final statuses and 'errorCode'/'errorMessage' for in-progress
+        result_code = response.get('ResultCode')
+        error_code = response.get('errorCode', '')
+
+        # 500.001.1001 means "The transaction is being processed" - NOT a failure, keep polling
+        STILL_PROCESSING_CODES = {'500.001.1001', '500.001.1000'}
+        is_still_processing = str(error_code) in STILL_PROCESSING_CODES or str(result_code) in STILL_PROCESSING_CODES
+
+        if not is_still_processing and result_code is not None and transaction_obj:
+            # Only update the DB when Daraja gives us a final result code (0 = success, anything else = failure)
             process_stk_result(
                 transaction_obj, 
                 result_code, 
@@ -175,11 +184,13 @@ def query_mpesa_status(request):
             # Refetch to get updated status
             transaction_obj.refresh_from_db()
                 
-        # Add internal status to response for frontend reliability
+        # Always add internal status to response so frontend has a reliable source of truth
         if transaction_obj:
             response['internal_status'] = transaction_obj.status
             response['internal_result_code'] = transaction_obj.result_code
             response['internal_result_desc'] = transaction_obj.result_desc
+        elif is_still_processing:
+            response['internal_status'] = 'pending'
 
         return Response(response, status=status.HTTP_200_OK)
     except Exception as e:
