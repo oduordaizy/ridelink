@@ -290,6 +290,13 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
     Updates transaction status, wallet balance, and confirms bookings.
     Returns True if processed, False if already handled.
     """
+    # Guard: Never process 'still processing' codes as failures.
+    # 500.001.1001 = "The transaction is being processed"
+    STILL_PROCESSING_CODES = {'500.001.1001', '500.001.1000'}
+    if str(result_code) in STILL_PROCESSING_CODES:
+        logger.info(f"Transaction {getattr(transaction_obj, 'checkout_request_id', '?')} is still processing (code: {result_code}). Skipping update.")
+        return False
+
     with db_transaction.atomic():
         # Get fresh copy and lock it
         transaction_obj = Transaction.objects.select_for_update().get(id=transaction_obj.id)
