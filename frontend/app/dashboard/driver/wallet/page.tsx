@@ -147,14 +147,17 @@ export default function DriverWallet() {
 
   const stkPushQueryWithIntervals = (CheckoutRequestID: string) => {
     let reqcount = 0;
+    const STILL_PROCESSING_CODES = ['500.001.1001', '500.001.1000'];
+    const MAX_ATTEMPTS = 25; // 25 × 3s = 75 seconds
+
     const timer = setInterval(async () => {
       reqcount += 1;
 
-      if (reqcount === 15) {
+      if (reqcount >= MAX_ATTEMPTS) {
         clearInterval(timer);
         setStkQueryLoading(false);
         setIsProcessing(false);
-        showToast("You took too long to pay. Please try again.", "error");
+        showToast("You took too long to pay. If you have paid, your balance will reflect shortly.", "error");
         return;
       }
 
@@ -166,21 +169,23 @@ export default function DriverWallet() {
         });
 
         if (!response.ok) {
-          return;
+          return; // Transient error, keep polling
         }
 
         const data = await response.json();
 
-        // Check internal status from our database first as it's more reliable
+        // Check for 500.001.1001 'still processing' — keep polling
+        const mpesaErrorCode = String(data.errorCode || '');
+        if (STILL_PROCESSING_CODES.includes(mpesaErrorCode)) {
+          return;
+        }
+
+        // internal_status is the most reliable source (set by our backend)
         if (data.internal_status === "success") {
           clearInterval(timer);
           setStkQueryLoading(false);
           setSuccess(true);
           setIsProcessing(false);
-
-          setTimeout(() => {
-            window.location.reload();
-          }, 3000);
           return;
         } else if (data.internal_status === "failed") {
           clearInterval(timer);
@@ -188,20 +193,18 @@ export default function DriverWallet() {
           setIsProcessing(false);
           showToast(data.internal_result_desc || data.ResultDesc || 'Payment failed', 'error');
           return;
+        } else if (data.internal_status === "pending") {
+          return; // Still processing — keep polling
         }
 
-        // Fallback to raw M-Pesa ResultCode
+        // Fallback to raw M-Pesa ResultCode only for definitive final codes
         if (data.ResultCode !== undefined && data.ResultCode !== null) {
           if (String(data.ResultCode) === "0") {
             clearInterval(timer);
             setStkQueryLoading(false);
             setSuccess(true);
             setIsProcessing(false);
-
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-          } else {
+          } else if (!STILL_PROCESSING_CODES.includes(String(data.ResultCode))) {
             clearInterval(timer);
             setStkQueryLoading(false);
             setIsProcessing(false);
@@ -211,7 +214,7 @@ export default function DriverWallet() {
       } catch (error) {
         console.error('Query error:', error);
       }
-    }, 2000);
+    }, 3000);
   };
 
   const handleTopUp = async () => {
