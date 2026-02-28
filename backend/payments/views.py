@@ -223,6 +223,21 @@ def wallet_transactions(request):
         # Get paginated transactions
         transactions = transactions_query.order_by('-created_at')[offset:offset + page_size]
         
+        # Auto-sync recent pending STK transactions to ensure frontend shows accurate status
+        pending_txs = [tx for tx in transactions if tx.status == 'pending' and tx.checkout_request_id]
+        if pending_txs:
+            from payments.mpesa import query_stk_status
+            
+            for tx in pending_txs[:3]: # Limit to 3 to prevent slow response times
+                try:
+                    response = query_stk_status(tx.checkout_request_id)
+                    result_code = response.get('ResultCode')
+                    if result_code is not None:
+                        process_stk_result(tx, result_code, response.get('ResultDesc', 'Auto Sync Result'))
+                        tx.refresh_from_db()
+                except Exception as e:
+                    logger.error(f"Error auto-syncing STK status for tx {tx.id}: {str(e)}")
+        
         # Prepare response data
         transactions_data = [{
             'id': str(tx.id),
@@ -440,6 +455,22 @@ def wallet_view(request):
             defaults={'balance': 1000.00}
         )
         transactions = Transaction.objects.filter(wallet=wallet).order_by('-created_at')[:10]
+        
+        # Auto-sync recent pending STK transactions to ensure frontend shows accurate status
+        pending_txs = [tx for tx in transactions if tx.status == 'pending' and tx.checkout_request_id]
+        if pending_txs:
+            from payments.mpesa import query_stk_status
+            from payments.views import process_stk_result # ensure imported
+            
+            for tx in pending_txs[:3]: # Limit to 3 to prevent slow response times
+                try:
+                    response = query_stk_status(tx.checkout_request_id)
+                    result_code = response.get('ResultCode')
+                    if result_code is not None:
+                        process_stk_result(tx, result_code, response.get('ResultDesc', 'Auto Sync Result'))
+                        tx.refresh_from_db()
+                except Exception as e:
+                    logger.error(f"Error auto-syncing STK status for tx {tx.id} in wallet_view: {str(e)}")
         
         # Prepare transactions data
         transactions_data = [{
