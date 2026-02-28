@@ -494,7 +494,14 @@ export default function DriverWallet() {
             {stkQueryLoading ? (
               <STKPushQueryLoading number={mpesaPhone} />
             ) : success ? (
-              <PaymentSuccess />
+              <PaymentSuccess
+                title="Top Up Successful! 🎉"
+                message="Your wallet has been topped up successfully."
+                viewLink="/dashboard/driver/wallet"
+                viewLabel="View Wallet"
+                continueLabel="Top Up Again"
+                onContinue={() => { setSuccess(false); setTopUpAmount(''); setMpesaPhone(''); }}
+              />
             ) : (
               <>
                 {/* Amount Input */}

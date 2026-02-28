@@ -152,7 +152,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
             <PaymentSuccess
                 title="Booking Successful! 🎉"
                 message={`Your ride booking for ${seats} seat(s) has been confirmed. You paid KES ${amount}.`}
-                viewLink="/dashboard/passenger/my-bookings"
+                viewLink="/dashboard/passenger/bookings"
                 viewLabel="View My Bookings"
                 continueLabel="Book Another Ride"
                 onContinue={() => window.location.reload()}
