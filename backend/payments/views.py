@@ -79,7 +79,7 @@ def topup_wallet(request):
             branded_ref = phone[:12]
             
             response = lipa_na_mpesa(
-                phone_number=phone_number,
+                phone_number=phone,
                 amount=amount,
                 account_reference=branded_ref, 
                 transaction_desc=f"Ride {branded_ref}"[:13]

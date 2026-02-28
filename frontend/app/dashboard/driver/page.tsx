@@ -303,7 +303,7 @@ export default function CreateRidePage() {
         <PaymentSuccess
           title="Ride Created! 🚗"
           message="Your ride has been successfully scheduled and is now visible to passengers."
-          viewLink="/dashboard/driver/myrides"
+          viewLink="/dashboard/driver/rides"
           viewLabel="View My Rides"
           continueLabel="Create Another Ride"
           onContinue={() => setShowSuccess(false)}

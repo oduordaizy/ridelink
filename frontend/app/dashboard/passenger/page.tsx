@@ -592,7 +592,7 @@ const Page = () => {
           <PaymentSuccess
             title="Booking Successful! 🎉"
             message={bookingSuccessMessage}
-            viewLink="/dashboard/passenger/my-bookings"
+            viewLink="/dashboard/passenger/bookings"
             viewLabel="View My Bookings"
             continueLabel="Book Another Ride"
             onContinue={() => setShowSuccessModal(false)}
