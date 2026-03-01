@@ -171,8 +171,14 @@ def query_mpesa_status(request):
         error_code = response.get('errorCode', '')
 
         # 500.001.1001 means "The transaction is being processed" - NOT a failure, keep polling
-        STILL_PROCESSING_CODES = {'500.001.1001', '500.001.1000'}
-        is_still_processing = str(error_code) in STILL_PROCESSING_CODES or str(result_code) in STILL_PROCESSING_CODES
+        # some Daraja responses use ResultCode == 1 with a "still processing" description
+        STILL_PROCESSING_CODES = {'500.001.1001', '500.001.1000', '1'}
+        desc = str(response.get('ResultDesc', '')).lower()
+        is_still_processing = (
+            str(error_code) in STILL_PROCESSING_CODES or
+            str(result_code) in STILL_PROCESSING_CODES or
+            'processing' in desc and 'success' not in desc
+        )
 
         if not is_still_processing and result_code is not None and transaction_obj:
             # Only update the DB when Daraja gives us a final result code (0 = success, anything else = failure)
@@ -290,11 +296,16 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
     Updates transaction status, wallet balance, and confirms bookings.
     Returns True if processed, False if already handled.
     """
-    # Guard: Never process 'still processing' codes as failures.
-    # 500.001.1001 = "The transaction is being processed"
-    STILL_PROCESSING_CODES = {'500.001.1001', '500.001.1000'}
-    if str(result_code) in STILL_PROCESSING_CODES:
-        logger.info(f"Transaction {getattr(transaction_obj, 'checkout_request_id', '?')} is still processing (code: {result_code}). Skipping update.")
+    # Guard: Never process 'still processing' responses as failures.
+    # Daraja may return numeric 1 or the 500.00x codes with a "being processed" message.
+    STILL_PROCESSING_CODES = {'500.001.1001', '500.001.1000', '1'}
+    desc = str(result_desc or '').lower()
+    if (str(result_code) in STILL_PROCESSING_CODES or
+            ('processing' in desc and 'success' not in desc)):
+        logger.info(
+            f"Transaction {getattr(transaction_obj, 'checkout_request_id', '?')} is still processing "
+            f"(code: {result_code}, desc: {result_desc}). Skipping update."
+        )
         return False
 
     with db_transaction.atomic():

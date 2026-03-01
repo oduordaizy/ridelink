@@ -147,7 +147,7 @@ export default function PassengerWallet() {
 
   const stkPushQueryWithIntervals = (CheckoutRequestID: string) => {
     let reqcount = 0;
-    const STILL_PROCESSING_CODES = ['500.001.1001', '500.001.1000'];
+    const STILL_PROCESSING_CODES = ['500.001.1001', '500.001.1000', '1'];
     const MAX_ATTEMPTS = 25; // 25 × 3s = 75 seconds
 
     const timer = setInterval(async () => {
@@ -176,7 +176,8 @@ export default function PassengerWallet() {
 
         // Check for 500.001.1001 'still processing' — keep polling
         const mpesaErrorCode = String(data.errorCode || '');
-        if (STILL_PROCESSING_CODES.includes(mpesaErrorCode)) {
+        // treat numeric '1' and any text mentioning "processing" as still-processing
+        if (STILL_PROCESSING_CODES.includes(mpesaErrorCode) || /processing/i.test(data.ResultDesc || '')) {
           return;
         }
 
@@ -204,7 +205,7 @@ export default function PassengerWallet() {
             setStkQueryLoading(false);
             setSuccess(true);
             setIsProcessing(false);
-          } else if (!STILL_PROCESSING_CODES.includes(String(data.ResultCode))) {
+          } else if (!STILL_PROCESSING_CODES.includes(String(data.ResultCode)) && !/processing/i.test(data.ResultDesc || '')) {
             clearInterval(timer);
             setStkQueryLoading(false);
             setIsProcessing(false);

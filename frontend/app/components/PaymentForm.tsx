@@ -28,7 +28,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
     // Poll for STK status
     const stkPushQueryWithIntervals = (checkoutRequestId: string) => {
         let currentAttempt = 0;
-        const STILL_PROCESSING_CODES = ['500.001.1001', '500.001.1000'];
+        const STILL_PROCESSING_CODES = ['500.001.1001', '500.001.1000', '1'];
         const MAX_ATTEMPTS = 25; // 25 × 3s = 75 seconds total
 
         const timer = setInterval(async () => {
@@ -87,7 +87,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
                 const resultCode = data.ResultCode;
                 const mpesaErrorCode = String(data.errorCode || '');
 
-                if (STILL_PROCESSING_CODES.includes(mpesaErrorCode)) {
+                // treat numeric '1' or textual hints as still processing too
+                if (STILL_PROCESSING_CODES.includes(mpesaErrorCode) || /processing/i.test(data?.ResultDesc || '')) {
                     return; // Still processing, keep polling
                 }
 

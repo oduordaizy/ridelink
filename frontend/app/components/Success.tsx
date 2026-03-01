@@ -12,7 +12,7 @@ interface SuccessProps {
 
 export default function PaymentSuccess({
     title = "Payment Successful",
-    message = "Your payment has been processed successfully. Thank you for using RideLink.",
+    message = "Your payment has been processed successfully. Thank you for using iTravas.",
     viewLink = "/dashboard/passenger/bookings",
     viewLabel = "View Bookings",
     continueLabel = "Continue",
