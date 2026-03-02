@@ -7,14 +7,29 @@ import { IoNotifications, IoSearch, IoLogOut } from 'react-icons/io5';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user, logout } = useAuth();
+    const [mobileMenu, setMobileMenu] = React.useState(false);
+
+    const toggleMenu = () => setMobileMenu((v) => !v);
+    const closeMenu = () => setMobileMenu(false);
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
-            <AdminSidebar />
+        <div className="relative flex min-h-screen bg-gray-50">
+            {/* overlay when mobile menu open */}
+            {mobileMenu && <div onClick={closeMenu} className="fixed inset-0 bg-black/40 z-20 md:hidden" />}
+            <AdminSidebar mobileOpen={mobileMenu} onClose={closeMenu} />
 
             <div className="flex-1 flex flex-col">
                 {/* Top Header */}
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10">
+                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-10">
+                    <button
+                        onClick={toggleMenu}
+                        className="md:hidden p-2 text-gray-500 hover:text-[#08A6F6] transition-colors"
+                        aria-label="Toggle menu"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                     <div className="relative w-96">
                         <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input

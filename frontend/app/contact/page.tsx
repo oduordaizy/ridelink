@@ -57,7 +57,7 @@ const Contact = () => {
       <Navbar />
       <main className="min-h-screen bg-background flex flex-col items-center py-12 px-4 text-gray-700">
         <section className="max-w-3xl w-full text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-[#00204a] mb-4">Contact Us</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-[#08A6F6] mb-4">Contact Us</h1>
           <p className="text-lg md:text-xl text-gray-500 mb-6 font-medium">
             Have questions, feedback, or need help? Reach out to the iTravas team—we&apos;re here to help you on your journey.
           </p>
@@ -66,7 +66,7 @@ const Contact = () => {
         <section className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="name" className="block text-sm font-bold text-[#00204a] mb-1 uppercase tracking-tight">Name</label>
+              <label htmlFor="name" className="block text-sm font-bold text-[#08A6F6] mb-1 uppercase tracking-tight">Name</label>
               <input
                 type="text"
                 id="name"
@@ -79,7 +79,7 @@ const Contact = () => {
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-bold text-[#00204a] mb-1 uppercase tracking-tight">Email</label>
+              <label htmlFor="email" className="block text-sm font-bold text-[#08A6F6] mb-1 uppercase tracking-tight">Email</label>
               <input
                 type="email"
                 id="email"
@@ -92,7 +92,7 @@ const Contact = () => {
               />
             </div>
             <div>
-              <label htmlFor="message" className="block text-sm font-bold text-[#00204a] mb-1 uppercase tracking-tight">Message</label>
+              <label htmlFor="message" className="block text-sm font-bold text-[#08A6F6] mb-1 uppercase tracking-tight">Message</label>
               <textarea
                 id="message"
                 name="message"

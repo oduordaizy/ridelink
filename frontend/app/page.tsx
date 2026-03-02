@@ -31,7 +31,7 @@ export default function Home() {
               Effortless <span className="bg-linear-to-br from-[#08A6F6] to-[#003870] bg-clip-text text-transparent">Ridesharing</span> with iTravas
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-[#003870]/70 leading-relaxed max-w-xl mx-auto md:mx-0">
-              Connect drivers with empty seats to passengers seeking affordable, convenient rides. Post, search, and book trips in real time—securely and easily.
+              Connecting drivers with empty seats to passengers seeking affordable, convenient rides. Post, search, and book trips in real time—securely and easily.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start pt-2">
               <Link

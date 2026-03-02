@@ -23,15 +23,36 @@ const menuItems = [
     { href: '/dashboard/admin/settings', label: 'System Settings', icon: IoSettings },
 ];
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+    mobileOpen?: boolean;
+    onClose?: () => void;
+}
+
+export default function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps) {
     const pathname = usePathname();
 
     return (
-        <aside className="w-64 bg-[#00204a] text-white min-h-screen flex flex-col shadow-xl">
-            <Link href="/" className="p-6 flex items-center space-x-2 border-b border-white/10 group">
-                <Image src="/logo1.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
-                <span className="text-xl font-semibold text-[#08A6F6] tracking-tight">iTravas Admin</span>
-            </Link>
+        // outer wrapper handles mobile slide-in/out
+        <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#00204a] text-white min-h-screen flex flex-col shadow-xl transform transition-transform duration-200
+            ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+            md:relative md:translate-x-0 md:w-64`}
+        >
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
+                <Link href="/" className="flex items-center space-x-2 group">
+                    <Image src="/logo1.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
+                    <span className="text-xl font-semibold text-[#08A6F6] tracking-tight">iTravas Admin</span>
+                </Link>
+                {/* close button for mobile */}
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="md:hidden p-2 text-gray-400 hover:text-white"
+                        aria-label="Close menu"
+                    >
+                        <IoChevronBack />
+                    </button>
+                )}
+            </div>
 
             <nav className="flex-1 mt-6 px-4 space-y-1">
                 {menuItems.map((item) => {

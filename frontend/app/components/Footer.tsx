@@ -11,10 +11,10 @@ export default function Footer() {
           <div className="flex flex-col space-y-4">
             <div className="flex items-center space-x-0.5">
               <Image
-                src="/logo1.png"
+                src="/footer-logo.png"
                 alt="iTravas Logo"
-                width={32}
-                height={32}
+                width={50}
+                height={50}
                 className="object-contain"
               />
               {/* <div className="text-white font-bold text-xl">
