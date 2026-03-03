@@ -94,7 +94,9 @@ class BookingSerializer(serializers.ModelSerializer):
         read_only_fields = ['booked_at', 'updated_at']
 
     def get_total_price(self, obj):
-        return obj.no_of_seats * obj.ride.price
+        subtotal = obj.no_of_seats * obj.ride.price
+        # Return as float for JSON-serializable output, rounded to 2 decimal places
+        return float(round(subtotal * 1.01, 2))
 
     def validate_no_of_seats(self, value):
         if value < 1:

@@ -223,8 +223,10 @@ const Page = () => {
     if (!selectedRide) return;
 
     if (method === 'mpesa') {
-      setShowMpesaForm(true);
-      setMpesaAmount((selectedRide.price * numberOfSeats).toString());
+      const subtotal = selectedRide.price * numberOfSeats;
+      const platformFee = subtotal * 0.01;
+      const total = subtotal + platformFee;
+      setMpesaAmount(total.toString());
       return;
     }
 
@@ -264,13 +266,19 @@ const Page = () => {
 
         // Update wallet balance
         if (walletBalance !== null) {
-          setWalletBalance(walletBalance - (selectedRide.price * numberOfSeats));
+          const subtotal = selectedRide.price * numberOfSeats;
+          const platformFee = subtotal * 0.01;
+          const total = subtotal + platformFee;
+          setWalletBalance(walletBalance - total);
         }
 
         // Refresh rides list
         fetchAllRides();
 
-        setBookingSuccessMessage(`Your ride booking for ${numberOfSeats} seat(s) to ${selectedRide.destination} has been confirmed. KES ${selectedRide.price * numberOfSeats} was deducted from your wallet.`);
+        const subtotal = selectedRide.price * numberOfSeats;
+        const platformFee = subtotal * 0.01;
+        const total = subtotal + platformFee;
+        setBookingSuccessMessage(`Your ride booking for ${numberOfSeats} seat(s) to ${selectedRide.destination} has been confirmed. KES ${total.toLocaleString()} (including 1% platform fee) was deducted from your wallet.`);
         setShowSuccessModal(true);
 
       } else if (method === 'card') {
@@ -480,9 +488,17 @@ const Page = () => {
 
             <div className="p-6">
               <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-gray-500 text-sm">Ride Fare ({numberOfSeats} {numberOfSeats === 1 ? 'seat' : 'seats'})</span>
+                  <span className="font-semibold text-gray-700">KSh {(selectedRide.price * numberOfSeats).toLocaleString()}</span>
+                </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-500 text-sm">Trip Total ({numberOfSeats} {numberOfSeats === 1 ? 'seat' : 'seats'})</span>
-                  <span className="font-bold text-gray-800 text-lg">KSh {(selectedRide.price * numberOfSeats).toLocaleString()}</span>
+                  <span className="text-gray-500 text-sm">Platform Fee (1%)</span>
+                  <span className="font-semibold text-gray-700">KSh {(selectedRide.price * numberOfSeats * 0.01).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-blue-200/30">
+                  <span className="font-bold text-gray-800">Total Amount</span>
+                  <span className="font-bold text-[#08A6F6] text-xl">KSh {(selectedRide.price * numberOfSeats * 1.01).toLocaleString()}</span>
                 </div>
 
                 {/* Seat Selector */}
@@ -518,7 +534,7 @@ const Page = () => {
                 {showMpesaForm && selectedRide ? (
                   <PaymentForm
                     rideId={selectedRide.id}
-                    amount={selectedRide.price * numberOfSeats}
+                    amount={selectedRide.price * numberOfSeats * 1.01}
                     token={localStorage.getItem('access_token') || ''}
                     seats={numberOfSeats}
                     onSuccess={() => { }}
@@ -528,7 +544,7 @@ const Page = () => {
                   <div className="space-y-3">
                     <button
                       onClick={() => handlePaymentSelection('wallet')}
-                      disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide.price * numberOfSeats))}
+                      disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide.price * numberOfSeats * 1.01))}
                       className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-[#08A6F6]/30 hover:bg-[#C0DFED]/10 transition-all duration-200 bg-white"
                     >
                       <div className="flex items-center">

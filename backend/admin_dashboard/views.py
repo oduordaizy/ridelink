@@ -76,7 +76,8 @@ def admin_transactions(request):
         'user': tx.wallet.user.username,
         'amount': float(tx.amount),
         'status': tx.status,
-        'receipt': tx.mpesa_receipt_number,
+        # show the tracked reference first; fall back to old receipt if empty
+        'reference': tx.mpesa_transaction_reference or tx.mpesa_receipt_number,
         'description': tx.result_desc,
         'date': tx.created_at
     } for tx in transactions]
@@ -89,10 +90,10 @@ def mpesa_status(request, transaction_id):
     from payments.mpesa import query_stk_status
     try:
         tx = Transaction.objects.get(id=transaction_id)
-        if not tx.mpesa_checkout_id:
+        if not tx.checkout_request_id:
             return Response({'error': 'No checkout ID found'}, status=400)
         
-        result = query_stk_status(tx.mpesa_checkout_id)
+        result = query_stk_status(tx.checkout_request_id)
         return Response(result)
     except Transaction.DoesNotExist:
         return Response({'error': 'Transaction not found'}, status=404)
@@ -110,7 +111,8 @@ def mpesa_reversal_view(request, transaction_id):
         if tx.status != 'success':
             return Response({'error': 'Only successful transactions can be reversed'}, status=400)
             
-        result = mpesa_reversal(tx.mpesa_receipt_number, amount, settings.MPESA_SHORTCODE, reason)
+        reference_id = tx.mpesa_transaction_reference or tx.mpesa_receipt_number
+        result = mpesa_reversal(reference_id, amount, settings.MPESA_SHORTCODE, reason)
         return Response(result)
     except Transaction.DoesNotExist:
         return Response({'error': 'Transaction not found'}, status=404)

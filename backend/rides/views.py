@@ -10,6 +10,7 @@ from django.db import transaction as db_transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
+from decimal import Decimal
 
 from .models import Ride, Booking
 from .serializers import (
@@ -17,7 +18,8 @@ from .serializers import (
     BookingSerializer, 
 )
 from payments.models import Wallet, Transaction
-from accounts.models import Notification
+from payments.mpesa import lipa_na_mpesa
+from accounts.models import Notification, Driver
 
 
 
@@ -84,7 +86,114 @@ class RideViewSet(viewsets.ModelViewSet):
                 "missing_fields": missing
             }, status=status.HTTP_403_FORBIDDEN)
             
-        return super().create(request, *args, **kwargs)
+        # 1% Platform Fee Logic
+        try:
+            price = Decimal(str(request.data.get('price', 0)))
+            available_seats = int(request.data.get('available_seats', 1))
+            platform_fee = price * available_seats * Decimal('0.01')
+            payment_method = request.data.get('payment_method', 'wallet')
+
+            if platform_fee < 1:  # Minimum fee of 1 KES
+                platform_fee = Decimal('1.00')
+
+            with db_transaction.atomic():
+                if payment_method == 'wallet':
+                    wallet, _ = Wallet.objects.get_or_create(user=user)
+                    # We use select_for_update to lock the wallet row
+                    wallet = Wallet.objects.select_for_update().get(id=wallet.id)
+                    
+                    if wallet.balance < platform_fee:
+                        return Response({
+                            "error": "Insufficient Balance",
+                            "detail": f"Your wallet balance (KES {wallet.balance}) is insufficient to pay the platform fee (KES {platform_fee}).",
+                            "fee": float(platform_fee)
+                        }, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+                    # Create the ride
+                    serializer = self.get_serializer(data=request.data)
+                    serializer.is_valid(raise_exception=True)
+                    ride = serializer.save(driver=user, platform_fee=platform_fee, status='available')
+
+                    # Deduct from wallet
+                    wallet.balance -= platform_fee
+                    wallet.save()
+
+                    # Create transaction for the fee
+                    Transaction.objects.create(
+                        wallet=wallet,
+                        amount=-platform_fee,
+                        status="success",
+                        result_code=0,
+                        result_desc=f"Platform Fee for Ride #{ride.id}",
+                        completed_at=timezone.now(),
+                        ride=ride
+                    )
+
+                    # Notification
+                    Notification.objects.create(
+                        user=user,
+                        title="Ride Posted Successfully",
+                        message=f"Your ride to {ride.destination} is now available. Platform fee of KES {platform_fee} has been deducted from your wallet.",
+                        notification_type="success"
+                    )
+
+                    # Invalidate cache
+                    cache.delete_pattern("rides_list_*")
+                    
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+                elif payment_method == 'mpesa':
+                    # Create the ride with status 'pending_payment'
+                    serializer = self.get_serializer(data=request.data)
+                    serializer.is_valid(raise_exception=True)
+                    ride = serializer.save(driver=user, status='pending_payment', platform_fee=platform_fee)
+
+                    # Initiate STK Push
+                    phone = user.phone_number
+                    if not phone:
+                        return Response({"error": "Phone number required for M-Pesa payment"}, status=status.HTTP_400_BAD_REQUEST)
+
+                    phone_clean = str(phone).strip().replace('+', '')
+                    if phone_clean.startswith('0'): phone_clean = '254' + phone_clean[1:]
+                    elif not phone_clean.startswith('254'): phone_clean = '254' + phone_clean
+
+                    stk_response = lipa_na_mpesa(
+                        phone_number=phone_clean,
+                        amount=platform_fee,
+                        account_reference=f"RideFee{ride.id}"[:12],
+                        transaction_desc=f"Fee for Ride {ride.id}"[:20]
+                    )
+
+                    if "error" in stk_response:
+                        ride.delete()
+                        return Response({"error": f"M-Pesa initiation failed: {stk_response.get('error')}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                    # Create pending transaction
+                    wallet, _ = Wallet.objects.get_or_create(user=user)
+                    Transaction.objects.create(
+                        wallet=wallet,
+                        amount=platform_fee,
+                        status="pending",
+                        checkout_request_id=stk_response.get('CheckoutRequestID'),
+                        merchant_request_id=stk_response.get('MerchantRequestID'),
+                        mpesa_transaction_reference=stk_response.get('CheckoutRequestID'),
+                        ride=ride
+                    )
+
+                    return Response({
+                        "success": True,
+                        "message": "Please confirm the M-Pesa payment on your phone to activate your ride.",
+                        "checkout_request_id": stk_response.get('CheckoutRequestID'),
+                        "ride_id": ride.id,
+                        "status": "pending_payment"
+                    }, status=status.HTTP_201_CREATED)
+
+                else:
+                    return Response({"error": "Invalid payment method"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Error creating ride with fee: {str(e)}", exc_info=True)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def perform_create(self, serializer):
         serializer.save(driver=self.request.user)
@@ -197,10 +306,12 @@ class RideViewSet(viewsets.ModelViewSet):
                     except Wallet.DoesNotExist:
                         raise ValueError("Wallet not found. Please create a wallet first.")
                     
-                    total_amount = ride.price * no_of_seats
+                    subtotal = ride.price * no_of_seats
+                    platform_fee = subtotal * Decimal('0.01')
+                    total_amount = subtotal + platform_fee
                     
                     if wallet.balance < total_amount:
-                        raise ValueError(f"Insufficient wallet balance. Required: KSh {total_amount:.2f}, Available: KSh {wallet.balance:.2f}")
+                        raise ValueError(f"Insufficient wallet balance. Required: KSh {total_amount:.2f} (includes 1% fee), Available: KSh {wallet.balance:.2f}")
                     
                     # Deduct from wallet
                     wallet.balance -= total_amount

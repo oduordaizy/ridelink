@@ -36,12 +36,41 @@ class STKResultProcessingTest(TestCase):
         self.assertEqual(self.tx.status, 'pending')
 
     def test_success_updates_transaction(self):
-        result = process_stk_result(self.tx, '0', 'Success', callback_metadata={'Item': []})
+        # simulate a callback with a TransactionID value
+        result = process_stk_result(
+            self.tx,
+            '0',
+            'Success',
+            callback_metadata={'Item': [{'Name': 'TransactionID', 'Value': 'REF123'}]}
+        )
         self.tx.refresh_from_db()
         self.assertTrue(result)
         self.assertEqual(self.tx.status, 'success')
         self.assertIsNotNone(self.tx.completed_at)
-        self.assertEqual(self.wallet.refresh_from_db() or self.wallet.balance, Decimal('100'))
+        # wallet balance updated
+        self.wallet.refresh_from_db()
+        self.assertEqual(self.wallet.balance, Decimal('100'))
+        # reference field populated
+        self.assertEqual(self.tx.mpesa_transaction_reference, 'REF123')
+
+    def test_list_transactions_api_includes_reference(self):
+        from rest_framework.test import APIClient
+        client = APIClient()
+        # create a successful transaction with a reference
+        tx2 = Transaction.objects.create(
+            wallet=self.wallet,
+            amount=Decimal('50'),
+            status='success',
+            mpesa_transaction_reference='ABCREF',
+            checkout_request_id='XYZ'
+        )
+        # simulate authenticated user having wallet
+        client.force_authenticate(user=self.user)
+        response = client.get('/api/payments/wallet/transactions/')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        # expect at least one transaction with reference field
+        self.assertTrue(any(item.get('mpesa_transaction_reference') == 'ABCREF' for item in data.get('data', [])))
 
     def test_failure_updates_transaction(self):
         result = process_stk_result(self.tx, '2', 'User cancelled')

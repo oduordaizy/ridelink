@@ -16,8 +16,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "Passwords don't match"})
         
-        # Check for existing user info
-        errors = {}
+        # Check for spaces in username
+        username = attrs.get('username', '')
+        if ' ' in username:
+            errors['username'] = "Spaces are not allowed in usernames."
+
         if User.objects.filter(username=attrs.get('username')).exists():
             errors['username'] = "This username is already taken."
         if User.objects.filter(email=attrs.get('email')).exists():

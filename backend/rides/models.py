@@ -17,6 +17,7 @@ class Ride(models.Model):
     STATUS_CHOICES = [
         ('available', 'Available'),
         ('fully_booked', 'Fully Booked'),
+        ('pending_payment', 'Pending Payment'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available', db_index=True)
     

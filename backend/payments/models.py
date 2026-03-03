@@ -3,7 +3,7 @@ from accounts.models import User
 
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=2600.00)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def __str__(self):
         return f"{self.user.username}'s Wallet - {self.balance}"
@@ -15,6 +15,14 @@ class Wallet(models.Model):
 
 class Transaction(models.Model):
     wallet=models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
+    # historically we stored the MPESA "receipt number" but the business
+    # now prefers tracking the MPESA transaction reference/ID instead.  The
+    # reference may be a CheckoutRequestID, MerchantRequestID, or the
+    # value returned in callback metadata (often called the TransactionID).
+    # We'll populate this when we know it and keep the old receipt as a fallback
+    # for backwards compatibility.
+    mpesa_transaction_reference = models.CharField(max_length=100, blank=True, null=True)
+
     mpesa_receipt_number = models.CharField(max_length=100, blank=True, null=True)
     checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
     merchant_request_id = models.CharField(max_length=100, blank=True, null=True)
@@ -22,6 +30,7 @@ class Transaction(models.Model):
     result_desc = models.TextField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     booking = models.ForeignKey('rides.Booking', on_delete=models.SET_NULL, null=True, blank=True, related_name="transactions")
+    ride = models.ForeignKey('rides.Ride', on_delete=models.SET_NULL, null=True, blank=True, related_name="transactions")
     status= models.CharField(max_length=50, choices=[("pending", "Pending"), ("success", "Success"), ("failed", "Failed")], default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)

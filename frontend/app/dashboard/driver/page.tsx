@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
 import PaymentSuccess from '@/app/components/Success';
+import { FaSpinner, FaWallet, FaMobileScreenButton } from "react-icons/fa6";
+import STKPushQueryLoading from '@/app/components/StkQueryLoading';
+import { stkPushQuery } from '@/app/actions/stkPushQuery';
 
 
 interface RideFormData {
@@ -61,6 +64,12 @@ export default function CreateRidePage() {
     vehicle_images: [],
   });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'mpesa'>('wallet');
+  const [stkQueryLoading, setStkQueryLoading] = useState(false);
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const hasCheckedProfile = useRef(false);
 
@@ -103,10 +112,80 @@ export default function CreateRidePage() {
       }
     };
 
+    const fetchWallet = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payments/wallet/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setWalletBalance(data.wallet.balance);
+        }
+      } catch (err) {
+        console.error('Error fetching wallet:', err);
+      }
+    };
+
     if (user && !hasCheckedProfile.current) {
       checkProfile();
+      fetchWallet();
     }
-  }, [user, isLoading, router, updateUser]);
+  }, [isLoading, user, router, updateUser]);
+
+  const stkPushQueryWithIntervals = (checkoutRequestId: string) => {
+    let currentAttempt = 0;
+    const STILL_PROCESSING_CODES = ['500.001.1001', '500.001.1000', '1'];
+    const MAX_ATTEMPTS = 25;
+    const token = localStorage.getItem('access_token');
+
+    if (!token) return;
+
+    const timer = setInterval(async () => {
+      currentAttempt += 1;
+      setAttempt(currentAttempt);
+
+      if (currentAttempt >= MAX_ATTEMPTS) {
+        clearInterval(timer);
+        setStkQueryLoading(false);
+        setIsSubmitting(false);
+        toast.error("Payment confirmation timeout. Please check your notifications shortly.");
+        return;
+      }
+
+      const { data, error } = await stkPushQuery(checkoutRequestId, token);
+
+      if (error) {
+        const errorData = error.response?.data;
+        const errorCode = String(errorData?.errorCode || '');
+
+        if (errorCode && !STILL_PROCESSING_CODES.includes(errorCode)) {
+          clearInterval(timer);
+          setStkQueryLoading(false);
+          setIsSubmitting(false);
+          toast.error(errorData?.errorMessage || "Payment failed");
+        }
+        return;
+      }
+
+      if (data) {
+        if (data.internal_status === "success") {
+          clearInterval(timer);
+          setStkQueryLoading(false);
+          setIsSubmitting(false);
+          setShowSuccess(true);
+          return;
+        } else if (data.internal_status === "failed") {
+          clearInterval(timer);
+          setStkQueryLoading(false);
+          setIsSubmitting(false);
+          toast.error(data.internal_result_desc || "Payment failed");
+          return;
+        }
+      }
+    }, 3000);
+  };
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const target = e.target;
@@ -171,21 +250,35 @@ export default function CreateRidePage() {
 
     setIsSubmitting(true);
     try {
+      // Calculate platform fee for local validation
+      const price = Number(formData.price) || 0;
+      const seats = Number(formData.available_seats) || 1;
+      const platformFee = Math.max(1, price * seats * 0.01);
+
+      // Final balance check for wallet payment
+      if (paymentMethod === 'wallet' && walletBalance !== null && walletBalance < platformFee) {
+        toast.error(`Insufficient balance. You need KES ${platformFee.toFixed(2)} but have KES ${walletBalance.toFixed(2)}.`);
+        setIsSubmitting(false);
+        return;
+      }
+
       const departureDateTime = `${formData.departure_date}T${formData.departure_time}:00`;
 
       const formDataToSend = new FormData();
+      // Only append fields that the backend expects
       formDataToSend.append('departure_location', formData.departure_location);
       formDataToSend.append('destination', formData.destination);
       formDataToSend.append('departure_time', departureDateTime);
-      formDataToSend.append('available_seats', (formData.available_seats || 1).toString());
-      formDataToSend.append('price', (formData.price || 0).toString());
-      if (formData.additional_info) {
-        formDataToSend.append('additional_info', formData.additional_info);
-      }
+      formDataToSend.append('available_seats', String(formData.available_seats || 1));
+      formDataToSend.append('price', String(formData.price || 0));
+      formDataToSend.append('additional_info', formData.additional_info);
 
       formData.vehicle_images.forEach((file) => {
-        formDataToSend.append('uploaded_images', file);
+        formDataToSend.append('uploaded_images', file); // Backend expects 'uploaded_images'
       });
+
+      // Add payment method for the platform fee
+      formDataToSend.append('payment_method', paymentMethod);
 
       const response = await fetch(`${API_BASE_URL}/rides/`, {
         method: 'POST',
@@ -195,52 +288,39 @@ export default function CreateRidePage() {
         body: formDataToSend,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Ride Creation Error Data:', errorData);
+      if (response.ok) {
+        const result = await response.json();
 
-        // Handle DRF field-specific errors
-        if (typeof errorData === 'object' && !errorData.detail) {
-          const fieldErrors = Object.entries(errorData)
-            .map(([field, messages]) => {
-              const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-              return `${fieldName}: ${Array.isArray(messages) ? messages[0] : messages}`;
-            })
-            .join('\n');
-
-          if (fieldErrors) {
-            throw new Error(fieldErrors);
-          }
+        if (paymentMethod === 'mpesa' && result.checkout_request_id) {
+          setCheckoutRequestId(result.checkout_request_id);
+          setStkQueryLoading(true);
+          stkPushQueryWithIntervals(result.checkout_request_id);
+          toast.info("Please complete the M-Pesa payment on your phone to activate the ride.");
+        } else {
+          toast.success('Ride created successfully!');
+          setShowSuccess(true);
+          setFormData({
+            departure_location: '',
+            destination: '',
+            departure_date: new Date().toISOString().split('T')[0],
+            departure_time: '',
+            available_seats: 1,
+            price: '',
+            additional_info: '',
+            vehicle_images: []
+          });
+          setIsSubmitting(false);
         }
-
-        throw new Error(errorData.detail || 'Failed to create ride');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.detail || 'Failed to create ride');
       }
-
-      await response.json();
-      toast.success('Ride created successfully!');
-
-
-      setFormData({
-        departure_location: '',
-        destination: '',
-        departure_date: new Date().toISOString().split('T')[0],
-        departure_time: '',
-        available_seats: 1,
-        price: '',
-        additional_info: '',
-        vehicle_images: []
-      });
-
-      setShowSuccess(true);
-      // Removed immediate redirect
-      // router.push('/dashboard/driver');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating ride:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create ride');
-    } finally {
+      toast.error(error.message || 'Error occurred while creating ride.');
       setIsSubmitting(false);
     }
-  }, [user, formData, router]);
+  }, [user, formData, paymentMethod, walletBalance, stkPushQueryWithIntervals]);
 
   if (isLoading || profileLoading) {
     return (
@@ -308,6 +388,14 @@ export default function CreateRidePage() {
           continueLabel="Create Another Ride"
           onContinue={() => setShowSuccess(false)}
         />
+      </div>
+    );
+  }
+
+  if (stkQueryLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <STKPushQueryLoading number={phoneNumber || user?.phone_number || ''} attempt={attempt} />
       </div>
     );
   }
@@ -441,6 +529,74 @@ export default function CreateRidePage() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Platform Fee & Payment Method */}
+            <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider">Platform Fee (1%)</h3>
+                  <p className="text-xs text-blue-700">Required to activate and list your ride</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-blue-600">
+                    KSh {Math.max(1, (Number(formData.price) || 0) * (Number(formData.available_seats) || 1) * 0.01).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('wallet')}
+                  className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === 'wallet'
+                      ? 'border-[#08A6F6] bg-white text-[#08A6F6] shadow-sm'
+                      : 'border-transparent bg-gray-100/50 text-gray-500 hover:bg-gray-100'
+                    }`}
+                >
+                  <FaWallet className="text-lg" />
+                  <span className="text-xs font-bold">Wallet</span>
+                  {walletBalance !== null && (
+                    <span className="text-[10px] opacity-70">Bal: KSh {walletBalance.toFixed(0)}</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod('mpesa');
+                    if (!phoneNumber && user?.phone_number) setPhoneNumber(user.phone_number);
+                  }}
+                  className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === 'mpesa'
+                      ? 'border-[#08A6F6] bg-white text-[#08A6F6] shadow-sm'
+                      : 'border-transparent bg-gray-100/50 text-gray-500 hover:bg-gray-100'
+                    }`}
+                >
+                  <FaMobileScreenButton className="text-lg" />
+                  <span className="text-xs font-bold">M-Pesa</span>
+                  <span className="text-[10px] opacity-70">Direct Pay</span>
+                </button>
+              </div>
+
+              {paymentMethod === 'wallet' && walletBalance !== null && walletBalance < (Number(formData.price) || 0) * (Number(formData.available_seats) || 1) * 0.01 && (
+                <div className="flex items-center gap-2 p-2 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 text-[11px] font-medium animate-pulse">
+                  <FaTriangleExclamation />
+                  Insufficient balance. Switching to M-Pesa is recommended.
+                </div>
+              )}
+
+              {paymentMethod === 'mpesa' && (
+                <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1">Confirm M-Pesa Number</label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="e.g. 0712345678"
+                    className="w-full px-4 py-2 bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#08A6F6] text-sm text-black"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Additional Info */}

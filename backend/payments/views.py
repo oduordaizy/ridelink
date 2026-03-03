@@ -65,7 +65,7 @@ def topup_wallet(request):
             # Get or create wallet for the user
             wallet, created = Wallet.objects.get_or_create(
                 user=user,
-                defaults={'balance': 2600.00}
+                defaults={'balance': 0.00}
             )
             
             # Custom reference: iTra-First3phone..last3phone
@@ -95,12 +95,17 @@ def topup_wallet(request):
             
             logger.info(f"M-Pesa STK Push Success for user {user.id}: CheckoutRequestID={response.get('CheckoutRequestID')}")
             # Create transaction with the IDs from MPESA response
+            # record the various ids MPESA returns; we also populate the
+            # new 'mpesa_transaction_reference' field with the checkout id for
+            # easier lookup/display later (this will be replaced by the actual
+            # transaction reference when the callback arrives).
             transaction_obj = Transaction.objects.create(
                 wallet=wallet,
                 amount=amount,
                 status="pending",
                 checkout_request_id=response.get('CheckoutRequestID'),
                 merchant_request_id=response.get('MerchantRequestID'),
+                mpesa_transaction_reference=response.get('CheckoutRequestID'),
                 booking_id=booking_id
             )
             
@@ -128,7 +133,7 @@ def wallet_balance(request):
     try:
         wallet, created = Wallet.objects.get_or_create(
             user=request.user,
-            defaults={'balance': 2600.00}
+            defaults={'balance': 0.00}
         )
         
         return Response({
@@ -222,7 +227,7 @@ def wallet_transactions(request):
         # Get or create wallet for the user
         wallet, created = Wallet.objects.get_or_create(
             user=request.user,
-            defaults={'balance': 2600.00}
+            defaults={'balance': 0.00}
         )
         
         # Build the base queryset
@@ -260,6 +265,8 @@ def wallet_transactions(request):
             'id': str(tx.id),
             'amount': float(tx.amount),
             'status': tx.status,
+            'mpesa_transaction_reference': tx.mpesa_transaction_reference or '',
+            # keep old field available for backward compatibility
             'mpesa_receipt_number': tx.mpesa_receipt_number or '',
             'created_at': tx.created_at.isoformat(),
             'type': 'credit' if tx.amount >= 0 else 'debit',
@@ -331,19 +338,25 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
             mpesa_receipt = None
             
             if callback_metadata:
-                # Extract from callback metadata format
+                # Extract from callback metadata format.  older code only pulled
+                # the receipt number; we now look for any of the possible
+                # reference identifiers and store it in the new field.
                 items = callback_metadata.get('Item', [])
                 logger.info(f"Processing callback metadata for {transaction_obj.checkout_request_id}: {json.dumps(items)}")
                 for item in items:
-                    if item.get('Name') == 'Amount':
+                    name = item.get('Name')
+                    if name == 'Amount':
                         amount = Decimal(str(item.get('Value', amount)))
-                    elif item.get('Name') == 'MpesaReceiptNumber':
+                    elif name in ('MpesaReceiptNumber', 'TransactionID', 'MpesaTransactionID', 'TransactionReference'):
+                        # whichever identifier MPESA sends; these tend to be the
+                        # value customers refer to when making inquiries.
                         mpesa_receipt = item.get('Value', '')
+                        transaction_obj.mpesa_transaction_reference = mpesa_receipt
             
             transaction_obj.status = "success"
             if mpesa_receipt:
                 transaction_obj.mpesa_receipt_number = mpesa_receipt
-            transaction_obj.save()
+            transaction_obj.save()  # transaction_reference already set above if available
             
             wallet = transaction_obj.wallet
             wallet.balance += amount
@@ -359,6 +372,25 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                 notification_type="success"
             )
 
+            # Platform Fee / Ride activation logic
+            try:
+                if transaction_obj.ride:
+                    ride = transaction_obj.ride
+                    if ride.status == 'pending_payment':
+                        ride.status = 'available'
+                        ride.save()
+                        logger.info(f"Activated ride {ride.id} after platform fee payment.")
+                        
+                        # Notification for the driver
+                        Notification.objects.create(
+                            user=ride.driver,
+                            title="Ride Activated!",
+                            message=f"Your ride from {ride.departure_location} to {ride.destination} is now active and visible to passengers.",
+                            notification_type="success"
+                        )
+            except Exception as e:
+                logger.error(f"Error in ride activation: {str(e)}", exc_info=True)
+
             # Booking confirmation logic
             try:
                 from rides.models import Booking
@@ -373,7 +405,9 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                     ).select_related('ride').first()
                 
                 if pending_booking and pending_booking.status == 'pending':
-                    expected_amount = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
+                    subtotal = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
+                    expected_amount = (subtotal * Decimal('1.01')).quantize(Decimal('0.01'))
+                    
                     if amount >= expected_amount:
                         # Confirm the booking
                         pending_booking.confirm_payment()
@@ -481,7 +515,7 @@ def wallet_view(request):
             
         wallet, created = Wallet.objects.get_or_create(
             user=request.user,
-            defaults={'balance': 1000.00}
+            defaults={'balance': 0.00}
         )
         transactions = Transaction.objects.filter(wallet=wallet).order_by('-created_at')[:10]
         

@@ -54,6 +54,13 @@ export default function Register() {
     setIsLoading(true);
     setStatus('registering');
 
+    if (formData.username.includes(' ')) {
+      setFieldErrors({ username: ['Spaces are not allowed in usernames.'] });
+      setIsLoading(false);
+      setStatus('idle');
+      return;
+    }
+
     if (formData.password !== formData.password_confirm) {
       setFieldErrors({ password_confirm: ['Passwords do not match'] });
       setIsLoading(false);
