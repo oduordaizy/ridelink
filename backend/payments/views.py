@@ -406,7 +406,7 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                 
                 if pending_booking and pending_booking.status == 'pending':
                     subtotal = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
-                    expected_amount = (subtotal * Decimal('1.01')).quantize(Decimal('0.01'))
+                    expected_amount = (subtotal * Decimal('1.05')).quantize(Decimal('0.01'))
                     
                     if amount >= expected_amount:
                         # Confirm the booking

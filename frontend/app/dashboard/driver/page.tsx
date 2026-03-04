@@ -253,7 +253,7 @@ export default function CreateRidePage() {
       // Calculate platform fee for local validation
       const price = Number(formData.price) || 0;
       const seats = Number(formData.available_seats) || 1;
-      const platformFee = Math.max(1, price * seats * 0.01);
+      const platformFee = Math.max(1, price * seats * 0.05);
 
       // Final balance check for wallet payment
       if (paymentMethod === 'wallet' && walletBalance !== null && walletBalance < platformFee) {
@@ -540,7 +540,7 @@ export default function CreateRidePage() {
                 </div>
                 <div className="text-right">
                   <span className="text-xl font-black text-blue-600">
-                    KSh {Math.max(1, (Number(formData.price) || 0) * (Number(formData.available_seats) || 1) * 0.01).toFixed(2)}
+                    KSh {Math.max(1, (Number(formData.price) || 0) * (Number(formData.available_seats) || 1) * 0.05).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -550,8 +550,8 @@ export default function CreateRidePage() {
                   type="button"
                   onClick={() => setPaymentMethod('wallet')}
                   className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === 'wallet'
-                      ? 'border-[#08A6F6] bg-white text-[#08A6F6] shadow-sm'
-                      : 'border-transparent bg-gray-100/50 text-gray-500 hover:bg-gray-100'
+                    ? 'border-[#08A6F6] bg-white text-[#08A6F6] shadow-sm'
+                    : 'border-transparent bg-gray-100/50 text-gray-500 hover:bg-gray-100'
                     }`}
                 >
                   <FaWallet className="text-lg" />
@@ -568,8 +568,8 @@ export default function CreateRidePage() {
                     if (!phoneNumber && user?.phone_number) setPhoneNumber(user.phone_number);
                   }}
                   className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === 'mpesa'
-                      ? 'border-[#08A6F6] bg-white text-[#08A6F6] shadow-sm'
-                      : 'border-transparent bg-gray-100/50 text-gray-500 hover:bg-gray-100'
+                    ? 'border-[#08A6F6] bg-white text-[#08A6F6] shadow-sm'
+                    : 'border-transparent bg-gray-100/50 text-gray-500 hover:bg-gray-100'
                     }`}
                 >
                   <FaMobileScreenButton className="text-lg" />
@@ -578,7 +578,7 @@ export default function CreateRidePage() {
                 </button>
               </div>
 
-              {paymentMethod === 'wallet' && walletBalance !== null && walletBalance < (Number(formData.price) || 0) * (Number(formData.available_seats) || 1) * 0.01 && (
+              {paymentMethod === 'wallet' && walletBalance !== null && walletBalance < (Number(formData.price) || 0) * (Number(formData.available_seats) || 1) * 0.05 && (
                 <div className="flex items-center gap-2 p-2 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 text-[11px] font-medium animate-pulse">
                   <FaTriangleExclamation />
                   Insufficient balance. Switching to M-Pesa is recommended.

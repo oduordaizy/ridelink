@@ -90,7 +90,7 @@ class RideViewSet(viewsets.ModelViewSet):
         try:
             price = Decimal(str(request.data.get('price', 0)))
             available_seats = int(request.data.get('available_seats', 1))
-            platform_fee = price * available_seats * Decimal('0.01')
+            platform_fee = price * available_seats * Decimal('0.05')
             payment_method = request.data.get('payment_method', 'wallet')
 
             if platform_fee < 1:  # Minimum fee of 1 KES
@@ -307,7 +307,7 @@ class RideViewSet(viewsets.ModelViewSet):
                         raise ValueError("Wallet not found. Please create a wallet first.")
                     
                     subtotal = ride.price * no_of_seats
-                    platform_fee = subtotal * Decimal('0.01')
+                    platform_fee = subtotal * Decimal('0.05')
                     total_amount = subtotal + platform_fee
                     
                     if wallet.balance < total_amount:

@@ -224,7 +224,7 @@ const Page = () => {
 
     if (method === 'mpesa') {
       const subtotal = selectedRide.price * numberOfSeats;
-      const platformFee = subtotal * 0.01;
+      const platformFee = subtotal * 0.05;
       const total = subtotal + platformFee;
       setMpesaAmount(total.toString());
       return;
@@ -267,7 +267,7 @@ const Page = () => {
         // Update wallet balance
         if (walletBalance !== null) {
           const subtotal = selectedRide.price * numberOfSeats;
-          const platformFee = subtotal * 0.01;
+          const platformFee = subtotal * 0.05;
           const total = subtotal + platformFee;
           setWalletBalance(walletBalance - total);
         }
@@ -276,9 +276,9 @@ const Page = () => {
         fetchAllRides();
 
         const subtotal = selectedRide.price * numberOfSeats;
-        const platformFee = subtotal * 0.01;
+        const platformFee = subtotal * 0.05;
         const total = subtotal + platformFee;
-        setBookingSuccessMessage(`Your ride booking for ${numberOfSeats} seat(s) to ${selectedRide.destination} has been confirmed. KES ${total.toLocaleString()} (including 1% platform fee) was deducted from your wallet.`);
+        setBookingSuccessMessage(`Your ride booking for ${numberOfSeats} seat(s) to ${selectedRide.destination} has been confirmed. KES ${total.toLocaleString()} (including 5% platform fee) was deducted from your wallet.`);
         setShowSuccessModal(true);
 
       } else if (method === 'card') {
@@ -493,12 +493,12 @@ const Page = () => {
                   <span className="font-semibold text-gray-700">KSh {(selectedRide.price * numberOfSeats).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-500 text-sm">Platform Fee (1%)</span>
-                  <span className="font-semibold text-gray-700">KSh {(selectedRide.price * numberOfSeats * 0.01).toLocaleString()}</span>
+                  <span className="text-gray-500 text-sm">Platform Fee (5%)</span>
+                  <span className="font-semibold text-gray-700">KSh {(selectedRide.price * numberOfSeats * 0.05).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-blue-200/30">
                   <span className="font-bold text-gray-800">Total Amount</span>
-                  <span className="font-bold text-[#08A6F6] text-xl">KSh {(selectedRide.price * numberOfSeats * 1.01).toLocaleString()}</span>
+                  <span className="font-bold text-[#08A6F6] text-xl">KSh {(selectedRide.price * numberOfSeats * 1.05).toLocaleString()}</span>
                 </div>
 
                 {/* Seat Selector */}
@@ -534,7 +534,7 @@ const Page = () => {
                 {showMpesaForm && selectedRide ? (
                   <PaymentForm
                     rideId={selectedRide.id}
-                    amount={selectedRide.price * numberOfSeats * 1.01}
+                    amount={selectedRide.price * numberOfSeats * 1.05}
                     token={localStorage.getItem('access_token') || ''}
                     seats={numberOfSeats}
                     onSuccess={() => { }}
@@ -544,7 +544,7 @@ const Page = () => {
                   <div className="space-y-3">
                     <button
                       onClick={() => handlePaymentSelection('wallet')}
-                      disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide.price * numberOfSeats * 1.01))}
+                      disabled={isProcessingPayment || (walletBalance !== null && walletBalance < (selectedRide.price * numberOfSeats * 1.05))}
                       className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-[#08A6F6]/30 hover:bg-[#C0DFED]/10 transition-all duration-200 bg-white"
                     >
                       <div className="flex items-center">
