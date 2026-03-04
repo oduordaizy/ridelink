@@ -171,7 +171,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(response.access);
       setUser(response.user);
       return response.user;
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
       throw error;
     }
   };

@@ -1,4 +1,5 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL + '/api';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://itravas.com';
+export const API_BASE_URL = BASE_URL + '/api';
 
 /**
  * Helper to construct absolute media URLs.
