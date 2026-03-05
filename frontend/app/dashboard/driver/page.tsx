@@ -279,6 +279,9 @@ export default function CreateRidePage() {
 
       // Add payment method for the platform fee
       formDataToSend.append('payment_method', paymentMethod);
+      if (paymentMethod === 'mpesa' && phoneNumber) {
+        formDataToSend.append('phone_number', phoneNumber);
+      }
 
       const response = await fetch(`${API_BASE_URL}/rides/`, {
         method: 'POST',

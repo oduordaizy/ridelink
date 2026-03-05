@@ -86,7 +86,7 @@ class RideViewSet(viewsets.ModelViewSet):
                 "missing_fields": missing
             }, status=status.HTTP_403_FORBIDDEN)
             
-        # 1% Platform Fee Logic
+        # 5% Platform Fee Logic
         try:
             price = Decimal(str(request.data.get('price', 0)))
             available_seats = int(request.data.get('available_seats', 1))
@@ -149,7 +149,9 @@ class RideViewSet(viewsets.ModelViewSet):
                     ride = serializer.save(driver=user, status='pending_payment', platform_fee=platform_fee)
 
                     # Initiate STK Push
-                    phone = user.phone_number
+                    # Try to get phone from request data (form), fallback to user profile
+                    phone = request.data.get('phone_number') or user.phone_number
+                    
                     if not phone:
                         return Response({"error": "Phone number required for M-Pesa payment"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -161,7 +163,7 @@ class RideViewSet(viewsets.ModelViewSet):
                         phone_number=phone_clean,
                         amount=platform_fee,
                         account_reference=f"RideFee{ride.id}"[:12],
-                        transaction_desc=f"Fee for Ride {ride.id}"[:20]
+                        transaction_desc=f"Fee-Ride-{ride.id}"[:13]
                     )
 
                     if "error" in stk_response:
