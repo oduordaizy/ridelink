@@ -501,18 +501,12 @@ def mpesa_callback(request):
         logger.error(f"Unexpected error in callback: {str(e)}", exc_info=True)
         return JsonResponse({"ResultCode": 1, "ResultDesc": "Internal server error"})
 
-@csrf_exempt
-@require_http_methods(["GET"])
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def wallet_view(request):
     """API endpoint to get wallet information and recent transactions"""
     try:
-        # Check if user is authenticated
-        if not request.user.is_authenticated:
-            return JsonResponse(
-                {"error": "Authentication credentials were not provided."}, 
-                status=401
-            )
-            
         wallet, created = Wallet.objects.get_or_create(
             user=request.user,
             defaults={'balance': 0.00}
@@ -523,7 +517,6 @@ def wallet_view(request):
         pending_txs = [tx for tx in transactions if tx.status == 'pending' and tx.checkout_request_id]
         if pending_txs:
             from payments.mpesa import query_stk_status
-            from payments.views import process_stk_result # ensure imported
             
             for tx in pending_txs[:3]: # Limit to 3 to prevent slow response times
                 try:
@@ -547,7 +540,7 @@ def wallet_view(request):
             'completed_at': tx.completed_at.isoformat() if tx.completed_at else None
         } for tx in transactions]
         
-        return JsonResponse({
+        return Response({
             'success': True,
             'wallet': {
                 'id': str(wallet.id),
@@ -558,7 +551,8 @@ def wallet_view(request):
         })
         
     except Exception as e:
-        return JsonResponse(
+        logger.error(f"Error in wallet_view: {str(e)}", exc_info=True)
+        return Response(
             {"error": f"An error occurred while fetching wallet information: {str(e)}"},
-            status=500
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
