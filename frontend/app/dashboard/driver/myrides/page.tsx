@@ -24,10 +24,12 @@ import {
   Trash2,
   X,
   User,
-  Phone
+  Phone,
+  Star
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'react-toastify'
+import ReviewForm from '@/app/components/ReviewForm';
 
 interface Ride {
   id: number;
@@ -86,6 +88,10 @@ const Page = () => {
     additional_info: ''
   });
 
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [reviewedBookings, setReviewedBookings] = useState<number[]>([]);
+
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/auth/login');
@@ -141,11 +147,56 @@ const Page = () => {
         const data = await response.json();
         const bookingsList = Array.isArray(data) ? data : (data.results || []);
         setBookings(bookingsList);
+
+        // Fetch reviews to see who we've already reviewed
+        const reviewsResponse = await fetch(`${API_BASE_URL}/reviews/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        if (reviewsResponse.ok) {
+          const reviewsData = await reviewsResponse.json();
+          const reviewsList = Array.isArray(reviewsData) ? reviewsData : (reviewsData.results || []);
+          const myReviewedIds = reviewsList
+            .filter((r: any) => r.reviewer === user?.id)
+            .map((r: any) => r.booking);
+          setReviewedBookings(myReviewedIds);
+        }
       }
     } catch (err) {
       console.error('Error fetching bookings:', err);
     } finally {
       setFetchingBookings(false);
+    }
+  };
+
+  const handleCompleteRide = async (rideId: number) => {
+    if (!window.confirm('Mark this ride and all confirmed bookings as completed?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/rides/${rideId}/complete/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+
+      if (response.ok) {
+        toast.success('Ride marked as completed');
+        setRides(prev => prev.map(r => r.id === rideId ? { ...r, status: 'completed' } : r));
+        if (selectedRide?.id === rideId) {
+          setSelectedRide(prev => prev ? { ...prev, status: 'completed' } : null);
+          fetchBookings(rideId);
+        }
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to complete ride');
+      }
+    } catch (err) {
+      console.error('Error completing ride:', err);
+      toast.error('An error occurred');
     }
   };
 
@@ -669,12 +720,32 @@ const Page = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-2">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                            booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                            booking.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                              booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
                             }`}>
                             {booking.status}
                           </span>
+
+                          {selectedRide.status === 'completed' && booking.status === 'completed' && (
+                            !reviewedBookings.includes(booking.id) ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setIsReviewModalOpen(true);
+                                }}
+                                className="flex items-center gap-1 text-[10px] font-bold text-[#08A6F6] hover:text-[#00204a] bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                              >
+                                <Star className="w-3 h-3" /> Review Passenger
+                              </button>
+                            ) : (
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md">
+                                <CheckCircle className="w-3 h-3" /> Reviewed
+                              </span>
+                            )
+                          )}
+
                           <p className="text-[10px] text-gray-400 mt-1">{format(new Date(booking.booked_at), 'MMM dd, HH:mm')}</p>
                         </div>
                       </div>
@@ -685,7 +756,15 @@ const Page = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap gap-3">
+              {selectedRide.status !== 'completed' && (
+                <button
+                  onClick={() => handleCompleteRide(selectedRide.id)}
+                  className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" /> Mark as Completed
+                </button>
+              )}
               <button
                 onClick={() => {
                   setIsViewModalOpen(false);
@@ -702,150 +781,166 @@ const Page = () => {
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        </div>
+          </div >
+        </div >
       )}
+
+      {
+        isReviewModalOpen && selectedBooking && (
+          <ReviewForm
+            bookingId={selectedBooking.id}
+            revieweeName={selectedBooking.user.first_name || selectedBooking.user.username}
+            onClose={() => setIsReviewModalOpen(false)}
+            onSuccess={() => {
+              setReviewedBookings(prev => [...prev, selectedBooking.id]);
+              setIsReviewModalOpen(false);
+            }}
+          />
+        )
+      }
 
       {/* Edit Ride Modal */}
-      {isEditModalOpen && selectedRide && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-900">Edit Ride</h3>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-6 h-6 text-gray-500" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateRide} className="flex-1 overflow-y-auto p-6 space-y-5">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">From</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.departure_location}
-                    onChange={(e) => setEditFormData({ ...editFormData, departure_location: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">To</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.destination}
-                    onChange={(e) => setEditFormData({ ...editFormData, destination: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
-                  />
-                </div>
+      {
+        isEditModalOpen && selectedRide && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900">Edit Ride</h3>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-gray-500" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={editFormData.departure_date}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setEditFormData({ ...editFormData, departure_date: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Time</label>
-                  <input
-                    type="time"
-                    required
-                    value={editFormData.departure_time}
-                    onChange={(e) => setEditFormData({ ...editFormData, departure_time: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Available Seats</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    max="10"
-                    value={editFormData.available_seats}
-                    onChange={(e) => setEditFormData({ ...editFormData, available_seats: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Price (KSh)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="50"
-                    value={editFormData.price}
-                    onChange={(e) => setEditFormData({ ...editFormData, price: parseFloat(e.target.value) })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Additional Info</label>
-                <textarea
-                  rows={3}
-                  value={editFormData.additional_info}
-                  onChange={(e) => setEditFormData({ ...editFormData, additional_info: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all resize-none"
-                  placeholder="Any extra details for your passengers..."
-                />
-              </div>
-
-              {/* Existing Photos thumbnails in Edit Modal */}
-              {selectedRide.images && selectedRide.images.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Current Photos</label>
-                  <div className="flex gap-2 overflow-x-auto pb-2">
-                    {selectedRide.images.map((img) => (
-                      <div key={img.id} className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
-                        <img src={img.image} alt="Vehicle thumbnail" className="w-full h-full object-cover" />
-                      </div>
-                    ))}
+              <form onSubmit={handleUpdateRide} className="flex-1 overflow-y-auto p-6 space-y-5">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">From</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.departure_location}
+                      onChange={(e) => setEditFormData({ ...editFormData, departure_location: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">To</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.destination}
+                      onChange={(e) => setEditFormData({ ...editFormData, destination: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
+                    />
                   </div>
                 </div>
-              )}
 
-              <div className="pt-4 flex flex-col gap-3">
-                <button
-                  type="submit"
-                  disabled={isUpdating}
-                  className="w-full py-4 bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isUpdating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
-                      Saving Changes...
-                    </>
-                  ) : 'Save Changes'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="w-full py-3 bg-white text-gray-500 font-bold hover:text-gray-700 transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={editFormData.departure_date}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setEditFormData({ ...editFormData, departure_date: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Time</label>
+                    <input
+                      type="time"
+                      required
+                      value={editFormData.departure_time}
+                      onChange={(e) => setEditFormData({ ...editFormData, departure_time: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Available Seats</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      max="10"
+                      value={editFormData.available_seats}
+                      onChange={(e) => setEditFormData({ ...editFormData, available_seats: parseInt(e.target.value) })}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Price (KSh)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="50"
+                      value={editFormData.price}
+                      onChange={(e) => setEditFormData({ ...editFormData, price: parseFloat(e.target.value) })}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Additional Info</label>
+                  <textarea
+                    rows={3}
+                    value={editFormData.additional_info}
+                    onChange={(e) => setEditFormData({ ...editFormData, additional_info: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all resize-none"
+                    placeholder="Any extra details for your passengers..."
+                  />
+                </div>
+
+                {/* Existing Photos thumbnails in Edit Modal */}
+                {selectedRide.images && selectedRide.images.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Current Photos</label>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {selectedRide.images.map((img) => (
+                        <div key={img.id} className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                          <img src={img.image} alt="Vehicle thumbnail" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 flex flex-col gap-3">
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="w-full py-4 bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isUpdating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
+                        Saving Changes...
+                      </>
+                    ) : 'Save Changes'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="w-full py-3 bg-white text-gray-500 font-bold hover:text-gray-700 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

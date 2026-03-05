@@ -12,11 +12,11 @@ from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from decimal import Decimal
 
-from .models import Ride, Booking
 from .serializers import (
     RideListSerializer, RideDetailSerializer,
-    BookingSerializer, 
+    BookingSerializer, ReviewSerializer
 )
+from .models import Ride, Booking, Review
 from payments.models import Wallet, Transaction
 from payments.mpesa import lipa_na_mpesa
 from accounts.models import Notification, Driver
@@ -234,19 +234,21 @@ class RideViewSet(viewsets.ModelViewSet):
             
             from django.db.models import Count
             if category == 'active':
-                return queryset.filter(departure_time__gte=now)
+                return queryset.filter(departure_time__gte=now).exclude(status='completed')
+            elif category == 'completed':
+                return queryset.filter(status='completed')
             elif category == 'past':
-                # Departed rides with at least one booking
+                # Departed rides (not marked completed) with at least one booking
                 return queryset.annotate(booking_count=Count('bookings')).filter(
                     departure_time__lt=now, 
                     booking_count__gt=0
-                )
+                ).exclude(status='completed')
             elif category == 'expired':
                 # Departed rides with no bookings
                 return queryset.annotate(booking_count=Count('bookings')).filter(
                     departure_time__lt=now, 
                     booking_count=0
-                )
+                ).exclude(status='completed')
             # Default for drivers is to see all their rides
             return queryset
             
@@ -395,6 +397,37 @@ class RideViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': f'Booking failed: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complete(self, request, pk=None):
+        """
+        Mark ride as completed
+        """
+        ride = self.get_object()
+        if ride.driver != request.user:
+            return Response({"error": "Only the driver can mark a ride as completed"}, status=status.HTTP_403_FORBIDDEN)
+        
+        if ride.status == 'completed':
+            return Response({"error": "Ride is already completed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with db_transaction.atomic():
+            ride.status = 'completed'
+            ride.save()
+            
+            # Also mark all confirmed bookings as completed
+            confirmed_bookings = ride.bookings.filter(status='confirmed')
+            confirmed_bookings.update(status='completed')
+            
+            # Notify passengers
+            for booking in confirmed_bookings:
+                Notification.objects.create(
+                    user=booking.user,
+                    title="Ride Completed",
+                    message=f"Your ride from {ride.departure_location} to {ride.destination} has been marked as completed. Please leave a review for your driver!",
+                    notification_type="success"
+                )
+
+        return Response({"success": True, "message": "Ride and all bookings marked as completed"})
     
 
 class IsBookingOwner(permissions.BasePermission):
@@ -477,4 +510,37 @@ class BookingViewSet(viewsets.ModelViewSet):
         return Response(
             {"detail": "Booking confirmed successfully"},
             status=status.HTTP_200_OK
+        )
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Users can see all reviews related to them (given or received)
+        user = self.request.user
+        return Review.objects.filter(Q(reviewer=user) | Q(reviewee=user))
+
+    def perform_create(self, serializer):
+        booking_id = self.request.data.get('booking')
+        booking = Booking.objects.get(id=booking_id)
+        
+        # Determine reviewee
+        if booking.user == self.request.user:
+            # Reviewer is passenger, reviewee is driver
+            reviewee = booking.ride.driver
+        else:
+            # Reviewer is driver, reviewee is passenger
+            reviewee = booking.user
+            
+        serializer.save(reviewer=self.request.user, reviewee=reviewee)
+        
+        # Notify reviewee
+        Notification.objects.create(
+            user=reviewee,
+            title="New Review Received",
+            message=f"You have received a new {serializer.validated_data['rating']}-star review for your ride from {booking.ride.departure_location}.",
+            notification_type="info"
         )

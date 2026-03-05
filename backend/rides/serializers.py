@@ -1,7 +1,7 @@
 # rides/serializers.py
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Ride, Booking, RideImage
+from .models import Ride, Booking, RideImage, Review
 from accounts.models import User, Driver
 
 
@@ -124,3 +124,48 @@ class BookingSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         booking = Booking.objects.create(user=user, **validated_data)
         return booking
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    reviewer_name = serializers.CharField(source='reviewer.username', read_only=True)
+    reviewee_name = serializers.CharField(source='reviewee.username', read_only=True)
+    reviewer_profile_pic = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = [
+            'id', 'booking', 'reviewer', 'reviewee', 'reviewer_name', 
+            'reviewee_name', 'reviewer_profile_pic', 'rating', 'comment', 'created_at'
+        ]
+        read_only_fields = ['reviewer', 'reviewee', 'created_at']
+
+    def get_reviewer_profile_pic(self, obj):
+        if obj.reviewer.profile_picture:
+            return obj.reviewer.profile_picture.url
+        return None
+
+    def validate(self, data):
+        request = self.context.get('request')
+        if not request or not request.user:
+            return data
+
+        booking = data.get('booking')
+        if not booking:
+            return data
+
+        # Ensure booking is completed
+        if booking.status != 'completed':
+            raise serializers.ValidationError("Reviews can only be submitted for completed bookings.")
+
+        # Ensure the reviewer is part of the booking (either passenger or driver)
+        is_passenger = booking.user == request.user
+        is_driver = booking.ride.driver == request.user
+
+        if not is_passenger and not is_driver:
+            raise serializers.ValidationError("You can only review bookings you were part of.")
+
+        # Ensure they haven't already reviewed this booking
+        if Review.objects.filter(booking=booking, reviewer=request.user).exists():
+            raise serializers.ValidationError("You have already reviewed this booking.")
+
+        return data

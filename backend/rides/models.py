@@ -18,6 +18,7 @@ class Ride(models.Model):
         ('available', 'Available'),
         ('fully_booked', 'Fully Booked'),
         ('pending_payment', 'Pending Payment'),
+        ('completed', 'Completed'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available', db_index=True)
     
@@ -47,6 +48,7 @@ class Booking(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
+        ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
     ]
     
@@ -145,3 +147,34 @@ class Booking(models.Model):
             # Send notification to driver about new booking
             from .utils import send_new_booking_notification_to_driver
             send_new_booking_notification_to_driver(self)
+
+class Review(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='reviews')
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews_given')
+    reviewee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews_received')
+    rating = models.PositiveSmallIntegerField(default=5)  # 1-5 stars
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('booking', 'reviewer')  # One review per booking per side
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Review from {self.reviewer.username} to {self.reviewee.username} for booking #{self.booking.id}"
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            # Update reviewee rating if they are a driver
+            try:
+                from accounts.models import Driver
+                driver_profile = self.reviewee.driver_profile
+                # Recalculate average rating
+                avg_rating = Review.objects.filter(reviewee=self.reviewee).aggregate(models.Avg('rating'))['rating__avg']
+                if avg_rating:
+                    driver_profile.rating = avg_rating
+                    driver_profile.save()
+            except Exception:
+                pass

@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaArrowLeft, FaChevronLeft, FaPhone, FaEnvelope, FaInfoCircle, FaImage } from 'react-icons/fa';
+import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaArrowLeft, FaChevronLeft, FaPhone, FaEnvelope, FaInfoCircle, FaImage, FaStar } from 'react-icons/fa';
 import Link from 'next/link';
 import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
+import ReviewForm from '@/app/components/ReviewForm';
 
 interface BookingDetail {
     id: number;
@@ -53,6 +54,8 @@ export default function BookingDetailPage() {
     const { id } = useParams();
     const [booking, setBooking] = useState<BookingDetail | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -74,6 +77,22 @@ export default function BookingDetailPage() {
             if (response.ok) {
                 const data = await response.json();
                 setBooking(data);
+
+                // Check if already reviewed
+                const reviewsResponse = await fetch(`${API_BASE_URL}/reviews/?booking=${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    },
+                });
+                if (reviewsResponse.ok) {
+                    const reviewsData = await reviewsResponse.json();
+                    const reviews = Array.isArray(reviewsData) ? reviewsData : (reviewsData.results || []);
+                    // Check if current user has given a review
+                    const userReview = reviews.find((r: any) => r.reviewer === user?.id);
+                    if (userReview) {
+                        setHasReviewed(true);
+                    }
+                }
             } else {
                 const errorData = await response.json();
                 toast.error(errorData.detail || 'Failed to fetch booking details');
@@ -319,8 +338,22 @@ export default function BookingDetailPage() {
                                     onClick={cancelBooking}
                                     className="w-full py-4 rounded-3xl bg-white border-2 border-red-100 text-red-500 font-bold hover:bg-red-50 transition-all active:scale-95 shadow-sm"
                                 >
-                                    Cancel Booking
                                 </button>
+                            )}
+
+                            {booking.status === 'completed' && !hasReviewed && (
+                                <button
+                                    onClick={() => setIsReviewModalOpen(true)}
+                                    className="w-full py-4 rounded-3xl bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white font-bold hover:shadow-lg transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"
+                                >
+                                    <FaStar className="text-yellow-400" /> Review Driver
+                                </button>
+                            )}
+
+                            {hasReviewed && (
+                                <div className="w-full py-4 rounded-3xl bg-green-50 border border-green-100 text-green-700 font-bold flex items-center justify-center gap-2">
+                                    <FaStar className="text-green-500" /> Review Submitted
+                                </div>
                             )}
 
                             <Link
@@ -334,6 +367,15 @@ export default function BookingDetailPage() {
 
                 </div>
             </div>
+
+            {isReviewModalOpen && booking && (
+                <ReviewForm
+                    bookingId={booking.id}
+                    revieweeName={booking.ride_details.driver.first_name || booking.ride_details.driver.username}
+                    onClose={() => setIsReviewModalOpen(false)}
+                    onSuccess={() => setHasReviewed(true)}
+                />
+            )}
         </div>
     );
 }
