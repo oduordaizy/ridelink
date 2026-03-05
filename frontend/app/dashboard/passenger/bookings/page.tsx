@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
-import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch, FaUserFriends, FaPhone, FaEnvelope } from 'react-icons/fa';
+import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch, FaUserFriends, FaPhone, FaEnvelope, FaExclamationCircle } from 'react-icons/fa';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
 
@@ -43,6 +43,21 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isMobile, setIsMobile] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Handle window resize safely for SSR
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Set initial value
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -74,12 +89,15 @@ export default function BookingsPage() {
         console.log('Bookings data received:', data);
         const bookingsList = Array.isArray(data) ? data : (data.results || []);
         setBookings(bookingsList);
+        setFetchError(null);
       } else {
-        const text = await response.text();
-        console.error('Failed to fetch bookings:', response.status, text);
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to fetch' }));
+        console.error('Failed to fetch bookings:', response.status, errorData);
+        setFetchError(errorData.detail || `Error ${response.status}: Failed to load bookings`);
       }
     } catch (error) {
       console.error('Error fetching bookings:', error);
+      setFetchError('Connection error. Please check your internet and try again.');
     } finally {
       setLoading(false);
     }
@@ -148,8 +166,8 @@ export default function BookingsPage() {
           <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
             <div style={{
               display: 'flex',
-              flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-              alignItems: window.innerWidth < 768 ? 'flex-start' : 'center',
+              flexDirection: isMobile ? 'column' : 'row',
+              alignItems: isMobile ? 'flex-start' : 'center',
               justifyContent: 'space-between',
               gap: '1rem'
             }}>
@@ -211,7 +229,7 @@ export default function BookingsPage() {
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: '1rem'
           }}>
             <div style={{ position: 'relative' }}>
@@ -303,7 +321,32 @@ export default function BookingsPage() {
 
         {/* Bookings List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {bookings.length === 0 ? (
+          {fetchError ? (
+            <div style={{
+              background: '#FEF2F2',
+              borderRadius: '1.5rem',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+              border: '1px solid #FCA5A5',
+              padding: '3rem',
+              textAlign: 'center'
+            }}>
+              <FaExclamationCircle style={{ height: '2.5rem', width: '2.5rem', color: '#EF4444', margin: '0 auto 1.5rem' }} />
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#991B1B', marginBottom: '0.5rem' }}>Oops! Something went wrong</h3>
+              <p style={{ color: '#B91C1C', marginBottom: '1.5rem' }}>{fetchError}</p>
+              <button
+                onClick={fetchBookings}
+                style={{
+                  padding: '0.875rem 1.5rem',
+                  background: '#EF4444',
+                  color: 'white',
+                  borderRadius: '1rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                Try Again
+              </button>
+            </div>
+          ) : bookings.length === 0 ? (
             <div style={{
               background: '#FFFFFF',
               borderRadius: '1.5rem',
@@ -400,8 +443,8 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
       <div style={{ padding: '1.5rem' }}>
         <div style={{
           display: 'flex',
-          flexDirection: window.innerWidth < 1024 ? 'column' : 'row',
-          alignItems: window.innerWidth < 1024 ? 'stretch' : 'center',
+          flexDirection: 'column',
+          alignItems: 'stretch',
           justifyContent: 'space-between',
           gap: '1rem'
         }}>
