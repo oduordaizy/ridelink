@@ -204,6 +204,7 @@ export default function Home() {
               name: "iTravas",
               alternateName: ["iTravas Ridesharing", "iTravas Kenya"],
               url: "https://itravas.com",
+              description: "Connecting drivers and passengers for affordable, secure, and convenient rides across Kenya.",
               potentialAction: {
                 "@type": "SearchAction",
                 target: "https://itravas.com/dashboard/passenger?q={search_term_string}",
@@ -219,15 +220,8 @@ export default function Home() {
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "iTravas",
-              alternateName: "iTravas Ridesharing",
               url: "https://itravas.com",
-              logo: {
-                "@type": "ImageObject",
-                url: "https://itravas.com/page-logo.png",
-                width: "512",
-                height: "512"
-              },
-              description: "Reliable ridesharing platform in Kenya connecting drivers and passengers for affordable, secure, and convenient rides.",
+              logo: "https://itravas.com/page-logo.png",
               sameAs: [
                 "https://facebook.com/itravas",
                 "https://twitter.com/itravas",
@@ -235,10 +229,51 @@ export default function Home() {
               ],
               contactPoint: {
                 "@type": "ContactPoint",
-                contactType: "Customer Service",
-                areaServed: "KE",
-                availableLanguage: ["English", "Swahili"]
+                telephone: "+254-XXX-XXXXXX", // Replace with real contact if available
+                contactType: "customer service"
               }
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              "name": "Main Navigation",
+              "itemListElement": [
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 1,
+                  "name": "How It Works",
+                  "url": "https://itravas.com/how-it-works"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 2,
+                  "name": "About",
+                  "url": "https://itravas.com/about"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 3,
+                  "name": "Contact",
+                  "url": "https://itravas.com/contact"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 4,
+                  "name": "Find a Ride",
+                  "url": "https://itravas.com/dashboard/passenger"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 5,
+                  "name": "Post a Ride",
+                  "url": "https://itravas.com/dashboard/driver"
+                }
+              ]
             }),
           }}
         />
@@ -258,14 +293,20 @@ export default function Home() {
                 {
                   "@type": "ListItem",
                   "position": 2,
-                  "name": "Find Ride",
-                  "item": "https://itravas.com/dashboard/passenger"
+                  "name": "How It Works",
+                  "item": "https://itravas.com/how-it-works"
                 },
                 {
                   "@type": "ListItem",
                   "position": 3,
-                  "name": "Post Ride",
-                  "item": "https://itravas.com/dashboard/driver"
+                  "name": "About",
+                  "item": "https://itravas.com/about"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 4,
+                  "name": "Contact",
+                  "item": "https://itravas.com/contact"
                 }
               ]
             }),
