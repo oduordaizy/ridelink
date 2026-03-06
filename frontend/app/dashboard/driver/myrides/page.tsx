@@ -728,7 +728,7 @@ const Page = () => {
                             {booking.status}
                           </span>
 
-                          {selectedRide.status === 'completed' && booking.status === 'completed' && (
+                          {(selectedRide.status === 'completed' || new Date(selectedRide.departure_time) <= new Date()) && (booking.status === 'completed' || booking.status === 'confirmed') && (
                             !reviewedBookings.includes(booking.id) ? (
                               <button
                                 onClick={() => {

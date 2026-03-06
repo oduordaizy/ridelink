@@ -9,6 +9,7 @@ import { paymentAPI, API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import PaymentForm from '@/app/components/PaymentForm';
 import PaymentSuccess from '@/app/components/Success';
+import PublicProfileModal from '@/app/components/PublicProfileModal';
 
 interface Ride {
   id: number;
@@ -19,6 +20,7 @@ interface Ride {
   price: number;
   additional_info?: string;
   driver: {
+    id: number;
     username: string;
     phone_number?: string;
     email?: string;
@@ -67,6 +69,8 @@ const Page = () => {
   const [numberOfSeats, setNumberOfSeats] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [bookingSuccessMessage, setBookingSuccessMessage] = useState("");
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
 
   // Fetch all rides (initial load and after clearing search)
   const fetchAllRides = useCallback(async () => {
@@ -385,7 +389,6 @@ const Page = () => {
       setShowPaymentModal(false);
       setMpesaPhone('');
       setMpesaAmount('');
-      setMpesaAmount('');
       setSelectedRide(null);
       setNumberOfSeats(1);
 
@@ -465,6 +468,18 @@ const Page = () => {
           },
         }}
       />
+
+      {/* Public Profile Modal */}
+      {selectedDriverId && (
+        <PublicProfileModal
+          userId={selectedDriverId}
+          isOpen={isProfileModalOpen}
+          onClose={() => {
+            setIsProfileModalOpen(false);
+            setSelectedDriverId(null);
+          }}
+        />
+      )}
 
       {/* Payment Modal */}
       {showPaymentModal && selectedRide && (
@@ -788,6 +803,17 @@ const Page = () => {
                           </h4>
                           <div className="flex items-center text-xs text-gray-500 gap-2">
                             <span>@{ride.driver.username}</span>
+                            <span className="text-gray-300">•</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDriverId(ride.driver.id);
+                                setIsProfileModalOpen(true);
+                              }}
+                              className="text-[#08A6F6] hover:underline font-medium"
+                            >
+                              View Profile
+                            </button>
                           </div>
                         </div>
                       </div>

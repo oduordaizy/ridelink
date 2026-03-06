@@ -153,9 +153,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         if not booking:
             return data
 
-        # Ensure booking is completed
-        if booking.status != 'completed':
-            raise serializers.ValidationError("Reviews can only be submitted for completed bookings.")
+        # Ensure booking is completed OR ride has departed
+        has_departed = booking.ride.departure_time <= timezone.now()
+        is_completed = booking.status == 'completed'
+        is_confirmed = booking.status == 'confirmed'
+
+        if not is_completed and not (is_confirmed and has_departed):
+            raise serializers.ValidationError("Reviews can only be submitted after the ride has departed or once it is marked as completed.")
 
         # Ensure the reviewer is part of the booking (either passenger or driver)
         is_passenger = booking.user == request.user
@@ -169,3 +173,32 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("You have already reviewed this booking.")
 
         return data
+
+class ReviewDetailsSerializer(serializers.ModelSerializer):
+    reviewer_name = serializers.CharField(source='reviewer.username', read_only=True)
+    reviewer_profile_pic = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = ['id', 'reviewer_name', 'reviewer_profile_pic', 'rating', 'comment', 'created_at']
+
+    def get_reviewer_profile_pic(self, obj):
+        if obj.reviewer.profile_picture:
+            return obj.reviewer.profile_picture.url
+        return None
+
+
+class PublicProfileSerializer(serializers.ModelSerializer):
+    driver_profile = DriverProfileSerializer(read_only=True)
+    reviews_received = ReviewDetailsSerializer(many=True, read_only=True)
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'full_name',
+            'profile_picture', 'driver_profile', 'reviews_received', 'created_at'
+        ]
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip() or obj.username

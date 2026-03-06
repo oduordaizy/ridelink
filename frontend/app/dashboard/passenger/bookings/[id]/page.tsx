@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaArrowLeft, FaChevronLeft, FaPhone, FaEnvelope, FaInfoCircle, FaImage, FaStar } from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaStar, FaChevronLeft, FaMapMarkerAlt, FaCalendarAlt, FaClock, FaUsers, FaInfoCircle, FaCar, FaArrowLeft, FaUser } from 'react-icons/fa';
+import PublicProfileModal from '@/app/components/PublicProfileModal';
 import Link from 'next/link';
 import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
@@ -21,6 +22,7 @@ interface BookingDetail {
         available_seats: number;
         additional_info?: string;
         driver: {
+            id: number;
             username: string;
             email?: string;
             phone_number?: string;
@@ -55,6 +57,7 @@ export default function BookingDetailPage() {
     const [booking, setBooking] = useState<BookingDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [hasReviewed, setHasReviewed] = useState(false);
 
     useEffect(() => {
@@ -268,7 +271,7 @@ export default function BookingDetailPage() {
                         {booking.ride_details.images && booking.ride_details.images.length > 0 && (
                             <div className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-gray-100">
                                 <h2 className="text-xl font-bold text-[#00204a] mb-6 flex items-center gap-2">
-                                    <FaImage className="text-[#08A6F6]" /> Vehicle Photos
+                                    <FaUsers className="text-[#08A6F6]" /> Vehicle Photos
                                 </h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     {booking.ride_details.images.map((img) => (
@@ -288,19 +291,30 @@ export default function BookingDetailPage() {
                     {/* Right Column: Driver & Actions */}
                     <div className="space-y-6">
                         <div className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-gray-100 text-center">
-                            <div className="relative inline-block mb-4">
-                                {getMediaUrl(booking.ride_details.driver.profile_picture) ? (
-                                    <img
-                                        src={getMediaUrl(booking.ride_details.driver.profile_picture)}
-                                        alt={booking.ride_details.driver.username}
-                                        className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg mx-auto"
-                                    />
-                                ) : (
-                                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-lg mx-auto">
-                                        {booking.ride_details.driver.first_name ? booking.ride_details.driver.first_name.charAt(0).toUpperCase() : booking.ride_details.driver.username.charAt(0).toUpperCase()}
+                            <div className="relative mb-6">
+                                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#08A6F6] to-[#00204a] p-1 shadow-lg group cursor-pointer"
+                                    onClick={() => setIsProfileModalOpen(true)}>
+                                    <div className="w-full h-full rounded-[20px] bg-white overflow-hidden flex items-center justify-center border-4 border-white transition-transform group-hover:scale-105">
+                                        {getMediaUrl(booking.ride_details.driver.profile_picture) ? (
+                                            <img
+                                                src={getMediaUrl(booking.ride_details.driver.profile_picture)}
+                                                alt={booking.ride_details.driver.username}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="text-3xl font-bold text-[#08A6F6]">
+                                                {booking.ride_details.driver.first_name ? booking.ride_details.driver.first_name.charAt(0).toUpperCase() : booking.ride_details.driver.username.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                                <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
+                                    <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
+                                </div>
+                                <button
+                                    onClick={() => setIsProfileModalOpen(true)}
+                                    className="absolute -bottom-1 -right-2 bg-white text-[#08A6F6] text-[10px] font-bold px-2 py-1 rounded-full shadow-md border border-gray-100 hover:bg-blue-50 transition-colors"
+                                >
+                                    View Profile
+                                </button>
                             </div>
 
                             <h3 className="text-xl font-bold text-[#00204a]">
@@ -338,10 +352,11 @@ export default function BookingDetailPage() {
                                     onClick={cancelBooking}
                                     className="w-full py-4 rounded-3xl bg-white border-2 border-red-100 text-red-500 font-bold hover:bg-red-50 transition-all active:scale-95 shadow-sm"
                                 >
+                                    Cancel Booking
                                 </button>
                             )}
 
-                            {booking.status === 'completed' && !hasReviewed && (
+                            {(booking.status === 'completed' || (booking.status === 'confirmed' && new Date(booking.ride_details.departure_time) <= new Date())) && !hasReviewed && (
                                 <button
                                     onClick={() => setIsReviewModalOpen(true)}
                                     className="w-full py-4 rounded-3xl bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white font-bold hover:shadow-lg transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"
@@ -368,6 +383,16 @@ export default function BookingDetailPage() {
                 </div>
             </div>
 
+            {/* Public Profile Modal */}
+            {booking && (
+                <PublicProfileModal
+                    userId={booking.ride_details.driver.id}
+                    isOpen={isProfileModalOpen}
+                    onClose={() => setIsProfileModalOpen(false)}
+                />
+            )}
+
+            {/* Review Modal */}
             {isReviewModalOpen && booking && (
                 <ReviewForm
                     bookingId={booking.id}

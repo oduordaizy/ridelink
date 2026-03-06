@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
+from rides.serializers import PublicProfileSerializer
 from .models import User
 from django.core.mail import send_mail
 from django.conf import settings
@@ -106,6 +107,11 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def perform_update(self, serializer):
         # Save the serializer and update the user instance
         serializer.save()
+
+class PublicProfileView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PublicProfileSerializer
+    queryset = User.objects.all()
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
