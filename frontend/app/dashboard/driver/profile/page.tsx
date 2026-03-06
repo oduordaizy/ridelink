@@ -1,7 +1,7 @@
 'use client'
 import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 
-import { useEffect, useState, ChangeEvent } from "react"
+import React, { useEffect, useState, ChangeEvent } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
