@@ -3,6 +3,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import Ride, Booking, RideImage, Review
 from accounts.models import User, Driver
+from decimal import Decimal
 
 
 class DriverProfileSerializer(serializers.ModelSerializer):
@@ -96,7 +97,7 @@ class BookingSerializer(serializers.ModelSerializer):
     def get_total_price(self, obj):
         subtotal = obj.no_of_seats * obj.ride.price
         # Return as float for JSON-serializable output, rounded to 2 decimal places
-        return float(round(subtotal * 1.05, 2))
+        return float(round(subtotal * Decimal('1.05'), 2))
 
     def validate_no_of_seats(self, value):
         if value < 1:
