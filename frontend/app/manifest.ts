@@ -16,12 +16,12 @@ export default function manifest(): MetadataRoute.Manifest {
                 type: 'image/png',
             },
             {
-                src: '/iTravas-logo.png',
+                src: '/logo1.png',
                 sizes: '192x192',
                 type: 'image/png',
             },
             {
-                src: '/iTravas-logo.png',
+                src: '/logo1.png',
                 sizes: '512x512',
                 type: 'image/png',
             },

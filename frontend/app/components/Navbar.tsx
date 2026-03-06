@@ -24,7 +24,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href='/' className='flex items-center text-[#00204a] hover:opacity-90 transition-opacity'>
-            <Image src="/logo1.png" alt="Logo" width={50} height={60} className="!m-0" />
+            <Image src="/logo1.png" alt="Logo" width={50} height={60} className="!m-0" style={{ width: 'auto', height: 'auto' }} />
             {/* {isHome ? (
               <h1 className="text-[#08A6F6] ml-0 font-semibold text-2xl">iTravas</h1>
             ) : (
@@ -70,18 +70,18 @@ export default function Navbar() {
                 </Link>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-[#C0DFED] rounded-lg">
                   <div className="w-7 h-7 rounded-full overflow-hidden border border-[#08A6F6]/20 flex items-center justify-center bg-[#08A6F6] text-white text-[10px] font-bold">
-                    {getMediaUrl(user.profile_picture) ? (
+                    {getMediaUrl(user?.profile_picture) ? (
                       <img
                         src={getMediaUrl(user.profile_picture)}
                         alt=""
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span>{user.first_name.charAt(0).toUpperCase()}</span>
+                      <span>{(user?.first_name || 'U').charAt(0).toUpperCase()}</span>
                     )}
                   </div>
                   <span className="text-[#003870] text-sm font-medium">
-                    {user.first_name}
+                    {user?.first_name || 'User'}
                   </span>
                 </div>
                 <button

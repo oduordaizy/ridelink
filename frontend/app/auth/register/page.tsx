@@ -6,6 +6,7 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import Footer from '@/app/components/Footer';
 import Navbar from '@/app/components/Navbar';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -159,6 +160,7 @@ export default function Register() {
                 alt="iTravas Logo"
                 width={60}
                 height={60}
+                style={{ width: 'auto', height: 'auto' }}
               />
             </div>
             <h1 className="text-3xl font-bold text-[#00204a]">Create Your Account</h1>
@@ -356,12 +358,12 @@ export default function Register() {
 
           <p className="mt-6 text-center text-sm text-[#00204a]">
             Already have an account?{' '}
-            <a
+            <Link
               href="/auth/login"
               className="font-semibold text-[#08A6F6] hover:text-[#00204a]"
             >
               Sign In
-            </a>
+            </Link>
           </p>
         </div>
       </main>

@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -40,7 +41,6 @@ export const metadata: Metadata = {
   authors: [{ name: "iTravas Team", url: "https://itravas.com" }],
   creator: "iTravas",
   metadataBase: new URL("https://itravas.com"),
-  manifest: "/manifest.json",
   icons: {
     icon: "/page-logo.png",
     shortcut: "/page-logo.png",

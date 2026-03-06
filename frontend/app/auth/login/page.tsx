@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
+import Link from 'next/link';
 import Footer from '@/app/components/Footer';
 import Navbar from '@/app/components/Navbar';
 import Image from 'next/image';
@@ -56,6 +57,7 @@ export default function Login() {
             src="/login-image.png"
             alt="iTravas carpool illustration"
             fill
+            sizes="50vw"
             className="object-cover"
           />
           <div className="absolute inset-0  flex items-center justify-center">
@@ -75,6 +77,7 @@ export default function Login() {
                 width={60}
                 height={60}
                 className="mb-3"
+                style={{ width: 'auto', height: 'auto' }}
               />
               <h1 className="text-3xl md:text-4xl font-bold text-[#013C5E] text-center">
                 Welcome to iTravas
@@ -160,12 +163,12 @@ export default function Login() {
 
             <p className="mt-6 text-center text-sm text-[#013C5E]">
               Don&apos;t have an account?{' '}
-              <a
+              <Link
                 href="/auth/register"
-                className="font-semibold text-[#08A6F6] hover:underline"
+                className="font-semibold text-[#08A6F6] hover:text-[#00204a]"
               >
-                Register
-              </a>
+                Sign Up
+              </Link>
             </p>
           </div>
         </div>

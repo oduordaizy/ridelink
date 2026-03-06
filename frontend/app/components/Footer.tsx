@@ -16,6 +16,7 @@ export default function Footer() {
                 width={50}
                 height={50}
                 className="object-contain"
+                style={{ width: 'auto', height: 'auto' }}
               />
               {/* <div className="text-white font-bold text-xl">
                 iTravas

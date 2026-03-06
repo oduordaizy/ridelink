@@ -1,6 +1,4 @@
-'use client';
-
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { IoNotifications, IoMenu, IoClose } from 'react-icons/io5';
@@ -108,6 +106,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
                 width={30}
                 height={30}
                 className="!m-0"
+                style={{ width: 'auto', height: 'auto' }}
               />
               {/* <span className="ml-1 font-semibold text-xl text-[#08A6F6]">
                 iTravas
@@ -201,6 +200,7 @@ export default function DashboardLayout({ children, user, onLogout }: DashboardL
               width={30}
               height={30}
               className="!m-0 transition-transform group-hover:scale-105"
+              style={{ width: 'auto', height: 'auto' }}
             />
             {/* <span className="ml-0 text-2xl font-semibold text-[#08A6F6]">
               iTravas
