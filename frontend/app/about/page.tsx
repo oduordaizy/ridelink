@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/about",
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 const values = [

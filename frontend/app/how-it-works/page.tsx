@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/how-it-works",
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function HowItWorks() {
