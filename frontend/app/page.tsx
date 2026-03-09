@@ -222,7 +222,7 @@ export default function Home() {
               "@type": "Organization",
               name: "iTravas",
               url: "https://itravas.com",
-              logo: "https://itravas.com/page-logo.png",
+              logo: "https://itravas.com/logo.png",
               sameAs: [
                 "https://facebook.com/itravas",
                 "https://twitter.com/itravas",
@@ -230,7 +230,7 @@ export default function Home() {
               ],
               contactPoint: {
                 "@type": "ContactPoint",
-                telephone: "+254-XXX-XXXXXX", // Replace with real contact if available
+                telephone: "+254-140-551456", 
                 contactType: "customer service"
               }
             }),

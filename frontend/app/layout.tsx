@@ -42,9 +42,9 @@ export const metadata: Metadata = {
   creator: "iTravas",
   metadataBase: new URL("https://itravas.com"),
   icons: {
-    icon: "/page-logo.png",
-    shortcut: "/page-logo.png",
-    apple: "/page-logo.png",
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
   openGraph: {
     title: "iTravas",
@@ -53,23 +53,16 @@ export const metadata: Metadata = {
     siteName: "iTravas",
     images: [
       {
-        url: "/page-logo.png",
-        width: 512,
-        height: 512,
+        url: "/logo.png",
+        width: 290,
+        height: 290,
         alt: "iTravas Ridesharing Application",
       },
     ],
     locale: "en_KE",
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "iTravas",
-    description: "Find affordable and secure rides across Kenya with iTravas.",
-    images: ["/page-logo.png"],
-    creator: "@itravas",
-  },
-  robots: {
+    robots: {
     index: true,
     follow: true,
     googleBot: {
