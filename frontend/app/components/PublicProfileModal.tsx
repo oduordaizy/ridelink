@@ -99,10 +99,10 @@ const PublicProfileModal: React.FC<PublicProfileModalProps> = ({ userId, isOpen,
                                 <div className="flex items-center gap-2 mt-2">
                                     <div className="flex text-yellow-400">
                                         {[...Array(5)].map((_, i) => (
-                                            <FaStar key={i} className={i < Math.round(profile?.driver_profile?.rating || 0) ? 'fill-current' : 'text-white/20'} />
+                                            <FaStar key={i} className={i < Math.round(profile?.driver_profile?.rating || 5) ? 'fill-current' : 'text-white/20'} />
                                         ))}
                                     </div>
-                                    <span className="font-bold">{(profile?.driver_profile?.rating || 0).toFixed(1)}</span>
+                                    <span className="font-bold">{(profile?.driver_profile?.rating || 5).toFixed(1)}</span>
                                 </div>
                             )}
                         </div>

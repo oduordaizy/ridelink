@@ -174,10 +174,10 @@ export default function DriverProfilePage() {
                   {driver?.first_name} {driver?.last_name}
                 </h2>
                 <p className="text-blue-100 text-sm mt-1">{driver?.email}</p>
-                {driver?.rating && (
+                {driver && (
                   <div className="flex items-center gap-1 mt-2 justify-center sm:justify-start">
                     <FaStar className="text-yellow-300" />
-                    <span className="font-semibold">{driver.rating.toFixed(1)}</span>
+                    <span className="font-semibold">{Number(driver.rating).toFixed(1)}</span>
                   </div>
                 )}
               </div>
