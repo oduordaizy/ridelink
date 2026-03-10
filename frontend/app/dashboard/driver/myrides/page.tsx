@@ -30,6 +30,7 @@ import {
 import { format } from 'date-fns'
 import { toast } from 'react-toastify'
 import ReviewForm from '@/app/components/ReviewForm';
+import PublicProfileModal from '@/app/components/PublicProfileModal';
 
 interface Ride {
   id: number;
@@ -50,6 +51,7 @@ interface Ride {
 interface Booking {
   id: number;
   user: {
+    id: number;
     username: string;
     first_name: string;
     last_name: string;
@@ -91,6 +93,8 @@ const Page = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [reviewedBookings, setReviewedBookings] = useState<number[]>([]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedPassengerId, setSelectedPassengerId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -717,6 +721,15 @@ const Page = () => {
                                   <Phone className="w-3 h-3" /> {booking.user.phone_number}
                                 </span>
                               )}
+                              <button
+                                onClick={() => {
+                                  setSelectedPassengerId(booking.user.id);
+                                  setIsProfileModalOpen(true);
+                                }}
+                                className="text-[10px] text-[#08A6F6] hover:text-[#00204a] font-medium hover:underline"
+                              >
+                                View Profile
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -798,6 +811,18 @@ const Page = () => {
           />
         )
       }
+
+      {/* Public Profile Modal */}
+      {selectedPassengerId && (
+        <PublicProfileModal
+          userId={selectedPassengerId}
+          isOpen={isProfileModalOpen}
+          onClose={() => {
+            setIsProfileModalOpen(false);
+            setSelectedPassengerId(null);
+          }}
+        />
+      )}
 
       {/* Edit Ride Modal */}
       {
