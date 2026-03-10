@@ -365,7 +365,7 @@ export default function BookingDetailPage() {
                                 </button>
                             )}
 
-                            {(booking.status === 'completed' || (booking.status === 'confirmed' && new Date(booking.ride_details.departure_time) <= new Date())) && !hasReviewed && (
+                            {(booking.status === 'confirmed' || booking.status === 'completed') && !hasReviewed && (
                                 <button
                                     onClick={() => setIsReviewModalOpen(true)}
                                     className="w-full py-4 rounded-3xl bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white font-bold hover:shadow-lg transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"

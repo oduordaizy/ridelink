@@ -164,13 +164,12 @@ class ReviewSerializer(serializers.ModelSerializer):
         if not booking:
             raise serializers.ValidationError("A valid booking is required.")
 
-        # Ensure booking is completed OR ride has departed
-        has_departed = booking.ride.departure_time <= timezone.now()
+        # Ensure booking is completed OR confirmed
         is_completed = booking.status == 'completed'
         is_confirmed = booking.status == 'confirmed'
 
-        if not is_completed and not (is_confirmed and has_departed):
-            raise serializers.ValidationError("Reviews can only be submitted after the ride has departed or once it is marked as completed.")
+        if not is_completed and not is_confirmed:
+            raise serializers.ValidationError("Reviews can only be submitted for confirmed or completed bookings.")
 
         # Ensure the reviewer is part of the booking (either passenger or driver)
         is_passenger = booking.user == request.user
