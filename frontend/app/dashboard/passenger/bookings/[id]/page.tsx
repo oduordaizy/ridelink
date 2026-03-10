@@ -10,6 +10,15 @@ import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ReviewForm from '@/app/components/ReviewForm';
 
+interface ReviewRecord {
+    id: number;
+    booking: number;
+    reviewer: number;  // user ID of the reviewer
+    reviewer_name: string;
+    rating: number;
+    comment: string | null;
+}
+
 interface BookingDetail {
     id: number;
     ride: number;
@@ -89,9 +98,9 @@ export default function BookingDetailPage() {
                 });
                 if (reviewsResponse.ok) {
                     const reviewsData = await reviewsResponse.json();
-                    const reviews = Array.isArray(reviewsData) ? reviewsData : (reviewsData.results || []);
-                    // Check if current user has given a review
-                    const userReview = reviews.find((r: any) => r.reviewer === user?.id);
+                    const reviews: ReviewRecord[] = Array.isArray(reviewsData) ? reviewsData : (reviewsData.results || []);
+                    // Check if current user has given a review for this booking
+                    const userReview = reviews.find((r: ReviewRecord) => r.reviewer === user?.id);
                     if (userReview) {
                         setHasReviewed(true);
                     }

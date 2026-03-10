@@ -520,6 +520,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [django_filters.DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['booking', 'reviewer', 'reviewee']
+    ordering_fields = ['created_at', 'rating']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         # Users can see all reviews related to them (given or received)
@@ -528,7 +532,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         booking_id = self.request.data.get('booking')
-        booking = Booking.objects.get(id=booking_id)
+        try:
+            booking = Booking.objects.get(id=booking_id)
+        except Booking.DoesNotExist:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"booking": f"Booking with id {booking_id} does not exist."})
         
         # Determine reviewee
         if booking.user == self.request.user:

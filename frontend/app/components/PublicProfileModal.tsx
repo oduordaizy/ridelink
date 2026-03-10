@@ -95,14 +95,16 @@ const PublicProfileModal: React.FC<PublicProfileModalProps> = ({ userId, isOpen,
                         <div>
                             <h3 className="text-2xl font-bold">{profile?.full_name || 'Loading...'}</h3>
                             <p className="text-white/80">@{profile?.username}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                                <div className="flex text-yellow-400">
-                                    {[...Array(5)].map((_, i) => (
-                                        <FaStar key={i} className={i < Math.round(profile?.driver_profile?.rating || 0) ? 'fill-current' : 'text-white/20'} />
-                                    ))}
+                            {profile?.driver_profile && (
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex text-yellow-400">
+                                        {[...Array(5)].map((_, i) => (
+                                            <FaStar key={i} className={i < Math.round(profile?.driver_profile?.rating || 0) ? 'fill-current' : 'text-white/20'} />
+                                        ))}
+                                    </div>
+                                    <span className="font-bold">{profile?.driver_profile?.rating?.toFixed(1) || '0.0'}</span>
                                 </div>
-                                <span className="font-bold">{profile?.driver_profile?.rating?.toFixed(1) || '0.0'}</span>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -141,46 +143,50 @@ const PublicProfileModal: React.FC<PublicProfileModalProps> = ({ userId, isOpen,
                                 </div>
                             </div>
 
-                            {/* Reviews Section */}
-                            <div>
-                                <h4 className="text-lg font-bold text-[#00204a] mb-4 flex items-center gap-2">
-                                    <FaQuoteLeft className="text-[#08A6F6]" />
-                                    What Passengers Say
-                                </h4>
-                                {profile?.reviews_received && profile.reviews_received.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {profile.reviews_received.map((review) => (
-                                            <div key={review.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:border-[#08A6F6]/30">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
-                                                            {review.reviewer_profile_pic ? (
-                                                                <img src={getMediaUrl(review.reviewer_profile_pic)} alt="" className="w-full h-full object-cover" />
-                                                            ) : (
-                                                                <FaUser className="text-gray-400 text-xs" />
-                                                            )}
+                            {/* Reviews Section - Only show for drivers */}
+                            {profile?.driver_profile && (
+                                <div>
+                                    <h4 className="text-lg font-bold text-[#00204a] mb-4 flex items-center gap-2">
+                                        <FaQuoteLeft className="text-[#08A6F6]" />
+                                        What Passengers Say
+                                    </h4>
+                                    {profile?.reviews_received && profile.reviews_received.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {profile.reviews_received.map((review) => (
+                                                <div key={review.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:border-[#08A6F6]/30">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                                                                {review.reviewer_profile_pic ? (
+                                                                    <img src={getMediaUrl(review.reviewer_profile_pic)} alt="" className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <FaUser className="text-gray-400 text-xs" />
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-gray-800">{review.reviewer_name}</p>
+                                                                <p className="text-[10px] text-gray-400">{format(new Date(review.created_at), 'MMM dd, yyyy')}</p>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-gray-800">{review.reviewer_name}</p>
-                                                            <p className="text-[10px] text-gray-400">{format(new Date(review.created_at), 'MMM dd, yyyy')}</p>
+                                                        <div className="flex text-yellow-400 text-xs">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <FaStar key={i} className={i < review.rating ? 'fill-current' : 'text-gray-200'} />
+                                                            ))}
                                                         </div>
                                                     </div>
-                                                    <div className="flex text-yellow-400 text-xs">
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <FaStar key={i} className={i < review.rating ? 'fill-current' : 'text-gray-200'} />
-                                                        ))}
-                                                    </div>
+                                                    {review.comment && review.comment.trim() && (
+                                                        <p className="text-gray-600 text-sm italic leading-relaxed">"{review.comment.trim()}"</p>
+                                                    )}
                                                 </div>
-                                                <p className="text-gray-600 text-sm italic leading-relaxed">"{review.comment}"</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                                        <p className="text-gray-400">No reviews yet for this driver.</p>
-                                    </div>
-                                )}
-                            </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                                            <p className="text-gray-400">No reviews yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

@@ -145,14 +145,19 @@ class ReviewSerializer(serializers.ModelSerializer):
             return obj.reviewer.profile_picture.url
         return None
 
+    def validate_rating(self, value):
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
+
     def validate(self, data):
         request = self.context.get('request')
-        if not request or not request.user:
-            return data
+        if not request or not request.user or not request.user.is_authenticated:
+            raise serializers.ValidationError("Authentication required to submit a review.")
 
         booking = data.get('booking')
         if not booking:
-            return data
+            raise serializers.ValidationError("A valid booking is required.")
 
         # Ensure booking is completed OR ride has departed
         has_departed = booking.ride.departure_time <= timezone.now()

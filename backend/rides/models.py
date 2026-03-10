@@ -1,8 +1,11 @@
 # rides/models.py
+import logging
 from django.db import models
 from accounts.models import User, Notification
 from django.utils import timezone
 from django.db import transaction as db_transaction
+
+logger = logging.getLogger(__name__)
 
 class Ride(models.Model):
     departure_location = models.CharField(max_length=100, db_index=True)
@@ -168,13 +171,13 @@ class Review(models.Model):
         super().save(*args, **kwargs)
         if is_new:
             # Update reviewee rating if they are a driver
-            try:
-                from accounts.models import Driver
-                driver_profile = self.reviewee.driver_profile
-                # Recalculate average rating
-                avg_rating = Review.objects.filter(reviewee=self.reviewee).aggregate(models.Avg('rating'))['rating__avg']
-                if avg_rating:
-                    driver_profile.rating = avg_rating
-                    driver_profile.save()
-            except Exception:
-                pass
+            if self.reviewee.user_type == 'driver':
+                try:
+                    driver_profile = self.reviewee.driver_profile
+                    # Recalculate average rating from reviews received as driver
+                    avg_rating = Review.objects.filter(reviewee=self.reviewee).aggregate(models.Avg('rating'))['rating__avg']
+                    if avg_rating:
+                        driver_profile.rating = avg_rating
+                        driver_profile.save()
+                except Exception as e:
+                    logger.warning(f"Could not update driver rating for reviewee {self.reviewee_id}: {e}")
