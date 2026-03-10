@@ -102,7 +102,7 @@ const PublicProfileModal: React.FC<PublicProfileModalProps> = ({ userId, isOpen,
                                             <FaStar key={i} className={i < Math.round(profile?.driver_profile?.rating || 0) ? 'fill-current' : 'text-white/20'} />
                                         ))}
                                     </div>
-                                    <span className="font-bold">{profile?.driver_profile?.rating?.toFixed(1) || '0.0'}</span>
+                                    <span className="font-bold">{(profile?.driver_profile?.rating || 0).toFixed(1)}</span>
                                 </div>
                             )}
                         </div>

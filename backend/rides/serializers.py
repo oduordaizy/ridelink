@@ -7,9 +7,14 @@ from decimal import Decimal
 
 
 class DriverProfileSerializer(serializers.ModelSerializer):
+    rating = serializers.SerializerMethodField()
+
     class Meta:
         model = Driver
         fields = ['vehicle_model', 'vehicle_color', 'vehicle_plate', 'vehicle_picture', 'rating']
+
+    def get_rating(self, obj):
+        return float(obj.rating)
 
 
 class UserSerializer(serializers.ModelSerializer):
