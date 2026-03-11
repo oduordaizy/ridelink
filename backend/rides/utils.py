@@ -150,3 +150,69 @@ iTravas Team
     thread = threading.Thread(target=send)
     thread.start()
     return True
+
+def send_booking_confirmed_to_driver_email(booking):
+    """
+    Send an email notification to the driver when a booking is confirmed (paid).
+    """
+    subject = f'Booking Confirmed - Ride to {booking.ride.destination}'
+    driver_name = booking.ride.driver.first_name or booking.ride.driver.username
+    passenger_full_name = f"{booking.user.first_name} {booking.user.last_name}"
+    
+    # Plain text version
+    text_message = f"""
+Hi {driver_name},
+
+A booking for your ride from {booking.ride.departure_location} to {booking.ride.destination} has been confirmed.
+
+Booking Details:
+- Passenger: {passenger_full_name}
+- Number of Seats: {booking.no_of_seats}
+- Status: Confirmed
+
+You can now expect the passenger at the scheduled time.
+
+Thank you,
+iTravas Team
+"""
+    
+    # HTML version
+    html_message = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #00204a; padding: 20px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">iTravas</h1>
+        </div>
+        <div style="padding: 30px; background-color: #ffffff;">
+            <h2 style="color: #28a745; margin-top: 0;">Booking Confirmed! ✅</h2>
+            <p style="font-size: 16px; color: #333333;">Hi <strong>{driver_name}</strong>, a booking for your ride to <strong>{booking.ride.destination}</strong> has been confirmed.</p>
+            
+            <div style="background-color: #f4f7f9; border-radius: 6px; padding: 20px; margin: 25px 0;">
+                <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                    <tr><td style="padding: 5px 0; color: #666666;">Passenger:</td><td style="padding: 5px 0; font-weight: bold;">{passenger_full_name}</td></tr>
+                    <tr><td style="padding: 5px 0; color: #666666;">Seats:</td><td style="padding: 5px 0; font-weight: bold;">{booking.no_of_seats}</td></tr>
+                    <tr><td style="padding: 5px 0; color: #666666;">Status:</td><td style="padding: 5px 0; color: #28a745; font-weight: bold;">Confirmed</td></tr>
+                </table>
+            </div>
+
+            <p style="font-size: 16px; color: #333333; margin-top: 30px;">Thank you for driving with <strong>iTravas</strong>!</p>
+        </div>
+        <div style="background-color: #f8f9fa; padding: 15px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <p style="font-size: 12px; color: #999999; margin: 0;">&copy; 2026 iTravas. All rights reserved.</p>
+        </div>
+    </div>
+    """
+    
+    email_from = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [booking.ride.driver.email]
+    
+    def send():
+        try:
+            send_mail(subject, text_message, email_from, recipient_list, html_message=html_message)
+        except Exception as e:
+            print(f"Error sending driver booking confirmation email: {e}")
+
+    # Send in background to avoid blocking the user
+    thread = threading.Thread(target=send)
+    thread.start()
+    return True
+

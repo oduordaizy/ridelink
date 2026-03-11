@@ -357,8 +357,9 @@ class RideViewSet(viewsets.ModelViewSet):
                     )
                     
                     # Send confirmation email
-                    from .utils import send_booking_confirmation_email
+                    from .utils import send_booking_confirmation_email, send_booking_confirmed_to_driver_email
                     send_booking_confirmation_email(booking)
+                    send_booking_confirmed_to_driver_email(booking)
                     
                     message = 'Booking confirmed successfully'
                     extra_data = {'driver_phone': ride.driver.phone_number}

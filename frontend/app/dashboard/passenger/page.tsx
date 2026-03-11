@@ -231,6 +231,7 @@ const Page = () => {
       const platformFee = subtotal * 0.05;
       const total = subtotal + platformFee;
       setMpesaAmount(total.toString());
+      setShowMpesaForm(true); // Added to trigger the PaymentForm component
       return;
     }
 
@@ -299,101 +300,6 @@ const Page = () => {
     }
   };
 
-  const processMpesaPayment = async () => {
-    if (!selectedRide || !mpesaPhone || !mpesaAmount) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    if (!token) {
-      toast.error('Please log in to make a payment');
-      return;
-    }
-
-    // Format phone number to include country code if not present
-    let formattedPhone = mpesaPhone.trim();
-    if (!formattedPhone.startsWith('254') && formattedPhone.startsWith('0')) {
-      formattedPhone = '254' + formattedPhone.substring(1);
-    } else if (!formattedPhone.startsWith('254') && !formattedPhone.startsWith('+254')) {
-      formattedPhone = '254' + formattedPhone;
-    }
-
-    setIsProcessingPayment(true);
-
-    try {
-      // First, create the booking
-      const bookingResponse = await fetch(`${API_BASE_URL}/rides/${selectedRide.id}/book/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          payment_method: 'mpesa',
-          no_of_seats: numberOfSeats
-        }),
-      });
-
-      if (!bookingResponse.ok) {
-        const errorData = await bookingResponse.json();
-        throw new Error(errorData.error || 'Booking failed');
-      }
-
-      const bookingData = await bookingResponse.json();
-      console.log('Booking created:', bookingData);
-
-      // Then initiate M-Pesa payment
-      const paymentData = await paymentAPI.initiateMpesaPayment(token, {
-        phone_number: formattedPhone,
-        amount: parseFloat(mpesaAmount), // This is already the total amount
-        booking_id: bookingData.booking_id || bookingData.id
-      });
-
-      console.log('M-Pesa payment initiated:', paymentData);
-
-      // Show success message
-      toast.success('Payment initiated! Please check your phone to complete the M-Pesa payment.', {
-        duration: 6000,
-      });
-      toast('Your booking will be confirmed once payment is received.', {
-        duration: 6000,
-        icon: 'ℹ️',
-      });
-      setShowMpesaForm(false);
-      setShowPaymentModal(false);
-      setMpesaPhone('');
-      setMpesaAmount('');
-      setSelectedRide(null);
-      setNumberOfSeats(1);
-
-      // Refresh available rides
-      fetchAllRides();
-
-    } catch (error) {
-      console.error('M-Pesa payment failed:', error);
-
-      // More detailed error messages based on error type
-      let errorMessage = 'M-Pesa payment failed. Please try again.';
-
-      if (error instanceof Error) {
-        if (error.message.includes('NetworkError')) {
-          errorMessage = 'Network error. Please check your internet connection.';
-        } else if (error.message.includes('401')) {
-          errorMessage = 'Session expired. Please log in again.';
-        } else if (error.message.includes('400')) {
-          errorMessage = 'Invalid request. Please check the phone number and amount.';
-        } else if (error.message.includes('500')) {
-          errorMessage = 'Server error. Please try again later.';
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-      }
-
-      toast.error(errorMessage);
-    } finally {
-      setIsProcessingPayment(false);
-    }
-  };
 
   const bookRide = async (rideId: number, paymentMethod: string, token: string) => {
     try {

@@ -412,6 +412,14 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         # Confirm the booking
                         pending_booking.confirm_payment()
                         
+                        # Send confirmation emails
+                        try:
+                            from rides.utils import send_booking_confirmation_email, send_booking_confirmed_to_driver_email
+                            send_booking_confirmation_email(pending_booking)
+                            send_booking_confirmed_to_driver_email(pending_booking)
+                        except Exception as e:
+                            logger.error(f"Error sending emails in M-Pesa callback: {str(e)}")
+                        
                         # Deduct from wallet immediately (Debit)
                         wallet.balance -= expected_amount
                         wallet.save()
@@ -433,7 +441,7 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         Notification.objects.create(
                             user=wallet.user,
                             title="Ride Booking Confirmed",
-                            message=f"Your booking for ride from {ride.pickup_location} to {ride.destination} has been confirmed. KES {expected_amount} deducted from wallet.",
+                            message=f"Your booking for ride from {ride.departure_location} to {ride.destination} has been confirmed. KES {expected_amount} deducted from wallet.",
                             notification_type="success"
                         )
 
