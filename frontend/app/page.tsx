@@ -60,16 +60,14 @@ export default function Home() {
               <div className="absolute -top-4 -right-4 w-20 h-20 sm:w-24 sm:h-24 bg-linear-to-br from-[#08A6F6] to-[#003870] rounded-2xl opacity-20 blur-xl animate-pulse"></div>
               <div className="absolute -bottom-4 -left-4 w-24 h-24 sm:w-32 sm:h-32 bg-linear-to-br from-[#C0DFED] to-[#08A6F6] rounded-full opacity-30 blur-2xl"></div>
 
-              <div className="relative">
-                <Image
-                  src="/main-img.png"
-                  alt="People carpooling together"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-contain drop-shadow-2xl"
-                  priority
-                />
-              </div>
+              <Image
+                src="/main-img.png"
+                alt="People carpooling together"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-contain drop-shadow-2xl"
+                priority
+              />
             </div>
           </div>
         </section>
@@ -230,7 +228,7 @@ export default function Home() {
               ],
               contactPoint: {
                 "@type": "ContactPoint",
-                telephone: "+254-140-551456", 
+                telephone: "+254-140-551456",
                 contactType: "customer service"
               }
             }),
