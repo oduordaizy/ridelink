@@ -231,7 +231,16 @@ def wallet_transactions(request):
         )
         
         # Build the base queryset
-        transactions_query = Transaction.objects.filter(wallet=wallet)
+        # We only show pure wallet top-ups and payments Made using the wallet balance.
+        # "Pass-through" payments (ride activation fees or bookings paid directly via M-Pesa)
+        # are identified by having both an M-Pesa reference AND being linked to a ride or booking.
+        transactions_query = Transaction.objects.filter(wallet=wallet).exclude(
+            mpesa_transaction_reference__isnull=False,
+            ride__isnull=False
+        ).exclude(
+            mpesa_transaction_reference__isnull=False,
+            booking__isnull=False
+        )
         
         # Apply status filter if provided
         if status_filter and status_filter in ['pending', 'success', 'failed']:
@@ -381,6 +390,22 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         ride.save()
                         logger.info(f"Activated ride {ride.id} after platform fee payment.")
                         
+                        # Deduct the fee from wallet (Pass-through)
+                        wallet.balance -= amount
+                        wallet.save()
+                        
+                        # Create a debit transaction for the fee
+                        Transaction.objects.create(
+                            wallet=wallet,
+                            amount=-amount,
+                            status="success",
+                            result_code=0,
+                            result_desc=f"Platform Fee for Ride #{ride.id}",
+                            completed_at=timezone.now(),
+                            ride=ride,
+                            mpesa_transaction_reference=transaction_obj.mpesa_transaction_reference
+                        )
+                        
                         # Notification for the driver
                         Notification.objects.create(
                             user=ride.driver,
@@ -433,7 +458,8 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             result_code=0,
                             result_desc=f"Payment for Booking #{pending_booking.id}",
                             completed_at=timezone.now(),
-                            booking=pending_booking
+                            booking=pending_booking,
+                            mpesa_transaction_reference=transaction_obj.mpesa_transaction_reference
                         )
                         logger.info(f"Confirmed booking {pending_booking.id} and deducted KES {expected_amount}")
                         
