@@ -477,7 +477,7 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                                 f"Your booking for ride from {ride.departure_location} to {ride.destination} has been confirmed. "
                                 f"Paid via M-Pesa (Ref: {mpesa_receipt or 'N/A'}) at "
                                 f"{transaction_obj.completed_at.strftime('%H:%M on %d %b %Y') if transaction_obj.completed_at else 'N/A'}. "
-                                f"KES {expected_amount} deducted from wallet."
+                                # f"KES {expected_amount} deducted from wallet."
                             ),
                             notification_type="success"
                         )
