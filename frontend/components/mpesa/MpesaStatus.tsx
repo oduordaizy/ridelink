@@ -27,6 +27,7 @@ interface PaymentSuccessProps {
     viewLabel?: string;
     continueLabel?: string;
     onContinue?: () => void;
+    onView?: () => void;
 }
 
 export function PaymentSuccess({
@@ -36,6 +37,7 @@ export function PaymentSuccess({
     viewLabel = "View Wallet",
     continueLabel = "Top Up Again",
     onContinue,
+    onView,
 }: PaymentSuccessProps) {
     return (
         <div className="space-y-4 text-center p-10 bg-white/50 backdrop-blur-md rounded-2xl border border-green-100 shadow-xl animate-in fade-in zoom-in duration-300">
@@ -58,11 +60,20 @@ export function PaymentSuccess({
                         {continueLabel}
                     </button>
                 )}
-                <Link href={viewLink} className="flex-1">
-                    <button className="w-full px-5 py-3 bg-[#08A6F6] text-white rounded-2xl font-bold hover:bg-[#00204a] shadow-lg transition-all">
+                {onView ? (
+                    <button
+                        onClick={onView}
+                        className="flex-1 px-5 py-3 bg-[#08A6F6] text-white rounded-2xl font-bold hover:bg-[#00204a] shadow-lg transition-all"
+                    >
                         {viewLabel}
                     </button>
-                </Link>
+                ) : (
+                    <Link href={viewLink} className="flex-1">
+                        <button className="w-full px-5 py-3 bg-[#08A6F6] text-white rounded-2xl font-bold hover:bg-[#00204a] shadow-lg transition-all">
+                            {viewLabel}
+                        </button>
+                    </Link>
+                )}
             </div>
         </div>
     );

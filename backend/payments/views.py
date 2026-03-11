@@ -373,13 +373,14 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
             
             logger.info(f"Successfully processed payment for {wallet.user.username}: {mpesa_receipt or 'N/A'} for KES {amount}")
             
-            # Notification for top-up success
-            Notification.objects.create(
-                user=wallet.user,
-                title="Wallet Top-up Success",
-                message=f"Your wallet has been topped up with KES {amount}. Receipt: {mpesa_receipt or 'N/A'}",
-                notification_type="success"
-            )
+            # Notification for top-up success (only if not a direct ride/booking payment)
+            if not (transaction_obj.ride or transaction_obj.booking):
+                Notification.objects.create(
+                    user=wallet.user,
+                    title="Wallet Top-up Success",
+                    message=f"Your wallet has been topped up with KES {amount}. Receipt: {mpesa_receipt or 'N/A'}",
+                    notification_type="success"
+                )
 
             # Platform Fee / Ride activation logic
             try:

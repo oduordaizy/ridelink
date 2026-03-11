@@ -8,6 +8,7 @@ interface SuccessProps {
     viewLabel?: string;
     continueLabel?: string;
     onContinue?: () => void;
+    onView?: () => void;
 }
 
 export default function PaymentSuccess({
@@ -16,7 +17,8 @@ export default function PaymentSuccess({
     viewLink = "/dashboard/passenger/bookings",
     viewLabel = "View Bookings",
     continueLabel = "Continue",
-    onContinue
+    onContinue,
+    onView
 }: SuccessProps) {
     return (
         <div className="space-y-6 text-center text-black p-10 bg-white rounded-3xl shadow-xl border border-gray-100 max-w-md mx-auto">
@@ -38,11 +40,20 @@ export default function PaymentSuccess({
                         {continueLabel}
                     </button>
                 )}
-                <Link href={viewLink} className="flex-1">
-                    <button className="w-full px-6 py-4 bg-[#08A6F6] text-white rounded-2xl font-bold hover:bg-[#00204a] shadow-lg transition-all">
+                {onView ? (
+                    <button
+                        onClick={onView}
+                        className="flex-1 px-6 py-4 bg-[#08A6F6] text-white rounded-2xl font-bold hover:bg-[#00204a] shadow-lg transition-all"
+                    >
                         {viewLabel}
                     </button>
-                </Link>
+                ) : (
+                    <Link href={viewLink} className="flex-1">
+                        <button className="w-full px-6 py-4 bg-[#08A6F6] text-white rounded-2xl font-bold hover:bg-[#00204a] shadow-lg transition-all">
+                            {viewLabel}
+                        </button>
+                    </Link>
+                )}
             </div>
         </div>
     );

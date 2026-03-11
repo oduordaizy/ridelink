@@ -458,12 +458,13 @@ export default function PassengerWallet() {
               <STKPushQueryLoading number={mpesaPhone} />
             ) : success ? (
               <PaymentSuccess
-                title="Top Up Successful! 🎉"
+                title="Top Up Successful!"
                 message="Your wallet has been topped up successfully."
                 viewLink="/dashboard/passenger/wallet"
                 viewLabel="View Wallet"
                 continueLabel="Top Up Again"
                 onContinue={() => { setSuccess(false); setTopUpAmount(''); setMpesaPhone(''); }}
+                onView={() => window.location.reload()}
               />
             ) : (
               <>
