@@ -111,7 +111,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference, transaction_desc):
         "Password": password,
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
-        "Amount": int(amount),
+        "Amount": int(round(float(amount))),
         "PartyA": phone_number,
         "PartyB": shortcode,
         "PhoneNumber": phone_number,

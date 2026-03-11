@@ -318,7 +318,7 @@ class RideViewSet(viewsets.ModelViewSet):
                     total_amount = subtotal + platform_fee
                     
                     if wallet.balance < total_amount:
-                        raise ValueError(f"Insufficient wallet balance. Required: KSh {total_amount:.2f} (includes 1% fee), Available: KSh {wallet.balance:.2f}")
+                        raise ValueError(f"Insufficient wallet balance. Required: KSh {total_amount:.2f} (includes 5% fee), Available: KSh {wallet.balance:.2f}")
                     
                     # Deduct from wallet
                     wallet.balance -= total_amount

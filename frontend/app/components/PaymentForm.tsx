@@ -54,7 +54,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
                     clearInterval(timer);
                     setStkQueryLoading(false);
                     setLoading(false);
-                    const msg = errorData?.errorMessage || errorData?.error || errorData?.ResultDesc || "An error occurred while checking status";
+
+                    let msg = errorData?.errorMessage || errorData?.error || errorData?.ResultDesc || "An error occurred while checking status";
+
+                    // Handle DS Timeout / Cannot be reached error (Code 1037 or specific strings)
+                    if (errorCode === '1037' || /timeout|reached/i.test(msg)) {
+                        msg = "Safaricom could not reach your phone. Please ensure your phone is ON, has signal, and the SIM card is M-Pesa active. If you are testing, please use a registered Sandbox phone number.";
+                    }
+
                     setErrorMessage(msg);
                 }
                 // Otherwise (500.001.1001 or unknown transient), keep polling

@@ -408,7 +408,8 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                     subtotal = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
                     expected_amount = (subtotal * Decimal('1.05')).quantize(Decimal('0.01'))
                     
-                    if amount >= expected_amount:
+                    # Allow a small margin of error (1 KES) to account for rounding by Daraja/M-Pesa
+                    if amount >= (expected_amount - Decimal('1.0')):
                         # Confirm the booking
                         pending_booking.confirm_payment()
                         
