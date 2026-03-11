@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { IoWallet, IoCard } from "react-icons/io5";
+import { IoWallet } from "react-icons/io5";
 import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner, FaChevronDown, FaChevronUp, FaUser, FaStar, FaPhone, FaInfoCircle, FaClock, FaImage, FaChevronRight } from "react-icons/fa";
 import { FaMoneyBillWave as IoCash } from "react-icons/fa";
 import { paymentAPI, API_BASE_URL, getMediaUrl } from '@/app/services/api';
@@ -44,7 +44,7 @@ interface Ride {
   }[];
 }
 
-type PaymentMethod = 'wallet' | 'mpesa' | 'card';
+type PaymentMethod = 'wallet' | 'mpesa';
 
 const Page = () => {
   const { user, token, isLoading, logout } = useAuth()
@@ -285,32 +285,6 @@ const Page = () => {
         setBookingSuccessMessage(`Your ride booking for ${numberOfSeats} seat(s) to ${selectedRide.destination} has been confirmed. KES ${total.toLocaleString()} (including 5% platform fee) was deducted from your wallet.`);
         setShowSuccessModal(true);
 
-      } else if (method === 'card') {
-        // Book ride with card payment
-        const response = await fetch(`${API_BASE_URL}/rides/${selectedRide.id}/book/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            payment_method: 'card',
-            no_of_seats: numberOfSeats
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Booking failed');
-        }
-
-        const data = await response.json();
-        toast.success(`Booking created! Booking ID: ${data.booking_id}. Please complete card payment.`, {
-          duration: 5000,
-        });
-
-        // Refresh rides list
-        fetchAllRides();
       }
 
     } catch (error) {
@@ -596,19 +570,6 @@ const Page = () => {
                       <FaChevronRight className="text-gray-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
                     </button>
 
-                    <button
-                      onClick={() => handlePaymentSelection('card')}
-                      disabled={isProcessingPayment}
-                      className="w-full group relative flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-[#08A6F6]/30 hover:bg-[#C0DFED]/20 transition-all duration-200 bg-white"
-                    >
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                          <IoCard className="text-[#08A6F6] text-xl" />
-                        </div>
-                        <span className="font-semibold text-gray-800">Card</span>
-                      </div>
-                      <FaChevronRight className="text-gray-300 group-hover:text-[#08A6F6] group-hover:translate-x-1 transition-all" />
-                    </button>
                   </div>
                 )}
               </div>

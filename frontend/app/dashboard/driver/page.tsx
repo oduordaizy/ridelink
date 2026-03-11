@@ -65,7 +65,7 @@ export default function CreateRidePage() {
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'mpesa'>('wallet');
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'mpesa'>('wallet'); // card removed
   const [stkQueryLoading, setStkQueryLoading] = useState(false);
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);

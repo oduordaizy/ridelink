@@ -247,49 +247,7 @@ export default function DriverWallet() {
     setIsProcessing(true);
 
     try {
-      if (paymentMethod === 'card') {
-        // Stripe Integration - Consistent with M-Pesa pattern
-        const response = await fetch(`${API_BASE_URL}/checkout/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-          body: JSON.stringify({
-            amount: amount,
-          }),
-        });
-
-        console.log('Response status:', response.status);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Error data:', errorData);
-
-          // If 401, token is invalid
-          if (response.status === 401) {
-            showToast('Session expired. Please log in again.', 'error');
-            setTimeout(() => {
-              window.location.href = '/auth/login';
-            }, 2000);
-            return;
-          }
-
-          throw new Error(errorData.error || errorData.detail || 'Failed to create checkout session');
-        }
-
-        const data = await response.json();
-        console.log('Checkout response:', data);
-
-        if (!data.checkout_url) {
-          throw new Error('No checkout URL received from server');
-        }
-
-        // Redirect to Stripe Checkout
-        showToast('Redirecting to Stripe checkout...', 'info');
-        window.location.href = data.checkout_url;
-
-      } else if (paymentMethod === 'mpesa') {
+      if (paymentMethod === 'mpesa') {
         // M-Pesa Integration - Same pattern
         const response = await fetch(`${API_BASE_URL}/payments/wallet/topup/`, {
           method: 'POST',
@@ -544,25 +502,6 @@ export default function DriverWallet() {
                   </label>
 
                   <div className="space-y-3">
-                    {/* Card Payment */}
-                    <button
-                      onClick={() => setPaymentMethod('card')}
-                      className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'card'
-                        ? 'border-[#08A6F6] bg-[#C0DFED] bg-opacity-20'
-                        : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                    >
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentMethod === 'card' ? 'bg-[#08A6F6]' : 'bg-gray-100'
-                        }`}>
-                        <CreditCard className={`w-6 h-6 ${paymentMethod === 'card' ? 'text-white' : 'text-gray-600'
-                          }`} />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-semibold text-gray-800">Card Payment</p>
-                        <p className="text-sm text-gray-600">Pay with Visa, Mastercard</p>
-                      </div>
-                    </button>
-
                     {/* M-Pesa Payment */}
                     <button
                       onClick={() => setPaymentMethod('mpesa')}
