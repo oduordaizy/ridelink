@@ -410,7 +410,11 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         Notification.objects.create(
                             user=ride.driver,
                             title="Ride Activated!",
-                            message=f"Your ride from {ride.departure_location} to {ride.destination} is now active and visible to passengers.",
+                            message=(
+                                f"Your ride from {ride.departure_location} to {ride.destination} is now active. "
+                                f"Paid via M-Pesa (Ref: {mpesa_receipt or 'N/A'}) at "
+                                f"{transaction_obj.completed_at.strftime('%H:%M on %d %b %Y') if transaction_obj.completed_at else 'N/A'}."
+                            ),
                             notification_type="success"
                         )
             except Exception as e:
@@ -468,7 +472,12 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         Notification.objects.create(
                             user=wallet.user,
                             title="Ride Booking Confirmed",
-                            message=f"Your booking for ride from {ride.departure_location} to {ride.destination} has been confirmed. KES {expected_amount} deducted from wallet.",
+                            message=(
+                                f"Your booking for ride from {ride.departure_location} to {ride.destination} has been confirmed. "
+                                f"Paid via M-Pesa (Ref: {mpesa_receipt or 'N/A'}) at "
+                                f"{transaction_obj.completed_at.strftime('%H:%M on %d %b %Y') if transaction_obj.completed_at else 'N/A'}. "
+                                f"KES {expected_amount} deducted from wallet."
+                            ),
                             notification_type="success"
                         )
 
@@ -476,7 +485,11 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         Notification.objects.create(
                             user=ride.driver,
                             title="New Confirmed Booking",
-                            message=f"A booking for your ride from {ride.departure_location} to {ride.destination} has been paid and confirmed.",
+                            message=(
+                                f"A booking for your ride from {ride.departure_location} to {ride.destination} has been paid via M-Pesa "
+                                f"(Ref: {mpesa_receipt or 'N/A'}) and confirmed at "
+                                f"{transaction_obj.completed_at.strftime('%H:%M on %d %b %Y') if transaction_obj.completed_at else 'N/A'}."
+                            ),
                             notification_type="success"
                         )
             except Exception as e:
