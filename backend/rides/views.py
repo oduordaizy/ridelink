@@ -165,7 +165,7 @@ class RideViewSet(viewsets.ModelViewSet):
                     stk_response = lipa_na_mpesa(
                         phone_number=phone_clean,
                         amount=platform_fee,
-                        account_reference=f"RideFee{ride.id}"[:12],
+                        account_reference=phone_clean[:12],
                         transaction_desc=f"Fee-Ride-{ride.id}"[:13]
                     )
 
