@@ -9,6 +9,7 @@ urlpatterns = [
     path('wallet/balance/', views.wallet_balance, name='wallet_balance'),
     path('wallet/transactions/', views.wallet_transactions, name='wallet_transactions'),
     path('wallet/topup/', views.topup_wallet, name='topup_wallet'),
+    path('wallet/withdraw/', views.withdraw_wallet, name='withdraw_wallet'),
     
     # MPESA operations
     path('mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),

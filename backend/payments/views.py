@@ -7,7 +7,7 @@ from django.utils import timezone
 from decimal import Decimal
 import json
 from .models import Transaction, Wallet
-from .mpesa import lipa_na_mpesa, query_stk_status
+from .mpesa import lipa_na_mpesa, query_stk_status, b2c_payout
 from accounts.models import Notification
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
@@ -106,7 +106,8 @@ def topup_wallet(request):
                 checkout_request_id=response.get('CheckoutRequestID'),
                 merchant_request_id=response.get('MerchantRequestID'),
                 mpesa_transaction_reference=response.get('CheckoutRequestID'),
-                booking_id=booking_id
+                booking_id=booking_id,
+                transaction_type="topup"
             )
             
             return Response({
@@ -146,6 +147,93 @@ def wallet_balance(request):
     except Exception as e:
         return Response(
             {"error": f"An error occurred while fetching wallet balance: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def withdraw_wallet(request):
+    """
+    API endpoint to initiate a withdrawal from wallet to M-Pesa
+    """
+    user = request.user
+    data = request.data
+    amount = data.get("amount")
+    phone_number = data.get("phone")
+
+    if not all([amount, phone_number]):
+        return Response(
+            {"error": "Amount and phone number are required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return Response({"error": "Amount must be positive"}, status=status.HTTP_400_BAD_REQUEST)
+    except (ValueError, TypeError):
+        return Response({"error": "Invalid amount format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with db_transaction.atomic():
+            wallet = Wallet.objects.select_for_update().get(user=user)
+            
+            if wallet.balance < amount:
+                return Response(
+                    {"error": "Insufficient wallet balance"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Deduct balance immediately (Pending status)
+            wallet.balance -= amount
+            wallet.save()
+
+            # Create withdrawal transaction
+            transaction_obj = Transaction.objects.create(
+                wallet=wallet,
+                amount=-amount,
+                status="pending",
+                transaction_type="withdrawal",
+                result_desc=f"Withdrawal to {phone_number}"
+            )
+
+            # Initiate B2C Payout
+            response = b2c_payout(
+                phone_number=phone_number,
+                amount=amount,
+                remarks=f"Withdrawal for {user.username}"
+            )
+
+            if "error" in response:
+                # Rollback balance if initiation fails
+                wallet.balance += amount
+                wallet.save()
+                transaction_obj.status = "failed"
+                transaction_obj.result_desc = response.get("error")
+                transaction_obj.save()
+                
+                return Response(
+                    {"error": f"Withdrawal failed to initiate: {response.get('error')}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            # Store ConversationID/OriginID if available (Safaricom B2C returns these)
+            transaction_obj.mpesa_transaction_reference = response.get('ConversationID')
+            transaction_obj.save()
+
+            return Response({
+                "success": True,
+                "message": "Withdrawal initiated. You will receive an M-Pesa confirmation soon.",
+                "transaction_id": transaction_obj.id
+            }, status=status.HTTP_200_OK)
+
+    except Wallet.DoesNotExist:
+        return Response({"error": "Wallet not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Withdrawal error: {str(e)}", exc_info=True)
+        return Response(
+            {"error": f"An unexpected error occurred: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -365,7 +453,12 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
             transaction_obj.status = "success"
             if mpesa_receipt:
                 transaction_obj.mpesa_receipt_number = mpesa_receipt
-            transaction_obj.save()  # transaction_reference already set above if available
+            
+            # Ensure topup type is set if not already (safeguard)
+            if not transaction_obj.transaction_type:
+                transaction_obj.transaction_type = "topup"
+                
+            transaction_obj.save()
             
             wallet = transaction_obj.wallet
             wallet.balance += amount
@@ -404,7 +497,8 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             result_desc=f"Platform Fee for Ride #{ride.id}",
                             completed_at=timezone.now(),
                             ride=ride,
-                            mpesa_transaction_reference=transaction_obj.mpesa_transaction_reference
+                            mpesa_transaction_reference=transaction_obj.mpesa_transaction_reference,
+                            transaction_type="ride_fee"
                         )
                         
                         # Notification for the driver
@@ -464,7 +558,8 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             result_desc=f"Payment for Booking #{pending_booking.id}",
                             completed_at=timezone.now(),
                             booking=pending_booking,
-                            mpesa_transaction_reference=transaction_obj.mpesa_transaction_reference
+                            mpesa_transaction_reference=transaction_obj.mpesa_transaction_reference,
+                            transaction_type="booking"
                         )
                         logger.info(f"Confirmed booking {pending_booking.id} and deducted KES {expected_amount}")
                         
@@ -513,42 +608,93 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
 
 @csrf_exempt
 def mpesa_callback(request):
-    """Handle M-Pesa STK Push callback"""
+    """Handle M-Pesa STK Push and B2C Payout callbacks"""
     try:
         raw_body = request.body.decode('utf-8')
         logger.info(f"M-Pesa Callback received: {raw_body}")
         data = json.loads(raw_body)
-        stk_callback = data.get('Body', {}).get('stkCallback', {})
         
-        if not stk_callback:
-            logger.error(f"Invalid callback format: {raw_body}")
-            return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid callback format"})
-        
-        checkout_request_id = stk_callback.get('CheckoutRequestID')
-        result_code = stk_callback.get('ResultCode')
-        result_desc = stk_callback.get('ResultDesc')
-        metadata = stk_callback.get('CallbackMetadata')
-        
-        transaction_obj = Transaction.objects.filter(checkout_request_id=checkout_request_id).first()
-        if not transaction_obj:
-            logger.error(f"Transaction not found: {checkout_request_id}")
-            return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+        # 1. Handle STK Push Callback
+        if 'Body' in data and 'stkCallback' in data['Body']:
+            stk_callback = data['Body']['stkCallback']
+            checkout_request_id = stk_callback.get('CheckoutRequestID')
+            result_code = stk_callback.get('ResultCode')
+            result_desc = stk_callback.get('ResultDesc')
+            metadata = stk_callback.get('CallbackMetadata')
             
-        process_stk_result(transaction_obj, result_code, result_desc, metadata)
-        
-        return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
-        
+            transaction_obj = Transaction.objects.filter(checkout_request_id=checkout_request_id).first()
+            if not transaction_obj:
+                logger.error(f"STK Transaction not found: {checkout_request_id}")
+                return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+                
+            process_stk_result(transaction_obj, result_code, result_desc, metadata)
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
+            
+        # 2. Handle B2C Withdrawal Callback
+        elif 'Result' in data:
+            b2c_result = data['Result']
+            conversation_id = b2c_result.get('ConversationID')
+            result_code = b2c_result.get('ResultCode')
+            result_desc = b2c_result.get('ResultDesc')
+            
+            transaction_obj = Transaction.objects.filter(
+                mpesa_transaction_reference=conversation_id,
+                transaction_type="withdrawal"
+            ).first()
+            
+            if not transaction_obj:
+                logger.error(f"B2C Transaction not found for ConversationID: {conversation_id}")
+                return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+            
+            with db_transaction.atomic():
+                transaction_obj = Transaction.objects.select_for_update().get(id=transaction_obj.id)
+                if transaction_obj.status != "pending":
+                    return JsonResponse({"ResultCode": 0, "ResultDesc": "Already processed"})
+                
+                transaction_obj.result_code = result_code
+                transaction_obj.result_desc = result_desc
+                transaction_obj.completed_at = timezone.now()
+                
+                if str(result_code) == "0":
+                    transaction_obj.status = "success"
+                    # Capture M-Pesa Transaction ID if available
+                    ref_id = b2c_result.get('TransactionID')
+                    if ref_id:
+                        transaction_obj.mpesa_receipt_number = ref_id
+                    
+                    # Notification for success
+                    Notification.objects.create(
+                        user=transaction_obj.wallet.user,
+                        title="Withdrawal Successful",
+                        message=f"Your withdrawal of KES {abs(transaction_obj.amount)} was successful. Ref: {ref_id or 'N/A'}",
+                        notification_type="success"
+                    )
+                else:
+                    transaction_obj.status = "failed"
+                    # Rollback wallet balance on failure
+                    wallet = transaction_obj.wallet
+                    wallet.balance += abs(transaction_obj.amount)
+                    wallet.save()
+                    
+                    # Notification for failure
+                    Notification.objects.create(
+                        user=transaction_obj.wallet.user,
+                        title="Withdrawal Failed",
+                        message=f"Your withdrawal of KES {abs(transaction_obj.amount)} failed. Reason: {result_desc}",
+                        notification_type="error"
+                    )
+                
+                transaction_obj.save()
+            
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
+            
+        else:
+            logger.error(f"Unknown callback format: {raw_body}")
+            return JsonResponse({"ResultCode": 1, "ResultDesc": "Unknown format"})
+            
     except Exception as e:
         logger.error(f"Callback error: {str(e)}", exc_info=True)
         return JsonResponse({"ResultCode": 1, "ResultDesc": "Internal Error"})
-    
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in callback: {str(e)}")
-        return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid JSON"})
-    
-    except Exception as e:
-        logger.error(f"Unexpected error in callback: {str(e)}", exc_info=True)
-        return JsonResponse({"ResultCode": 1, "ResultDesc": "Internal server error"})
 
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])

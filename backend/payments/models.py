@@ -31,6 +31,14 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     booking = models.ForeignKey('rides.Booking', on_delete=models.SET_NULL, null=True, blank=True, related_name="transactions")
     ride = models.ForeignKey('rides.Ride', on_delete=models.SET_NULL, null=True, blank=True, related_name="transactions")
+    TRANSACTION_TYPES = [
+        ("topup", "Top-up"),
+        ("booking", "Booking Payment"),
+        ("ride_fee", "Ride Fee"),
+        ("withdrawal", "Withdrawal"),
+    ]
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES, default="topup")
+    
     status= models.CharField(max_length=50, choices=[("pending", "Pending"), ("success", "Success"), ("failed", "Failed")], default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)

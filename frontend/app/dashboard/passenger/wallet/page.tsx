@@ -74,12 +74,17 @@ export default function PassengerWallet() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'mpesa' | ''>('');
   const [mpesaPhone, setMpesaPhone] = useState('');
+  const [withdrawPhone, setWithdrawPhone] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [stkQueryLoading, setStkQueryLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
 
@@ -97,6 +102,15 @@ export default function PassengerWallet() {
         if (balanceRes.ok) {
           const balanceData = await balanceRes.json();
           setBalance(balanceData.balance);
+        }
+
+        // Pre-fill phones if available
+        if (user?.phone_number) {
+          const formattedPhone = user.phone_number.startsWith('0')
+            ? '254' + user.phone_number.substring(1)
+            : user.phone_number.replace('+', '');
+          if (!mpesaPhone) setMpesaPhone(formattedPhone);
+          if (!withdrawPhone) setWithdrawPhone(formattedPhone);
         }
 
         // Fetch Transactions
@@ -293,6 +307,70 @@ export default function PassengerWallet() {
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!withdrawAmount || !withdrawPhone) {
+      showToast('Please enter amount and phone number', 'error');
+      return;
+    }
+
+    const amount = parseFloat(withdrawAmount);
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Please enter a valid amount', 'error');
+      return;
+    }
+
+    if (balance !== null && amount > balance) {
+      showToast('Insufficient balance', 'error');
+      return;
+    }
+
+    if (!/^254\d{9}$/.test(withdrawPhone)) {
+      showToast('Please enter a valid M-Pesa number (254XXXXXXXXX)', 'error');
+      return;
+    }
+
+    setIsWithdrawing(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/payments/wallet/withdraw/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({
+          amount: amount,
+          phone: withdrawPhone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Withdrawal failed');
+      }
+
+      setWithdrawSuccess(true);
+      // Refresh balance after a short delay since withdrawal is pending
+      setTimeout(async () => {
+        const token = localStorage.getItem('access_token');
+        const balanceRes = await fetch(`${API_BASE_URL}/payments/wallet/balance/`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (balanceRes.ok) {
+          const balanceData = await balanceRes.json();
+          setBalance(balanceData.balance);
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      showToast(error instanceof Error ? error.message : 'Withdrawal failed', 'error');
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   const quickAmounts = [500, 1000, 2000, 5000];
 
   return (
@@ -347,13 +425,22 @@ export default function PassengerWallet() {
             <p className="text-xs md:text-sm opacity-80">Last updated: {new Date().toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>
           </div>
 
-          <button
-            onClick={() => setShowTopUpModal(true)}
-            className="w-full bg-white text-[#08A6F6] font-semibold py-3 rounded-lg md:rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 text-sm md:text-base"
-          >
-            <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5" />
-            Top Up Wallet
-          </button>
+          <div className="flex flex-col md:flex-row gap-3">
+            <button
+              onClick={() => setShowTopUpModal(true)}
+              className="flex-1 bg-white text-[#08A6F6] font-semibold py-3 rounded-lg md:rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 text-sm md:text-base"
+            >
+              <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5" />
+              Top Up Wallet
+            </button>
+            <button
+              onClick={() => setShowWithdrawModal(true)}
+              className="flex-1 bg-transparent border-2 border-white text-white font-semibold py-3 rounded-lg md:rounded-xl hover:bg-white hover:text-[#08A6F6] transition-all flex items-center justify-center gap-2 text-sm md:text-base"
+            >
+              <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 rotate-180" />
+              Withdraw Funds
+            </button>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -415,7 +502,10 @@ export default function PassengerWallet() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-[#00204a] text-sm md:text-base truncate">
-                        {tx.amount >= 0 ? 'Mpesa top up' : 'Ride Payment'}
+                        {tx.transaction_type === 'withdrawal' ? 'Wallet Withdrawal' :
+                          tx.transaction_type === 'topup' ? 'Mpesa top up' :
+                            tx.transaction_type === 'booking' ? 'Ride Payment' :
+                              tx.amount >= 0 ? 'Mpesa top up' : 'Ride Payment'}
                       </p>
                       <p className="text-xs md:text-sm text-gray-500 truncate font-medium">
                         {(tx.mpesa_transaction_reference || tx.mpesa_receipt_number) || 'STK Push'} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
@@ -556,6 +646,91 @@ export default function PassengerWallet() {
                     </>
                   ) : (
                     `Top Up KSh ${topUpAmount || '0'}`
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Withdraw Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowWithdrawModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Withdraw Funds</h2>
+            <p className="text-gray-600 text-sm mb-6">Withdraw money from your wallet to M-Pesa</p>
+
+            {withdrawSuccess ? (
+              <PaymentSuccess
+                title="Withdrawal Requested!"
+                message="Your withdrawal request has been received and is being processed. You will receive an M-Pesa notification shortly."
+                viewLink="/dashboard/passenger/wallet"
+                viewLabel="View Wallet"
+                continueLabel="Make Another Withdrawal"
+                onContinue={() => { setWithdrawSuccess(false); setWithdrawAmount(''); }}
+                onView={() => window.location.reload()}
+              />
+            ) : (
+              <>
+                {/* Balance Info */}
+                <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
+                  <p className="text-xs text-gray-500 uppercase font-bold mb-1">Available for withdrawal</p>
+                  <p className="text-xl font-bold text-[#00204a]">KSh {(balance || 0).toLocaleString()}</p>
+                </div>
+
+                {/* Amount Input */}
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Withdrawal Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3 text-gray-500 font-semibold">KSh</span>
+                    <input
+                      type="number"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full pl-16 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none text-lg"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone Number */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    M-Pesa Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={withdrawPhone}
+                    onChange={(e) => setWithdrawPhone(e.target.value)}
+                    placeholder="254712345678"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#08A6F6] focus:outline-none"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-2">Funds will be sent to this M-Pesa number.</p>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleWithdraw}
+                  disabled={isWithdrawing}
+                  className="w-full bg-[#08A6F6] text-white font-semibold py-4 rounded-xl hover:bg-[#00204a] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isWithdrawing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing Payout...
+                    </>
+                  ) : (
+                    `Withdraw KSh ${withdrawAmount || '0'}`
                   )}
                 </button>
               </>

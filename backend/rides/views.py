@@ -337,7 +337,8 @@ class RideViewSet(viewsets.ModelViewSet):
                         result_code=0,
                         result_desc=f"Ride Payment for Booking #{booking.id}",
                         completed_at=timezone.now(),
-                        booking=booking
+                        booking=booking,
+                        transaction_type="booking"
                     )
                     
                     # Notification for wallet payment success

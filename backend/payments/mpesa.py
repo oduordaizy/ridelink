@@ -263,3 +263,54 @@ def get_account_balance():
         return response.json()
     except Exception as e:
         return {"error": str(e)}
+def b2c_payout(phone_number, amount, remarks, occasion="Withdrawal"):
+    """
+    Initiate a B2C (Business to Customer) payment.
+    Requires funds in the Utility account.
+    """
+    shortcode = settings.MPESA_SHORTCODE
+    initiator = settings.MPESA_INITIATOR_USERNAME
+    security_credential = settings.MPESA_INITIATOR_SECURITY_CREDENTIAL
+    
+    # Ensure phone number is in the correct format
+    phone_number = str(phone_number).strip()
+    if phone_number.startswith('+'):
+        phone_number = phone_number[1:]
+    if phone_number.startswith('0'):
+        phone_number = '254' + phone_number[1:]
+    elif not phone_number.startswith('254'):
+        phone_number = '254' + phone_number
+        
+    access_token = get_access_token()
+    if not access_token:
+        return {"error": "Authentication failed", "code": "AUTH_ERROR"}
+
+    # Prepare request payload
+    payload = {
+        "InitiatorName": initiator,
+        "SecurityCredential": security_credential,
+        "CommandID": "BusinessPayment",
+        "Amount": int(amount),
+        "PartyA": shortcode,
+        "PartyB": phone_number,
+        "Remarks": remarks[:100],
+        "QueueTimeOutURL": settings.CALLBACK_URL,
+        "ResultURL": settings.CALLBACK_URL,
+        "Occasion": occasion[:100]
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        api_url = get_mpesa_urls()["b2c"]
+        logger.info(f"Initiating B2C Payout to {phone_number} for KES {amount}")
+        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
+        logger.info(f"B2C API Response Status: {response.status_code}")
+        logger.info(f"B2C API Response Body: {response.text}")
+        return response.json()
+    except Exception as e:
+        logger.error(f"B2C Payout Exception: {str(e)}")
+        return {"error": str(e), "code": "REQUEST_FAILED"}
