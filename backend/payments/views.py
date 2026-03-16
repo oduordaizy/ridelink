@@ -205,16 +205,25 @@ def withdraw_wallet(request):
                 remarks=f"Withdrawal for {user.username}"
             )
 
-            if "error" in response:
+            # Safaricom might return 'error' (our custom fail logic), 'errorMessage' (API failure), 
+            # or a ResponseCode other than "0" for failures.
+            is_error = (
+                "error" in response or 
+                "errorMessage" in response or 
+                (response.get("ResponseCode") and str(response.get("ResponseCode")) != "0")
+            )
+
+            if is_error:
                 # Rollback balance if initiation fails
                 wallet.balance += amount
                 wallet.save()
                 transaction_obj.status = "failed"
-                transaction_obj.result_desc = response.get("error")
+                error_msg = response.get("error") or response.get("errorMessage") or response.get("ResponseDescription") or "Unknown M-Pesa Error"
+                transaction_obj.result_desc = error_msg
                 transaction_obj.save()
                 
                 return Response(
-                    {"error": f"Withdrawal failed to initiate: {response.get('error')}"},
+                    {"error": f"Withdrawal failed to initiate: {error_msg}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
@@ -362,6 +371,7 @@ def wallet_transactions(request):
             'id': str(tx.id),
             'amount': float(tx.amount),
             'status': tx.status,
+            'transaction_type': tx.transaction_type,
             'mpesa_transaction_reference': tx.mpesa_transaction_reference or '',
             # keep old field available for backward compatibility
             'mpesa_receipt_number': tx.mpesa_receipt_number or '',
