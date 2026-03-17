@@ -3,11 +3,12 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db import transaction as db_transaction
+from django.db.models import Q
 from django.utils import timezone
 from decimal import Decimal
 import json
 from .models import Transaction, Wallet
-from .mpesa import lipa_na_mpesa, query_stk_status, b2c_payout
+from .mpesa import lipa_na_mpesa, query_stk_status, b2c_payout, normalize_phone_number
 from accounts.models import Notification
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
@@ -185,6 +186,12 @@ def withdraw_wallet(request):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Normalize the phone number for MPESA (2547XXXXXXXX)
+            try:
+                normalized_phone = normalize_phone_number(phone_number)
+            except ValueError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
             # Deduct balance immediately (Pending status)
             wallet.balance -= amount
             wallet.save()
@@ -195,12 +202,12 @@ def withdraw_wallet(request):
                 amount=-amount,
                 status="pending",
                 transaction_type="withdrawal",
-                result_desc=f"Withdrawal to {phone_number}"
+                result_desc=f"Withdrawal to {normalized_phone}"
             )
 
             # Initiate B2C Payout
             response = b2c_payout(
-                phone_number=phone_number,
+                phone_number=normalized_phone,
                 amount=amount,
                 remarks=f"Withdrawal for {user.username}"
             )
@@ -644,16 +651,23 @@ def mpesa_callback(request):
         elif 'Result' in data:
             b2c_result = data['Result']
             conversation_id = b2c_result.get('ConversationID')
+            originator_id = b2c_result.get('OriginatorConversationID')
             result_code = b2c_result.get('ResultCode')
             result_desc = b2c_result.get('ResultDesc')
             
+            # Safaricom may send either ConversationID or OriginatorConversationID.
+            # Try matching both to avoid missing the transaction record.
             transaction_obj = Transaction.objects.filter(
-                mpesa_transaction_reference=conversation_id,
                 transaction_type="withdrawal"
+            ).filter(
+                Q(mpesa_transaction_reference=conversation_id) |
+                Q(mpesa_transaction_reference=originator_id)
             ).first()
             
             if not transaction_obj:
-                logger.error(f"B2C Transaction not found for ConversationID: {conversation_id}")
+                logger.error(
+                    f"B2C Transaction not found for ConversationID: {conversation_id} or OriginatorConversationID: {originator_id}"
+                )
                 return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
             
             with db_transaction.atomic():
