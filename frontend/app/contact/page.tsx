@@ -3,8 +3,22 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import BreadcrumbJsonLd from '../components/BreadcrumbJsonLd';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Contact | iTravas',
+  description: 'Get in touch with iTravas for support, feedback and partnership inquiries.',
+  alternates: {
+    canonical: '/contact',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -55,6 +69,12 @@ const Contact = () => {
   return (
     <>
       <Navbar />
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', item: 'https://itravas.com' },
+          { name: 'Contact', item: 'https://itravas.com/contact' },
+        ]}
+      />
       <main className="min-h-screen bg-background flex flex-col items-center py-12 px-4 text-gray-700">
         <section className="max-w-3xl w-full text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold text-[#08A6F6] mb-4">Contact Us</h1>

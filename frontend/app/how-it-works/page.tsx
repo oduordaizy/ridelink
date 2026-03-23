@@ -2,6 +2,7 @@ import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import BreadcrumbJsonLd from '../components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: "How It Works | iTravas",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     canonical: "/how-it-works",
   },
   robots: {
-    index: false,
+    index: true,
     follow: true,
   },
 };
@@ -19,6 +20,12 @@ export default function HowItWorks() {
   return (
     <>
       <Navbar />
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', item: 'https://itravas.com' },
+          { name: 'How It Works', item: 'https://itravas.com/how-it-works' },
+        ]}
+      />
       <main className="min-h-screen bg-background flex flex-col items-center">
         {/* Hero Section */}
         <section className="w-full flex flex-col items-center justify-center text-center py-20 px-4 relative overflow-hidden">

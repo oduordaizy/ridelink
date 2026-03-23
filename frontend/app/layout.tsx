@@ -102,10 +102,39 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "name": "iTravas",
+              "url": "https://itravas.com",
+              "logo": "https://itravas.com/logo.png",
+              "sameAs": ["https://www.facebook.com/itravas"],
+              "contactPoint": [{
+                "@type": "ContactPoint",
+                "telephone": "+254-140-551-456",
+                "contactType": "customer support",
+                "areaServed": "KE",
+                "availableLanguage": "English"
+              }]
+            },
+            {
+              "@type": "WebSite",
+              "name": "iTravas",
+              "url": "https://itravas.com",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://itravas.com/?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            }
+          ]
+        }) }} />
+
         <AuthProvider>
           {children}
           <ToastContainer position="top-right" autoClose={3000} />
-          {/* WebSite and Organization JSON-LD is consolidated in page.tsx for better homepage signal */}
         </AuthProvider>
       </body>
     </html>
