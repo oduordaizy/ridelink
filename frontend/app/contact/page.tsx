@@ -6,19 +6,6 @@ import Footer from '../components/Footer';
 import BreadcrumbJsonLd from '../components/BreadcrumbJsonLd';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Contact | iTravas',
-  description: 'Get in touch with iTravas for support, feedback and partnership inquiries.',
-  alternates: {
-    canonical: '/contact',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
 
 const Contact = () => {
   const [formData, setFormData] = useState({
