@@ -624,12 +624,40 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
         return True
 
 @csrf_exempt
-def mpesa_callback(request):
+def mpesa_callback(request, secret=None):
     """Handle M-Pesa STK Push and B2C Payout callbacks"""
+    from django.conf import settings
+    import json
+    
+    # 1. URL Token Validation
+    expected_secret = getattr(settings, 'MPESA_WEBHOOK_SECRET', 'default_secret_please_change_me')
+    if secret != expected_secret:
+        logger.warning(f"Blocked unauthorized M-Pesa callback with invalid secret")
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Unauthorized Token"}, status=403)
+        
+    # 2. IP Validation
+    SAFARICOM_IPS = ['196.201.214.', '196.201.213.', '196.201.212.', '196.196.164.']
+    x_forwarded_for = request.headers.get('x-forwarded-for')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+        
+    # Allow local development bypass or safaricom IPs
+    is_valid_ip = getattr(settings, 'DEBUG', False) or (ip and any(ip.startswith(prefix) for prefix in SAFARICOM_IPS))
+    if not is_valid_ip:
+        logger.warning(f"Blocked unauthorized M-Pesa callback from IP: {ip}")
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Unauthorized IP"}, status=403)
+
     try:
         raw_body = request.body.decode('utf-8')
         logger.info(f"M-Pesa Callback received: {raw_body}")
         data = json.loads(raw_body)
+        
+        # 3. Payload validation
+        if not (('Body' in data and 'stkCallback' in data['Body']) or ('Result' in data) or ('stkCallback' in data)):
+            logger.warning("Blocked malformed M-Pesa payload")
+            return JsonResponse({"ResultCode": 1, "ResultDesc": "Malformed Payload"}, status=400)
         
         # 1. Handle STK Push Callback
         if 'Body' in data and 'stkCallback' in data['Body']:

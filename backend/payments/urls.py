@@ -12,6 +12,6 @@ urlpatterns = [
     path('wallet/withdraw/', views.withdraw_wallet, name='withdraw_wallet'),
     
     # MPESA operations
-    path('mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),
+    path('mpesa/callback/<str:secret>/', views.mpesa_callback, name='mpesa_callback'),
     path('mpesa/query/', views.query_mpesa_status, name='query_mpesa_status'),
 ]
