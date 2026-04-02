@@ -238,6 +238,8 @@ MPESA_PASSKEY = os.getenv('MPESA_PASSKEY')
 MPESA_WEBHOOK_SECRET = os.getenv('MPESA_WEBHOOK_SECRET', 'default_secret_please_change_me')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://itravas.com').rstrip('/')
 CALLBACK_URL = f"{FRONTEND_URL}/api/payments/mpesa/callback/{MPESA_WEBHOOK_SECRET}/"
+MPESA_RESULT_URL = os.getenv('MPESA_RESULT_URL', f"{FRONTEND_URL}/result")
+MPESA_TIMEOUT_URL = os.getenv('MPESA_TIMEOUT_URL', f"{FRONTEND_URL}/timeout")
 
 MPESA_INITIATOR_USERNAME = os.getenv('MPESA_INITIATOR_USERNAME')
 

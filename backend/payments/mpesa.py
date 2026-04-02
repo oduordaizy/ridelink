@@ -226,8 +226,8 @@ def mpesa_reversal(transaction_id, amount, receiver_party, reason):
         "Amount": int(amount),
         "ReceiverParty": receiver_party,
         "ReceiverIdentifierType": "11", # 11 for Organization
-        "ResultURL": settings.CALLBACK_URL,
-        "QueueTimeOutURL": settings.CALLBACK_URL,
+        "ResultURL": getattr(settings, 'MPESA_RESULT_URL', settings.CALLBACK_URL),
+        "QueueTimeOutURL": getattr(settings, 'MPESA_TIMEOUT_URL', settings.CALLBACK_URL),
         "Remarks": reason[:100],
         "Occasion": "Reversal"
     }
@@ -285,10 +285,16 @@ def get_account_balance():
     if not access_token:
         return {"error": "Authentication failed"}
 
-    try:
-        callback_url = get_callback_url()
-    except ValueError as e:
-        return {"error": f"MPESA callback URL issue: {e}", "code": "INVALID_CALLBACK_URL"}
+    result_url = getattr(settings, 'MPESA_RESULT_URL', getattr(settings, 'CALLBACK_URL', ''))
+    timeout_url = getattr(settings, 'MPESA_TIMEOUT_URL', getattr(settings, 'CALLBACK_URL', ''))
+    
+    if not result_url or not timeout_url:
+        try:
+            callback_url = get_callback_url()
+            result_url = result_url or callback_url
+            timeout_url = timeout_url or callback_url
+        except ValueError as e:
+            return {"error": f"MPESA callback URL issue: {e}", "code": "INVALID_CALLBACK_URL"}
 
     payload = {
         "Initiator": initiator,
@@ -297,8 +303,8 @@ def get_account_balance():
         "PartyA": shortcode,
         "IdentifierType": "4", # 4 for Shortcode
         "Remarks": "Balance Check",
-        "QueueTimeOutURL": callback_url,
-        "ResultURL": callback_url
+        "QueueTimeOutURL": timeout_url,
+        "ResultURL": result_url
     }
 
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
@@ -325,12 +331,18 @@ def b2c_payout(phone_number, amount, remarks, occasion="Withdrawal"):
         logger.error(error_msg)
         return {"error": error_msg, "code": "INVALID_PHONE"}
 
-    try:
-        callback_url = get_callback_url()
-    except ValueError as e:
-        error_msg = f"MPESA callback URL issue: {e}"
-        logger.error(error_msg)
-        return {"error": error_msg, "code": "INVALID_CALLBACK_URL"}
+    result_url = getattr(settings, 'MPESA_RESULT_URL', getattr(settings, 'CALLBACK_URL', ''))
+    timeout_url = getattr(settings, 'MPESA_TIMEOUT_URL', getattr(settings, 'CALLBACK_URL', ''))
+    
+    if not result_url or not timeout_url:
+        try:
+            callback_url = get_callback_url()
+            result_url = result_url or callback_url
+            timeout_url = timeout_url or callback_url
+        except ValueError as e:
+            error_msg = f"MPESA callback URL issue: {e}"
+            logger.error(error_msg)
+            return {"error": error_msg, "code": "INVALID_CALLBACK_URL"}
 
     access_token = get_access_token()
     if not access_token:
@@ -356,8 +368,8 @@ def b2c_payout(phone_number, amount, remarks, occasion="Withdrawal"):
         "PartyA": shortcode,
         "PartyB": phone_number,
         "Remarks": remarks[:100],
-        "QueueTimeOutURL": callback_url,
-        "ResultURL": callback_url,
+        "QueueTimeOutURL": timeout_url,
+        "ResultURL": result_url,
         "Occasion": occasion[:100]
     }
 
