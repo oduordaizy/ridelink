@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { FaPhone, FaEnvelope, FaStar, FaChevronLeft, FaMapMarkerAlt, FaCalendarAlt, FaClock, FaUsers, FaInfoCircle, FaCar, FaArrowLeft, FaUser } from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaStar, FaChevronLeft, FaChevronRight, FaMapMarkerAlt, FaCalendarAlt, FaClock, FaUsers, FaInfoCircle, FaCar, FaArrowLeft, FaTimes, FaUser } from 'react-icons/fa';
 import PublicProfileModal from '@/app/components/PublicProfileModal';
 import Link from 'next/link';
 import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
@@ -68,6 +68,9 @@ export default function BookingDetailPage() {
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [hasReviewed, setHasReviewed] = useState(false);
+    const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+    const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+    const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -283,16 +286,81 @@ export default function BookingDetailPage() {
                                     <FaUsers className="text-[#08A6F6]" /> Vehicle Photos
                                 </h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {booking.ride_details.images.map((img) => (
-                                        <div key={img.id} className="aspect-square rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-zoom-in">
+                                    {booking.ride_details.images.map((img, index) => (
+                                        <button
+                                            key={img.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setActivePhotoIndex(index);
+                                                setIsPhotoViewerOpen(true);
+                                                setIsPhotoZoomed(false);
+                                            }}
+                                            className="aspect-square rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-zoom-in"
+                                        >
                                             <img
                                                 src={getMediaUrl(img.image, 'vehicle')}
                                                 alt="Vehicle"
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
+                                {isPhotoViewerOpen && booking.ride_details.images[activePhotoIndex] && (
+                                    <div
+                                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+                                        onClick={() => {
+                                            setIsPhotoViewerOpen(false);
+                                            setIsPhotoZoomed(false);
+                                        }}
+                                    >
+                                        <div
+                                            className="relative max-w-[95vw] max-h-[95vh] w-full"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsPhotoViewerOpen(false);
+                                                    setIsPhotoZoomed(false);
+                                                }}
+                                                className="absolute top-4 right-4 z-50 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg hover:bg-white"
+                                            >
+                                                <FaTimes className="w-4 h-4" />
+                                            </button>
+                                            <img
+                                                src={getMediaUrl(booking.ride_details.images[activePhotoIndex].image, 'vehicle')}
+                                                alt={`Vehicle photo ${activePhotoIndex + 1}`}
+                                                className={`mx-auto max-h-[85vh] w-auto max-w-full object-contain transition-transform duration-300 ${isPhotoZoomed ? 'scale-110' : 'scale-100'}`}
+                                                onClick={() => setIsPhotoZoomed((prev) => !prev)}
+                                            />
+                                            <div className="mt-3 flex items-center justify-between gap-3 text-white">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setActivePhotoIndex((prev) => Math.max(prev - 1, 0));
+                                                        setIsPhotoZoomed(false);
+                                                    }}
+                                                    disabled={activePhotoIndex === 0}
+                                                    className="rounded-full bg-white/10 px-3 py-2 text-white disabled:opacity-40"
+                                                >
+                                                    <FaChevronLeft className="w-4 h-4" />
+                                                </button>
+                                                <span className="text-sm">Click image to {isPhotoZoomed ? 'reset' : 'zoom'}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setActivePhotoIndex((prev) => Math.min(prev + 1, booking.ride_details.images.length - 1));
+                                                        setIsPhotoZoomed(false);
+                                                    }}
+                                                    disabled={activePhotoIndex === booking.ride_details.images.length - 1}
+                                                    className="rounded-full bg-white/10 px-3 py-2 text-white disabled:opacity-40"
+                                                >
+                                                    <FaChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
