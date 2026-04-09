@@ -1,10 +1,12 @@
 from django.test import TestCase
 from django.utils import timezone
+from datetime import timedelta
 from decimal import Decimal
 
 from payments.views import process_stk_result
 from payments.models import Transaction, Wallet
 from django.contrib.auth import get_user_model
+from rides.models import Ride, Booking
 
 
 User = get_user_model()
@@ -78,3 +80,51 @@ class STKResultProcessingTest(TestCase):
         self.assertTrue(result)
         self.assertEqual(self.tx.status, 'failed')
         self.assertEqual(self.tx.result_desc, 'User cancelled')
+
+
+class BookingEarningsTest(TestCase):
+    def setUp(self):
+        self.driver = User.objects.create_user(username='driver', password='driverpass', user_type='driver')
+        self.passenger = User.objects.create_user(username='passenger', password='pass')
+        self.driver_wallet = Wallet.objects.create(user=self.driver, balance=Decimal('0.00'))
+        self.passenger_wallet = Wallet.objects.create(user=self.passenger, balance=Decimal('0.00'))
+        self.ride = Ride.objects.create(
+            departure_location='Nairobi',
+            destination='Mombasa',
+            departure_time=timezone.now() + timedelta(days=1),
+            driver=self.driver,
+            available_seats=3,
+            price=Decimal('100.00')
+        )
+        self.booking = Booking.objects.create(
+            ride=self.ride,
+            user=self.passenger,
+            no_of_seats=1,
+            status='pending'
+        )
+        self.tx = Transaction.objects.create(
+            wallet=self.passenger_wallet,
+            amount=Decimal('105.00'),
+            status='pending',
+            checkout_request_id='BOOKING123',
+            booking=self.booking
+        )
+
+    def test_booking_payment_credits_driver_wallet(self):
+        result = process_stk_result(
+            self.tx,
+            '0',
+            'Success',
+            callback_metadata={'Item': [{'Name': 'TransactionID', 'Value': 'REF123'}]}
+        )
+        self.assertTrue(result)
+        self.driver_wallet.refresh_from_db()
+        self.assertEqual(self.driver_wallet.balance, Decimal('100.00'))
+
+        driver_tx = Transaction.objects.filter(
+            wallet=self.driver_wallet,
+            transaction_type='earning',
+            booking=self.booking
+        ).first()
+        self.assertIsNotNone(driver_tx)
+        self.assertEqual(driver_tx.amount, Decimal('100.00'))

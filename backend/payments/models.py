@@ -35,6 +35,7 @@ class Transaction(models.Model):
         ("topup", "Top-up"),
         ("booking", "Booking Payment"),
         ("ride_fee", "Ride Fee"),
+        ("earning", "Earning"),
         ("withdrawal", "Withdrawal"),
     ]
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES, default="topup")

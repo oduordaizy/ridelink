@@ -554,6 +554,26 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                         # Confirm the booking
                         pending_booking.confirm_payment()
                         
+                        # Credit the driver with the booking amount less the platform fee
+                        driver_amount = (pending_booking.ride.price * Decimal(pending_booking.no_of_seats)).quantize(Decimal('0.01'))
+                        driver_wallet, _ = Wallet.objects.get_or_create(user=pending_booking.ride.driver)
+                        driver_wallet = Wallet.objects.select_for_update().get(id=driver_wallet.id)
+                        driver_wallet.balance += driver_amount
+                        driver_wallet.save()
+
+                        Transaction.objects.create(
+                            wallet=driver_wallet,
+                            amount=driver_amount,
+                            status="success",
+                            result_code=0,
+                            result_desc=f"Earnings from Booking #{pending_booking.id}",
+                            completed_at=timezone.now(),
+                            booking=pending_booking,
+                            ride=pending_booking.ride,
+                            mpesa_transaction_reference=transaction_obj.mpesa_transaction_reference,
+                            transaction_type="earning"
+                        )
+
                         # Send confirmation emails
                         try:
                             from rides.utils import send_booking_confirmation_email, send_booking_confirmed_to_driver_email
