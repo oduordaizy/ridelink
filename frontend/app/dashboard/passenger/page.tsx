@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { IoWallet } from "react-icons/io5";
-import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner, FaChevronDown, FaChevronUp, FaUser, FaStar, FaPhone, FaInfoCircle, FaClock, FaImage, FaChevronRight } from "react-icons/fa";
+import { FaCar, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaTimes, FaSpinner, FaChevronDown, FaChevronUp, FaUser, FaStar, FaPhone, FaInfoCircle, FaClock, FaImage, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { FaMoneyBillWave as IoCash } from "react-icons/fa";
 import { paymentAPI, API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
