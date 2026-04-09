@@ -500,11 +500,12 @@ export default function DriverWallet() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-[#00204a] text-sm md:text-base truncate">
-                        {tx.transaction_type === 'withdrawal' ? 'Wallet Withdrawal' :
-                          tx.transaction_type === 'topup' ? 'Mpesa top up' :
-                            tx.transaction_type === 'booking' ? 'Ride Payment' :
-                              tx.transaction_type === 'ride_fee' ? 'Ride Fee' :
-                                tx.amount >= 0 ? 'Mpesa top up' : 'Payment/Commission'}
+                        {tx.details ||
+                          (tx.transaction_type === 'withdrawal' ? 'Wallet Withdrawal' :
+                            tx.transaction_type === 'topup' ? 'Mpesa top up' :
+                              tx.transaction_type === 'booking' ? 'Ride Payment' :
+                                tx.transaction_type === 'ride_fee' ? 'Ride Fee' :
+                                  tx.amount >= 0 ? 'Mpesa top up' : 'Payment/Commission')}
                       </p>
                       <p className="text-xs md:text-sm text-gray-500 truncate font-medium">
                         {(tx.mpesa_receipt_number || tx.mpesa_transaction_reference) || 'Pending'} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}

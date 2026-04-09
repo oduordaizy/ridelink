@@ -335,20 +335,23 @@ def wallet_transactions(request):
         )
         
         # Build the base queryset
-        # We only show pure wallet top-ups and payments Made using the wallet balance.
-        # "Pass-through" payments (ride activation fees or bookings paid directly via M-Pesa)
-        # are identified by having both an M-Pesa reference AND being linked to a ride or booking.
-        transactions_query = Transaction.objects.filter(wallet=wallet).exclude(
+        # We only show successful wallet transaction history by default.
+        # Exclude direct pass-through ride/booking payments that are only used for M-Pesa callbacks.
+        transactions_query = Transaction.objects.filter(
+            wallet=wallet,
+            status='success'
+        ).exclude(
+            transaction_type__in=['booking', 'ride_fee'],
             mpesa_transaction_reference__isnull=False,
             ride__isnull=False
         ).exclude(
+            transaction_type__in=['booking', 'ride_fee'],
             mpesa_transaction_reference__isnull=False,
             booking__isnull=False
         )
-        
-        # Apply status filter if provided
-        if status_filter and status_filter in ['pending', 'success', 'failed']:
-            transactions_query = transactions_query.filter(status=status_filter)
+
+        # Ignore pending/failed requests to satisfy wallet history requirements.
+        # If the frontend needs them later, this logic can be expanded explicitly.
         
         # Calculate pagination
         total_transactions = transactions_query.count()
@@ -373,12 +376,45 @@ def wallet_transactions(request):
                 except Exception as e:
                     logger.error(f"Error auto-syncing STK status for tx {tx.id}: {str(e)}")
         
+        def _transaction_details(tx):
+            if tx.transaction_type == 'topup':
+                if tx.booking and tx.booking.user:
+                    passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
+                    return f"MPESA TOP-UP FOR BOOKING BY {passenger_name}"
+                if tx.mpesa_transaction_reference:
+                    return "MPESA TOP-UP"
+                return "WALLET TOP-UP"
+
+            if tx.transaction_type == 'earning':
+                if tx.booking and tx.booking.user:
+                    passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
+                    return f"BOOKING PAYMENT TOP-UP FROM {passenger_name}"
+                return "BOOKING PAYMENT TOP-UP"
+
+            if tx.transaction_type == 'booking':
+                if tx.booking and tx.booking.user:
+                    passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
+                    return f"BOOKING PAYMENT BY {passenger_name}"
+                return "BOOKING PAYMENT"
+
+            if tx.transaction_type == 'ride_fee':
+                return "PLATFORM FEE"
+
+            if tx.transaction_type == 'withdrawal':
+                return "WALLET WITHDRAWAL"
+
+            if tx.result_desc:
+                return tx.result_desc.strip().upper()
+
+            return tx.transaction_type.replace('_', ' ').upper()
+
         # Prepare response data
         transactions_data = [{
             'id': str(tx.id),
             'amount': float(tx.amount),
             'status': tx.status,
             'transaction_type': tx.transaction_type,
+            'details': _transaction_details(tx),
             'mpesa_transaction_reference': tx.mpesa_transaction_reference or '',
             # keep old field available for backward compatibility
             'mpesa_receipt_number': tx.mpesa_receipt_number or '',
