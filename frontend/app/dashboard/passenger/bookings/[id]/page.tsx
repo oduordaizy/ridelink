@@ -400,7 +400,7 @@ export default function BookingDetailPage() {
             </div>
 
             {/* Public Profile Modal */}
-            {booking && (
+            {booking?.ride_details?.driver && (
                 <PublicProfileModal
                     userId={booking.ride_details.driver.id}
                     isOpen={isProfileModalOpen}
@@ -409,7 +409,7 @@ export default function BookingDetailPage() {
             )}
 
             {/* Review Modal */}
-            {isReviewModalOpen && booking && (
+            {isReviewModalOpen && booking?.ride_details?.driver && (
                 <ReviewForm
                     bookingId={booking.id}
                     revieweeName={booking.ride_details.driver.first_name || booking.ride_details.driver.username}
