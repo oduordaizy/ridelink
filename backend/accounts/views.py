@@ -337,3 +337,14 @@ def mark_all_notifications_read(request):
     from .models import Notification
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return Response({'success': True})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def delete_notification(request, notification_id):
+    from .models import Notification
+    try:
+        notification = Notification.objects.get(id=notification_id, user=request.user)
+        notification.delete()
+        return Response({'success': True})
+    except Notification.DoesNotExist:
+        return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)

@@ -288,6 +288,19 @@ export const authAPI = {
     return response.ok;
   },
 
+  // Delete notification
+  async deleteNotification(token: string, notificationId: number) {
+    const response = await fetch(`${API_BASE_URL}/auth/notifications/${notificationId}/delete/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.ok;
+  },
+
   // Mark all notifications as read
   async markAllNotificationsRead(token: string) {
     const response = await fetch(`${API_BASE_URL}/auth/notifications/read-all/`, {

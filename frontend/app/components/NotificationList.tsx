@@ -64,6 +64,23 @@ export default function NotificationList({ backHref }: { backHref: string }) {
         }
     };
 
+    const deleteNotification = async (id: number) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                const success = await authAPI.deleteNotification(token, id);
+                if (success) {
+                    setNotifications(prev => prev.filter(n => n.id !== id));
+                    toast.success('Notification deleted');
+                } else {
+                    throw new Error('Delete failed');
+                }
+            }
+        } catch (error) {
+            toast.error('Failed to delete notification');
+        }
+    };
+
     const getIcon = (type: string) => {
         switch (type) {
             case 'success': return <FaCheckCircle className="text-green-500 text-xl" />;
@@ -119,13 +136,41 @@ export default function NotificationList({ backHref }: { backHref: string }) {
                             <div className="flex gap-4">
                                 <div className="mt-1">{getIcon(notification.type)}</div>
                                 <div className="flex-1">
-                                    <div className="flex justify-between items-start">
-                                        <h3 className={`font-bold ${notification.is_read ? 'text-gray-700' : 'text-[#013C5E]'}`}>
-                                            {notification.title}
-                                        </h3>
-                                        <span className="text-xs text-gray-400 whitespace-nowrap">
-                                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                                        </span>
+                                    <div className="flex justify-between items-start gap-2">
+                                        <div className="min-w-0">
+                                            <h3 className={`font-bold ${notification.is_read ? 'text-gray-700' : 'text-[#013C5E]'}`}>
+                                                {notification.title}
+                                            </h3>
+                                            <span className="text-xs text-gray-400 whitespace-nowrap">
+                                                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {!notification.is_read && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        markAsRead(notification.id);
+                                                    }}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-green-600 transition-colors"
+                                                    aria-label="Mark notification as read"
+                                                >
+                                                    <FaCheckCircle className="text-lg" />
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    deleteNotification(notification.id);
+                                                }}
+                                                className="p-2 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
+                                                aria-label="Delete notification"
+                                            >
+                                                <FaTrashAlt className="text-lg" />
+                                            </button>
+                                        </div>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
                                         {notification.message}
