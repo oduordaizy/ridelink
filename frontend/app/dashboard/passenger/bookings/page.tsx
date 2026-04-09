@@ -490,7 +490,7 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <InfoItem icon={<FaCalendarAlt />} label="Date" value={booking.ride_details?.departure_time ? new Date(booking.ride_details.departure_time).toLocaleDateString() : 'N/A'} />
               <InfoItem icon={<FaClock />} label="Time" value={booking.ride_details?.departure_time ? new Date(booking.ride_details.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} />
-              <InfoItem icon={<FaUser />} label="Driver" value={booking.status === 'pending' ? 'Hidden until confirmed' : booking.ride_details?.driver?.username || 'Unknown'} />
+              <InfoItem icon={<FaUser />} label="Driver" value={['pending', 'cancelled'].includes(booking.status) ? 'Hidden until confirmed' : booking.ride_details?.driver?.username || 'Unknown'} />
               <InfoItem icon={<FaUserFriends />} label="Seats" value={`${booking.no_of_seats} seat${booking.no_of_seats !== 1 ? 's' : ''}`} />
               <InfoItem icon={<FaMoneyBillWave />} label="Total" value={`KSh ${booking.total_price.toLocaleString()}`} />
             </div>

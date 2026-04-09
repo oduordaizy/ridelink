@@ -299,7 +299,7 @@ export default function BookingDetailPage() {
 
                     {/* Right Column: Driver & Actions */}
                     <div className="space-y-6">
-                        {booking.status === 'pending' ? (
+                        {['pending', 'cancelled'].includes(booking.status) ? (
                             <div className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-gray-100 text-center">
                                 <h3 className="text-xl font-bold text-[#00204a]">Driver details are hidden</h3>
                                 <p className="text-gray-500 mt-4">Driver information will be available once the booking is confirmed.</p>

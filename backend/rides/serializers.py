@@ -108,7 +108,7 @@ class BookingSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         request = self.context.get('request')
 
-        if request and instance.status == 'pending':
+        if request and instance.status in ('pending', 'cancelled'):
             if request.user == instance.user:
                 if representation.get('ride_details'):
                     representation['ride_details']['driver'] = None
