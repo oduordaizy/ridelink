@@ -146,19 +146,20 @@ export default function NotificationList({ backHref }: { backHref: string }) {
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            {!notification.is_read && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation();
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    if (!notification.is_read) {
                                                         markAsRead(notification.id);
-                                                    }}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-green-600 transition-colors"
-                                                    aria-label="Mark notification as read"
-                                                >
-                                                    <FaCheckCircle className="text-lg" />
-                                                </button>
-                                            )}
+                                                    }
+                                                }}
+                                                className={`p-2 rounded-lg transition-colors ${notification.is_read ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
+                                                aria-label={notification.is_read ? 'Already read' : 'Mark notification as read'}
+                                                disabled={notification.is_read}
+                                            >
+                                                <FaCheckCircle className="text-lg" />
+                                            </button>
                                             <button
                                                 type="button"
                                                 onClick={(event) => {
