@@ -314,7 +314,7 @@ export default function BookingDetailPage() {
                                         }}
                                     >
                                         <div
-                                            className="relative max-w-[95vw] max-h-[95vh] w-full"
+                                            className="relative w-full max-w-screen-xl max-h-[95vh]"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <button
@@ -330,7 +330,7 @@ export default function BookingDetailPage() {
                                             <img
                                                 src={getMediaUrl(booking.ride_details.images[activePhotoIndex].image, 'vehicle')}
                                                 alt={`Vehicle photo ${activePhotoIndex + 1}`}
-                                                className={`mx-auto max-h-[85vh] w-auto max-w-full object-contain transition-transform duration-300 ${isPhotoZoomed ? 'scale-110' : 'scale-100'}`}
+                                                className={`mx-auto w-full max-h-[85vh] object-contain transition-transform duration-300 ${isPhotoZoomed ? 'scale-110' : 'scale-100'}`}
                                                 onClick={() => setIsPhotoZoomed((prev) => !prev)}
                                             />
                                             <div className="mt-3 flex items-center justify-between gap-3 text-white">
