@@ -299,60 +299,67 @@ export default function BookingDetailPage() {
 
                     {/* Right Column: Driver & Actions */}
                     <div className="space-y-6">
-                        <div className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-gray-100 text-center">
-                            <div className="relative mb-6">
-                                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#08A6F6] to-[#00204a] p-1 shadow-lg group cursor-pointer"
-                                    onClick={() => setIsProfileModalOpen(true)}>
-                                    <div className="w-full h-full rounded-[20px] bg-white overflow-hidden flex items-center justify-center border-4 border-white transition-transform group-hover:scale-105">
-                                        {getMediaUrl(booking.ride_details.driver.profile_picture) ? (
-                                            <img
-                                                src={getMediaUrl(booking.ride_details.driver.profile_picture)}
-                                                alt={booking.ride_details.driver.username}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="text-3xl font-bold text-[#08A6F6]">
-                                                {booking.ride_details.driver.first_name ? booking.ride_details.driver.first_name.charAt(0).toUpperCase() : booking.ride_details.driver.username.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
-                                </div>
-                                <button
-                                    onClick={() => setIsProfileModalOpen(true)}
-                                    className="absolute -bottom-1 -right-2 bg-white text-[#08A6F6] text-[10px] font-bold px-2 py-1 rounded-full shadow-md border border-gray-100 hover:bg-blue-50 transition-colors"
-                                >
-                                    View Profile
-                                </button>
+                        {booking.status === 'pending' ? (
+                            <div className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-gray-100 text-center">
+                                <h3 className="text-xl font-bold text-[#00204a]">Driver details are hidden</h3>
+                                <p className="text-gray-500 mt-4">Driver information will be available once the booking is confirmed.</p>
                             </div>
-
-                            <h3 className="text-xl font-bold text-[#00204a]">
-                                {booking.ride_details.driver.first_name || booking.ride_details.driver.username} {booking.ride_details.driver.last_name}
-                            </h3>
-                            <p className="text-gray-400 text-sm font-medium mb-6">@{booking.ride_details.driver.username}</p>
-
-                            <div className="space-y-3 text-left">
-                                <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 group transition-colors hover:bg-blue-50/50 hover:border-blue-100">
-                                    <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-[#08A6F6] flex items-center justify-center shadow-sm">
-                                        <FaPhone />
+                        ) : (
+                            <div className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-gray-100 text-center">
+                                <div className="relative mb-6">
+                                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#08A6F6] to-[#00204a] p-1 shadow-lg group cursor-pointer"
+                                        onClick={() => setIsProfileModalOpen(true)}>
+                                        <div className="w-full h-full rounded-[20px] bg-white overflow-hidden flex items-center justify-center border-4 border-white transition-transform group-hover:scale-105">
+                                            {getMediaUrl(booking.ride_details.driver.profile_picture) ? (
+                                                <img
+                                                    src={getMediaUrl(booking.ride_details.driver.profile_picture)}
+                                                    alt={booking.ride_details.driver.username}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="text-3xl font-bold text-[#08A6F6]">
+                                                    {booking.ride_details.driver.first_name ? booking.ride_details.driver.first_name.charAt(0).toUpperCase() : booking.ride_details.driver.username.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase block leading-none mb-1">Phone</label>
-                                        <span className="text-gray-700 font-bold">{booking.ride_details.driver.phone_number || 'Not provided'}</span>
-                                    </div>
+                                    <button
+                                        onClick={() => setIsProfileModalOpen(true)}
+                                        className="absolute -bottom-1 -right-2 bg-white text-[#08A6F6] text-[10px] font-bold px-2 py-1 rounded-full shadow-md border border-gray-100 hover:bg-blue-50 transition-colors"
+                                    >
+                                        View Profile
+                                    </button>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 group transition-colors hover:bg-blue-50/50 hover:border-blue-100">
-                                    <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-[#08A6F6] flex items-center justify-center shadow-sm">
-                                        <FaEnvelope />
+                                <h3 className="text-xl font-bold text-[#00204a]">
+                                    {booking.ride_details.driver.first_name || booking.ride_details.driver.username} {booking.ride_details.driver.last_name}
+                                </h3>
+                                <p className="text-gray-400 text-sm font-medium mb-6">@{booking.ride_details.driver.username}</p>
+
+                                <div className="space-y-3 text-left">
+                                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 group transition-colors hover:bg-blue-50/50 hover:border-blue-100">
+                                        <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-[#08A6F6] flex items-center justify-center shadow-sm">
+                                            <FaPhone />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase block leading-none mb-1">Phone</label>
+                                            <span className="text-gray-700 font-bold">{booking.ride_details.driver.phone_number || 'Not provided'}</span>
+                                        </div>
                                     </div>
-                                    <div className="overflow-hidden">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase block leading-none mb-1">Email</label>
-                                        <span className="text-gray-700 font-bold truncate block">{booking.ride_details.driver.email || 'Not provided'}</span>
+
+                                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 group transition-colors hover:bg-blue-50/50 hover:border-blue-100">
+                                        <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-[#08A6F6] flex items-center justify-center shadow-sm">
+                                            <FaEnvelope />
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase block leading-none mb-1">Email</label>
+                                            <span className="text-gray-700 font-bold truncate block">{booking.ride_details.driver.email || 'Not provided'}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Actions */}
                         <div className="space-y-3">

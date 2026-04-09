@@ -702,7 +702,7 @@ const Page = () => {
                       <div key={booking.id} className="p-4 rounded-xl border border-gray-100 hover:border-[#08A6F6] transition-colors bg-white shadow-sm flex items-center justify-between group">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 overflow-hidden">
-                            {getMediaUrl(booking.user.profile_picture) ? (
+                            {booking.status !== 'pending' && getMediaUrl(booking.user.profile_picture) ? (
                               <img src={getMediaUrl(booking.user.profile_picture)} alt={booking.user.username} className="w-full h-full object-cover" />
                             ) : (
                               <User className="w-5 h-5 text-[#08A6F6]" />
@@ -710,26 +710,28 @@ const Page = () => {
                           </div>
                           <div>
                             <p className="text-sm font-bold text-gray-900">
-                              {booking.user.first_name} {booking.user.last_name || `@${booking.user.username}`}
+                              {booking.status === 'pending' ? 'Passenger details hidden until booking is confirmed' : `${booking.user.first_name} ${booking.user.last_name || `@${booking.user.username}`}`}
                             </p>
                             <div className="flex items-center gap-3 mt-0.5">
                               <span className="flex items-center gap-1 text-[10px] text-gray-500">
                                 <Users className="w-3 h-3" /> {booking.no_of_seats} Seats
                               </span>
-                              {booking.user.phone_number && (
+                              {booking.status !== 'pending' && booking.user.phone_number && (
                                 <span className="flex items-center gap-1 text-[10px] text-gray-500">
                                   <Phone className="w-3 h-3" /> {booking.user.phone_number}
                                 </span>
                               )}
-                              <button
-                                onClick={() => {
-                                  setSelectedPassengerId(booking.user.id);
-                                  setIsProfileModalOpen(true);
-                                }}
-                                className="text-[10px] text-[#08A6F6] hover:text-[#00204a] font-medium hover:underline"
-                              >
-                                View Profile
-                              </button>
+                              {booking.status !== 'pending' && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedPassengerId(booking.user.id);
+                                    setIsProfileModalOpen(true);
+                                  }}
+                                  className="text-[10px] text-[#08A6F6] hover:text-[#00204a] font-medium hover:underline"
+                                >
+                                  View Profile
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>

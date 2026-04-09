@@ -104,6 +104,28 @@ class BookingSerializer(serializers.ModelSerializer):
         # Return as float for JSON-serializable output, rounded to 2 decimal places
         return float(round(subtotal * Decimal('1.05'), 2))
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
+
+        if request and instance.status == 'pending':
+            if request.user == instance.user:
+                if representation.get('ride_details'):
+                    representation['ride_details']['driver'] = None
+            elif request.user == instance.ride.driver:
+                representation['user'] = {
+                    'id': instance.user.id,
+                    'username': 'Hidden until confirmed',
+                    'email': '',
+                    'first_name': '',
+                    'last_name': '',
+                    'phone_number': None,
+                    'profile_picture': None,
+                    'driver_profile': None
+                }
+
+        return representation
+
     def validate_no_of_seats(self, value):
         if value < 1:
             raise serializers.ValidationError("At least one seat must be booked")

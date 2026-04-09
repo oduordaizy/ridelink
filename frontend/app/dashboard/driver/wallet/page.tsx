@@ -507,7 +507,7 @@ export default function DriverWallet() {
                                 tx.amount >= 0 ? 'Mpesa top up' : 'Payment/Commission'}
                       </p>
                       <p className="text-xs md:text-sm text-gray-500 truncate font-medium">
-                        {(tx.mpesa_transaction_reference || tx.mpesa_receipt_number) || 'STK Push'} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
+                        {(tx.mpesa_receipt_number || tx.mpesa_transaction_reference) || 'Pending'} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
