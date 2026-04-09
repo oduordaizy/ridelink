@@ -287,13 +287,22 @@ export default function BookingDetailPage() {
                                 </h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     {booking.ride_details.images.map((img, index) => (
-                                        <button
+                                        <div
                                             key={img.id}
-                                            type="button"
+                                            role="button"
+                                            tabIndex={0}
                                             onClick={() => {
                                                 setActivePhotoIndex(index);
                                                 setIsPhotoViewerOpen(true);
                                                 setIsPhotoZoomed(false);
+                                            }}
+                                            onKeyDown={(event) => {
+                                                if (event.key === 'Enter' || event.key === ' ') {
+                                                    event.preventDefault();
+                                                    setActivePhotoIndex(index);
+                                                    setIsPhotoViewerOpen(true);
+                                                    setIsPhotoZoomed(false);
+                                                }
                                             }}
                                             className="aspect-square rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group cursor-zoom-in"
                                         >
@@ -302,7 +311,7 @@ export default function BookingDetailPage() {
                                                 alt="Vehicle"
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
-                                        </button>
+                                        </div>
                                     ))}
                                 </div>
                                 {isPhotoViewerOpen && booking.ride_details.images[activePhotoIndex] && (

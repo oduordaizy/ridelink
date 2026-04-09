@@ -71,6 +71,10 @@ const Page = () => {
   const [bookingSuccessMessage, setBookingSuccessMessage] = useState("");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
+  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
+  const [viewerImages, setViewerImages] = useState<{ id: number; image: string; }[]>([]);
 
   // Fetch all rides (initial load and after clearing search)
   const fetchAllRides = useCallback(async () => {
@@ -498,6 +502,60 @@ const Page = () => {
         </div>
       )}
 
+      {isPhotoViewerOpen && viewerImages.length > 0 && viewerImages[activePhotoIndex] && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+          onClick={() => {
+            setIsPhotoViewerOpen(false);
+            setIsPhotoZoomed(false);
+          }}
+        >
+          <div className="relative w-full max-w-screen-xl max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsPhotoViewerOpen(false);
+                setIsPhotoZoomed(false);
+              }}
+              className="absolute top-4 right-4 z-50 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg hover:bg-white"
+            >
+              <FaTimes className="w-4 h-4" />
+            </button>
+            <img
+              src={getMediaUrl(viewerImages[activePhotoIndex].image, 'vehicle')}
+              alt={`Vehicle photo ${activePhotoIndex + 1}`}
+              className={`mx-auto w-full max-h-[85vh] object-contain transition-transform duration-300 ${isPhotoZoomed ? 'scale-110' : 'scale-100'}`}
+              onClick={() => setIsPhotoZoomed((prev) => !prev)}
+            />
+            <div className="mt-3 flex items-center justify-between gap-3 text-white">
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePhotoIndex((prev) => Math.max(prev - 1, 0));
+                  setIsPhotoZoomed(false);
+                }}
+                disabled={activePhotoIndex === 0}
+                className="rounded-full bg-white/10 px-3 py-2 text-white disabled:opacity-40"
+              >
+                <FaChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm">Click image to {isPhotoZoomed ? 'reset' : 'zoom'}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePhotoIndex((prev) => Math.min(prev + 1, viewerImages.length - 1));
+                  setIsPhotoZoomed(false);
+                }}
+                disabled={activePhotoIndex === viewerImages.length - 1}
+                className="rounded-full bg-white/10 px-3 py-2 text-white disabled:opacity-40"
+              >
+                <FaChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-[#00204a] via-[#04689E] to-[#08A6F6] pb-32 pt-16 px-6 shadow-lg overflow-hidden">
         {/* Abstract Background Shapes */}
@@ -762,8 +820,30 @@ const Page = () => {
                           <div className="bg-white p-4 rounded-xl shadow-xs border border-gray-100">
                             {ride.images && ride.images.length > 0 ? (
                               <div className="grid grid-cols-2 gap-2">
-                                {ride.images.map((img) => (
-                                  <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden border border-gray-100">
+                                {ride.images.map((img, index) => (
+                                  <div
+                                    key={img.id}
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setViewerImages(ride.images);
+                                      setActivePhotoIndex(index);
+                                      setIsPhotoZoomed(false);
+                                      setIsPhotoViewerOpen(true);
+                                    }}
+                                    onKeyDown={(event) => {
+                                      if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        setViewerImages(ride.images);
+                                        setActivePhotoIndex(index);
+                                        setIsPhotoZoomed(false);
+                                        setIsPhotoViewerOpen(true);
+                                      }
+                                    }}
+                                    className="relative aspect-video rounded-lg overflow-hidden border border-gray-100 cursor-zoom-in shadow-sm hover:shadow-md transition-shadow"
+                                  >
                                     <img
                                       src={getMediaUrl(img.image, 'vehicle')}
                                       alt="Vehicle"
