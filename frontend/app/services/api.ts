@@ -650,7 +650,9 @@ export const adminAPI = {
       },
     });
     if (!response.ok) throw new Error('Failed to fetch rides');
-    return response.json();
+    const data = await response.json();
+    // Handle paginated responses
+    return data.results ? data.results : data;
   },
 
   async getBookings(token: string) {
@@ -661,6 +663,8 @@ export const adminAPI = {
       },
     });
     if (!response.ok) throw new Error('Failed to fetch bookings');
-    return response.json();
+    const data = await response.json();
+    // Handle paginated responses
+    return data.results ? data.results : data;
   },
 };
