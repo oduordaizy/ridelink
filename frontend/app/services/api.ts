@@ -641,4 +641,26 @@ export const adminAPI = {
     if (!response.ok) throw new Error('Failed to fetch M-Pesa balance');
     return response.json();
   },
+
+  async getRides(token: string) {
+    const response = await fetch(`${API_BASE_URL}/rides/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch rides');
+    return response.json();
+  },
+
+  async getBookings(token: string) {
+    const response = await fetch(`${API_BASE_URL}/bookings/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch bookings');
+    return response.json();
+  },
 };

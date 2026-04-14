@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/AdminLayout';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { getAllRides } from '../../../services/api';
+import { adminAPI } from '../../../services/api';
 import { IoCar, IoCalendar, IoLocation, IoPeople } from 'react-icons/io5';
 
 interface AdminRide {
@@ -32,8 +32,12 @@ export default function AdminRides() {
             }
 
             async function loadRides() {
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
                 try {
-                    const data = await getAllRides();
+                    const data = await adminAPI.getRides(token);
                     setRides(data);
                 } catch (error) {
                     console.error('Failed to load rides:', error);
@@ -43,7 +47,7 @@ export default function AdminRides() {
             }
             loadRides();
         }
-    }, [authLoading, user, router]);
+    }, [authLoading, user, router, token]);
 
     return (
         <AdminLayout>

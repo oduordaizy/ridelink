@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
+from django.conf import settings
 from datetime import timedelta
 from accounts.models import User, Driver, Passenger
 from rides.models import Ride, Booking
@@ -137,15 +138,22 @@ def admin_users(request):
         
     users = users[:100] # Limit to most recent 100
     
-    data = [{
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'type': user.user_type,
-        'is_verified': user.is_verified,
-        'date_joined': user.date_joined,
-        'phone_number': user.phone_number,
-        'license_number': getattr(user, 'driver_profile', None).license_number if hasattr(user, 'driver_profile') else None,
-        'vehicle_plate': getattr(user, 'driver_profile', None).vehicle_plate if hasattr(user, 'driver_profile') else None,
-    } for user in users]
+    data = []
+    for user in users:
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'type': user.user_type,
+            'is_verified': user.is_verified,
+            'date_joined': user.date_joined,
+            'phone_number': user.phone_number,
+            'license_number': None,
+            'vehicle_plate': None,
+        }
+        # Add driver-specific fields if user is a driver
+        if hasattr(user, 'driver_profile'):
+            user_data['license_number'] = user.driver_profile.license_number
+            user_data['vehicle_plate'] = user.driver_profile.vehicle_plate
+        data.append(user_data)
     return Response(data)
