@@ -51,32 +51,32 @@ export default function AdminPassengers() {
     return (
         <AdminLayout>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#00204a]">Passenger Management</h1>
-                        <p className="text-gray-500 text-sm">Monitor platform passengers and their activity.</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-[#00204a]">Passenger Management</h1>
+                        <p className="text-gray-500 text-xs sm:text-sm">Monitor platform passengers and their activity.</p>
                     </div>
-                    <button className="bg-[#00204a] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-[#08A6F6] transition-colors">
-                        Export Passenger List
+                    <button className="w-full sm:w-auto bg-[#00204a] text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-bold shadow-sm hover:bg-[#08A6F6] transition-colors whitespace-nowrap">
+                        Export
                     </button>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <table className="w-full text-left border-collapse">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-max md:min-w-full">
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-100">
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Passenger</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Contact</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Verification</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Date Joined</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Passenger</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Contact</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Verification</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Date Joined</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
-                                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-400">Loading passengers...</td></tr>
+                                <tr><td colSpan={5} className="px-3 sm:px-6 py-6 sm:py-10 text-center text-gray-400 text-xs sm:text-base">Loading passengers...</td></tr>
                             ) : passengers.length === 0 ? (
-                                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-400">No passengers found.</td></tr>
+                                <tr><td colSpan={5} className="px-3 sm:px-6 py-6 sm:py-10 text-center text-gray-400 text-xs sm:text-base">No passengers found.</td></tr>
                             ) : passengers.map((p) => (
                                 <tr key={p.id} className="hover:bg-gray-50 transition-colors group">
                                     <td className="px-6 py-4">

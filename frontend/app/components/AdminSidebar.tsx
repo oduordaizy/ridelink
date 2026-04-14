@@ -34,12 +34,12 @@ export default function AdminSidebar({ mobileOpen = false, onClose }: AdminSideb
         // outer wrapper handles mobile slide-in/out
         <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#00204a] text-white min-h-screen flex flex-col shadow-xl transform transition-transform duration-200
             ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-            md:relative md:translate-x-0 md:w-64`}
+            md:relative md:translate-x-0 md:w-56 lg:w-64`}
         >
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
                 <Link href="/" className="flex items-center space-x-2 group">
-                    <Image src="/footer-logo.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
-                    <span className="text-xl font-semibold text-[#08A6F6] tracking-tight">iTravas Admin</span>
+                    <Image src="/footer-logo.png" alt="iTravas Logo" width={28} height={28} className="transition-transform group-hover:scale-105" />
+                    {/* <span className="text-base md:text-lg lg:text-xl font-semibold text-[#08A6F6] tracking-tight">iTravas Admin</span> */}
                 </Link>
                 {/* close button for mobile */}
                 {onClose && (
@@ -53,7 +53,7 @@ export default function AdminSidebar({ mobileOpen = false, onClose }: AdminSideb
                 )}
             </div>
 
-            <nav className="flex-1 mt-6 px-4 space-y-1">
+            <nav className="flex-1 mt-4 md:mt-6 px-2 md:px-4 space-y-1">
                 {menuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
@@ -62,25 +62,27 @@ export default function AdminSidebar({ mobileOpen = false, onClose }: AdminSideb
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                            onClick={onClose}
+                            className={`flex items-center space-x-3 px-3 md:px-4 py-3 rounded-lg md:rounded-xl transition-all duration-200 group ${isActive
                                 ? 'bg-[#08A6F6] text-white shadow-lg'
                                 : 'text-gray-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
-                            <Icon className={`text-xl ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
-                            <span className="font-medium">{item.label}</span>
+                            <Icon className={`text-lg md:text-xl flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
+                            <span className="font-medium text-sm md:text-base">{item.label}</span>
                         </Link>
                     );
                 })}
             </nav>
 
-            <div className="p-6 border-t border-white/10">
+            <div className="p-4 md:p-6 border-t border-white/10">
                 <Link
                     href="/dashboard"
-                    className="flex items-center space-x-2 text-sm text-gray-400 hover:text-white transition-colors"
+                    onClick={onClose}
+                    className="flex items-center space-x-2 text-xs md:text-sm text-gray-400 hover:text-white transition-colors"
                 >
                     <IoChevronBack />
-                    <span>Back to Dashboard</span>
+                    <span>Back</span>
                 </Link>
             </div>
         </aside>

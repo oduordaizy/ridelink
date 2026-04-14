@@ -53,19 +53,19 @@ export default function AdminRides() {
         <AdminLayout>
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#00204a]">Rides & Bookings</h1>
-                    <p className="text-gray-500 text-sm">Monitor all trip activity across the platform.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#00204a]">Rides & Bookings</h1>
+                    <p className="text-gray-500 text-xs sm:text-sm">Monitor all trip activity across the platform.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                     {loading ? (
-                        <div className="col-span-full py-20 text-center text-gray-400 font-medium">Loading platform rides...</div>
+                        <div className="col-span-full py-12 sm:py-20 text-center text-gray-400 font-medium text-xs sm:text-base">Loading platform rides...</div>
                     ) : rides.length === 0 ? (
-                        <div className="col-span-full py-20 text-center text-gray-400 font-medium">No rides available.</div>
+                        <div className="col-span-full py-12 sm:py-20 text-center text-gray-400 font-medium text-xs sm:text-base">No rides available.</div>
                     ) : rides.map((ride) => (
                         <div key={ride.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-                            <div className="p-6">
-                                <div className="flex justify-between items-start mb-4">
+                            <div className="p-4 sm:p-6">
+                                <div className="flex justify-between items-start mb-3 sm:mb-4">
                                     <div className="px-2 py-1 bg-blue-50 text-[#08A6F6] text-[10px] font-bold rounded uppercase">
                                         ID: #{ride.id}
                                     </div>

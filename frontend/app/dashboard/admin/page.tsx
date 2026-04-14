@@ -70,17 +70,17 @@ export default function AdminDashboard() {
 
     return (
         <AdminLayout>
-            <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-[#00204a]">Dashboard Overview</h1>
-                    <p className="text-gray-500 text-sm sm:text-base">Welcome back, here's what's happening on iTravas today.</p>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#00204a]">Dashboard Overview</h1>
+                    <p className="text-gray-500 text-xs sm:text-sm md:text-base mt-1">Welcome back, here's what's happening on iTravas today.</p>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                     {statCards.map((card, i) => (
-                        <div key={i} className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-lg hover:scale-105 transform transition-all duration-300">
-                            <div className="flex items-center justify-between mb-4">
+                        <div key={i} className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 hover:shadow-lg hover:scale-105 transform transition-all duration-300">
+                            <div className="flex items-center justify-between mb-3 sm:mb-4">
                                 <div className={`${card.bg} ${card.color} p-3 rounded-xl`}>  
                                     <card.icon className="text-2xl" />
                                 </div>

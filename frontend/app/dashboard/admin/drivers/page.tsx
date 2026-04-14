@@ -53,25 +53,25 @@ export default function AdminDrivers() {
     return (
         <AdminLayout>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#00204a]">Driver Management</h1>
-                        <p className="text-gray-500 text-sm">Verify and manage platform drivers and their vehicles.</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-[#00204a]">Driver Management</h1>
+                        <p className="text-gray-500 text-xs sm:text-sm">Verify and manage platform drivers and their vehicles.</p>
                     </div>
-                    <button className="bg-[#08A6F6] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-[#00204a] transition-colors">
-                        Export Driver List
+                    <button className="w-full sm:w-auto bg-[#08A6F6] text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-bold shadow-sm hover:bg-[#00204a] transition-colors whitespace-nowrap">
+                        Export
                     </button>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <table className="w-full text-left border-collapse">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-max md:min-w-full">
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-100">
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Driver</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">License & Vehicle</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Verification</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Date Joined</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Driver</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">License & Vehicle</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Verification</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Date Joined</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
