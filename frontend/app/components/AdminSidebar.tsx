@@ -20,7 +20,6 @@ const menuItems = [
     { href: '/dashboard/admin/passengers', label: 'Passengers', icon: IoPeople },
     { href: '/dashboard/admin/rides', label: 'Rides & Bookings', icon: IoCarSport },
     { href: '/dashboard/admin/payments', label: 'Payments', icon: IoCash },
-    { href: '/dashboard/admin/settings', label: 'System Settings', icon: IoSettings },
 ];
 
 interface AdminSidebarProps {
@@ -39,7 +38,7 @@ export default function AdminSidebar({ mobileOpen = false, onClose }: AdminSideb
         >
             <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <Link href="/" className="flex items-center space-x-2 group">
-                    <Image src="/logo1.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
+                    <Image src="/footer-logo.png" alt="iTravas Logo" width={32} height={32} className="transition-transform group-hover:scale-105" />
                     <span className="text-xl font-semibold text-[#08A6F6] tracking-tight">iTravas Admin</span>
                 </Link>
                 {/* close button for mobile */}
