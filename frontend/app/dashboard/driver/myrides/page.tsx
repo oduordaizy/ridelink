@@ -31,6 +31,7 @@ import { format } from 'date-fns'
 import { toast } from 'react-toastify'
 import ReviewForm from '@/app/components/ReviewForm';
 import PublicProfileModal from '@/app/components/PublicProfileModal';
+import RetryPaymentModal from '@/app/components/RetryPaymentModal';
 
 interface Ride {
   id: number;
@@ -95,6 +96,8 @@ const Page = () => {
   const [reviewedBookings, setReviewedBookings] = useState<number[]>([]);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedPassengerId, setSelectedPassengerId] = useState<number | null>(null);
+  const [retryRide, setRetryRide] = useState<Ride | null>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -137,7 +140,7 @@ const Page = () => {
     };
 
     fetchRides();
-  }, [user, filter]);
+  }, [user, filter, refreshCounter]);
 
   const fetchBookings = async (rideId: number) => {
     setFetchingBookings(true);
@@ -329,14 +332,27 @@ const Page = () => {
       color: 'bg-amber-100 text-amber-800 border-amber-200',
       icon: AlertCircle,
       label: 'Full'
+    },
+    pending_payment: {
+      color: 'bg-orange-100 text-orange-800 border-orange-200',
+      icon: AlertCircle,
+      label: 'Pending Payment'
+    },
+    completed: {
+      color: 'bg-blue-100 text-blue-800 border-blue-200',
+      icon: CheckCircle,
+      label: 'Completed'
     }
   };
 
-  const filteredRides = rides.filter(ride => {
-    const matchesSearch = ride.departure_location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ride.destination.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredRides = rides
+    .filter(ride => {
+      const matchesSearch = ride.departure_location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ride.destination.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch;
+    })
+    // Sort by most recently created first
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const stats = {
     total: rides.length,
@@ -540,14 +556,34 @@ const Page = () => {
                     </div>
                   </div>
 
+                  {/* Pending Payment Banner */}
+                  {ride.status === 'pending_payment' && (
+                    <div className="mt-3 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                      <p className="text-xs text-orange-700 font-medium">
+                        Platform fee payment pending. This ride is not yet active.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Action Buttons */}
                   <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => handleViewDetails(ride)}
-                      className="flex-1 py-2.5 bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all"
-                    >
-                      View Details
-                    </button>
+                    {ride.status === 'pending_payment' ? (
+                      <button
+                        onClick={() => setRetryRide(ride)}
+                        className="flex-1 py-2.5 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-lg font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        Pay Platform Fee
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleViewDetails(ride)}
+                        className="flex-1 py-2.5 bg-gradient-to-r from-[#08A6F6] to-[#00204a] text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all"
+                      >
+                        View Details
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEditRide(ride)}
                       className="p-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-[#08A6F6] hover:text-[#08A6F6] transition-all"
@@ -823,6 +859,20 @@ const Page = () => {
             setIsProfileModalOpen(false);
             setSelectedPassengerId(null);
           }}
+        />
+      )}
+
+      {/* Retry Platform Fee Payment Modal */}
+      {retryRide && (
+        <RetryPaymentModal
+          bookingId={retryRide.id}
+          amount={Number(retryRide.price)}
+          token={localStorage.getItem('access_token') || ''}
+          onSuccess={() => {
+            setRetryRide(null);
+            setRefreshCounter(c => c + 1);
+          }}
+          onClose={() => setRetryRide(null)}
         />
       )}
 
