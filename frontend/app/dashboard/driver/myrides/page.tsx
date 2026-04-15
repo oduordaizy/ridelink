@@ -561,7 +561,7 @@ const Page = () => {
                     <div className="mt-3 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
                       <p className="text-xs text-orange-700 font-medium">
-                        Platform fee payment pending. This ride is not yet active.
+                        Payment pending.
                       </p>
                     </div>
                   )}
@@ -574,7 +574,7 @@ const Page = () => {
                         className="flex-1 py-2.5 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-lg font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
                       >
                         <AlertCircle className="w-4 h-4" />
-                        Pay Platform Fee
+                        Pay Fee
                       </button>
                     ) : (
                       <button
