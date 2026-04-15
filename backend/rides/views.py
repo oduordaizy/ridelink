@@ -229,6 +229,11 @@ class RideViewSet(viewsets.ModelViewSet):
         user = self.request.user
         now = timezone.now()
         queryset = Ride.objects.select_related('driver', 'driver__driver_profile').prefetch_related('images')
+
+        # Let authenticated owners access their own rides directly for detail/update/delete flows
+        # even if they are currently in passenger mode.
+        if user.is_authenticated and getattr(self, 'action', None) in ('retrieve', 'update', 'partial_update', 'destroy', 'complete'):
+            return queryset.filter(driver=user)
         
         if user.is_anonymous or user.user_type == 'passenger':
             # Passengers only see future, available rides
@@ -260,6 +265,19 @@ class RideViewSet(viewsets.ModelViewSet):
             
         # If user has no valid type, return empty for safety
         return Ride.objects.none()
+
+    def destroy(self, request, *args, **kwargs):
+        ride = self.get_object()
+
+        if ride.driver != request.user:
+            return Response(
+                {"detail": "You do not have permission to perform this action."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        self.perform_destroy(ride)
+        cache.delete_pattern("rides_list_*")
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def book(self, request, pk=None):
