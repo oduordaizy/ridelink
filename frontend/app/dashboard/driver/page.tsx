@@ -538,7 +538,7 @@ export default function CreateRidePage() {
             <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 space-y-4">
               <div className="flex justify-between items-center">
                 <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider">Platform Fee (1%)</h3>
+                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider">Platform Fee (5%)</h3>
                   <p className="text-xs text-blue-700">Required to activate and list your ride</p>
                 </div>
                 <div className="text-right">

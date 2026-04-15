@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { FaPhone, FaEnvelope, FaStar, FaChevronLeft, FaChevronRight, FaMapMarkerAlt, FaCalendarAlt, FaClock, FaUsers, FaInfoCircle, FaCar, FaArrowLeft, FaTimes, FaUser } from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaStar, FaChevronLeft, FaChevronRight, FaMapMarkerAlt, FaCalendarAlt, FaClock, FaUsers, FaInfoCircle, FaCar, FaArrowLeft, FaTimes, FaUser, FaCreditCard } from 'react-icons/fa';
 import PublicProfileModal from '@/app/components/PublicProfileModal';
 import Link from 'next/link';
 import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ReviewForm from '@/app/components/ReviewForm';
+import RetryPaymentModal from '@/app/components/RetryPaymentModal';
 
 interface ReviewRecord {
     id: number;
@@ -71,6 +72,7 @@ export default function BookingDetailPage() {
     const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
     const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
+    const [showRetryPaymentModal, setShowRetryPaymentModal] = useState(false);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -440,6 +442,22 @@ export default function BookingDetailPage() {
 
                         {/* Actions */}
                         <div className="space-y-3">
+                            {booking.status === 'pending' && !booking.is_paid && (
+                                <button
+                                    onClick={() => setShowRetryPaymentModal(true)}
+                                    className="w-full py-4 rounded-3xl text-white font-bold transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)',
+                                        boxShadow: '0 4px 20px rgba(8,166,246,0.35)',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 30px rgba(8,166,246,0.5)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(8,166,246,0.35)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                >
+                                    <FaCreditCard />
+                                    Retry Payment
+                                </button>
+                            )}
+
                             {booking.status === 'pending' && (
                                 <button
                                     onClick={cancelBooking}
@@ -492,6 +510,20 @@ export default function BookingDetailPage() {
                     revieweeName={booking.ride_details.driver.first_name || booking.ride_details.driver.username}
                     onClose={() => setIsReviewModalOpen(false)}
                     onSuccess={() => setHasReviewed(true)}
+                />
+            )}
+
+            {/* Retry Payment Modal */}
+            {showRetryPaymentModal && booking && (
+                <RetryPaymentModal
+                    bookingId={booking.id}
+                    amount={booking.total_price}
+                    token={localStorage.getItem('access_token') || ''}
+                    onSuccess={() => {
+                        setShowRetryPaymentModal(false);
+                        fetchBookingDetails();
+                    }}
+                    onClose={() => setShowRetryPaymentModal(false)}
                 />
             )}
         </div>

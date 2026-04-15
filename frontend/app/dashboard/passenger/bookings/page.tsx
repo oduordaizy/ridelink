@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
-import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch, FaUserFriends, FaPhone, FaEnvelope, FaExclamationCircle } from 'react-icons/fa';
+import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch, FaUserFriends, FaPhone, FaEnvelope, FaExclamationCircle, FaCreditCard } from 'react-icons/fa';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
+import RetryPaymentModal from '@/app/components/RetryPaymentModal';
 
 interface Booking {
   id: number;
@@ -45,6 +46,7 @@ export default function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isMobile, setIsMobile] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [retryBooking, setRetryBooking] = useState<Booking | null>(null);
 
   // Handle window resize safely for SSR
   useEffect(() => {
@@ -412,16 +414,39 @@ export default function BookingsPage() {
                 key={booking.id}
                 booking={booking}
                 onCancel={cancelBooking}
+                onRetryPayment={(b) => setRetryBooking(b)}
               />
             ))
           )}
         </div>
       </div>
+
+      {/* Retry Payment Modal */}
+      {retryBooking && (
+        <RetryPaymentModal
+          bookingId={retryBooking.id}
+          amount={retryBooking.total_price}
+          token={localStorage.getItem('access_token') || ''}
+          onSuccess={() => {
+            setRetryBooking(null);
+            fetchBookings();
+          }}
+          onClose={() => setRetryBooking(null)}
+        />
+      )}
     </div>
   );
 }
 
-function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: number) => void }) {
+function BookingCard({
+  booking,
+  onCancel,
+  onRetryPayment,
+}: {
+  booking: Booking;
+  onCancel: (id: number) => void;
+  onRetryPayment: (booking: Booking) => void;
+}) {
   return (
     <div style={{
       background: '#FFFFFF',
@@ -497,6 +522,38 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 min-w-[200px] w-full lg:w-auto">
+            {booking.status === 'pending' && !booking.is_paid && (
+              <button
+                onClick={() => onRetryPayment(booking)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.875rem 1.5rem',
+                  borderRadius: '1rem',
+                  background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 15px rgba(8,166,246,0.3)',
+                  transition: 'all 0.2s',
+                  width: '100%',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(8,166,246,0.45)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(8,166,246,0.3)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <FaCreditCard style={{ width: '1rem', height: '1rem' }} />
+                Retry Payment
+              </button>
+            )}
             {booking.status === 'pending' && (
               <button
                 onClick={() => onCancel(booking.id)}
@@ -509,7 +566,7 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
               href={`/dashboard/passenger/bookings/${booking.id}`}
               className="w-full flex-1 py-3.5 px-6 background-gradient-primary text-center font-bold text-white rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300"
               style={{
-                background: 'linear-gradient(135deg, #08A6F6 0%, #00204a 100%)',
+                background: 'linear-gradient(135deg, #6b7280 0%, #374151 100%)',
                 textDecoration: 'none',
               }}
             >

@@ -380,7 +380,7 @@ def wallet_transactions(request):
             if tx.transaction_type == 'topup':
                 if tx.booking and tx.booking.user:
                     passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
-                    return f"MPESA TOP-UP FOR BOOKING BY {passenger_name}"
+                    return f"BOOKING FEE FROM {passenger_name}"
                 if tx.mpesa_transaction_reference:
                     return "MPESA TOP-UP"
                 return "WALLET TOP-UP"
@@ -398,7 +398,7 @@ def wallet_transactions(request):
                 return "BOOKING PAYMENT"
 
             if tx.transaction_type == 'ride_fee':
-                return "PLATFORM FEE"
+                return "RIDE CREATION FEE"
 
             if tx.transaction_type == 'withdrawal':
                 return "WALLET WITHDRAWAL"
