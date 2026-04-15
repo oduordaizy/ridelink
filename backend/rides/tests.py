@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 
 from payments.models import Wallet, Transaction
-from rides.models import Ride
+from rides.models import Ride, Booking
 
 User = get_user_model()
 
@@ -46,3 +46,61 @@ class RideBookingWalletPaymentTest(TestCase):
                 amount=Decimal('100.00')
             ).exists()
         )
+
+
+class BookingDeletionTest(TestCase):
+    def setUp(self):
+        self.driver = User.objects.create_user(username='driver2', password='pass', user_type='driver')
+        self.passenger = User.objects.create_user(username='passenger2', password='pass')
+        self.other_user = User.objects.create_user(username='otheruser', password='pass')
+        self.ride = Ride.objects.create(
+            departure_location='Nairobi',
+            destination='Kisumu',
+            departure_time=timezone.now() + timedelta(days=1),
+            driver=self.driver,
+            available_seats=3,
+            price=Decimal('150.00')
+        )
+        self.client = APIClient()
+
+    def test_passenger_can_delete_cancelled_booking(self):
+        booking = Booking.objects.create(
+            ride=self.ride,
+            user=self.passenger,
+            no_of_seats=1,
+            status='cancelled'
+        )
+        self.client.force_authenticate(user=self.passenger)
+
+        response = self.client.delete(f'/api/bookings/{booking.id}/')
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Booking.objects.filter(id=booking.id).exists())
+
+    def test_passenger_cannot_delete_non_cancelled_booking(self):
+        booking = Booking.objects.create(
+            ride=self.ride,
+            user=self.passenger,
+            no_of_seats=1,
+            status='pending'
+        )
+        self.client.force_authenticate(user=self.passenger)
+
+        response = self.client.delete(f'/api/bookings/{booking.id}/')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Booking.objects.filter(id=booking.id).exists())
+
+    def test_non_owner_cannot_delete_cancelled_booking(self):
+        booking = Booking.objects.create(
+            ride=self.ride,
+            user=self.passenger,
+            no_of_seats=1,
+            status='cancelled'
+        )
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.delete(f'/api/bookings/{booking.id}/')
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Booking.objects.filter(id=booking.id).exists())

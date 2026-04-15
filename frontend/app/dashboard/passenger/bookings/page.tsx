@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
-import { FaCar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch, FaUserFriends, FaPhone, FaEnvelope, FaExclamationCircle, FaCreditCard } from 'react-icons/fa';
+import { FaCar, FaCalendarAlt, FaUser, FaClock, FaMoneyBillWave, FaSearch, FaUserFriends, FaExclamationCircle, FaCreditCard, FaTrash } from 'react-icons/fa';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/app/services/api';
 import RetryPaymentModal from '@/app/components/RetryPaymentModal';
@@ -133,6 +133,29 @@ export default function BookingsPage() {
       } catch (error) {
         console.error('Error cancelling booking:', error);
         alert('An error occurred while cancelling the booking');
+      }
+    }
+  };
+
+  const deleteBooking = async (bookingId: number) => {
+    if (window.confirm('Delete this cancelled booking permanently?')) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+
+        if (response.ok) {
+          fetchBookings();
+        } else {
+          const errorData = await response.json().catch(() => ({ detail: 'Failed to delete booking' }));
+          alert(errorData.detail || 'Failed to delete booking');
+        }
+      } catch (error) {
+        console.error('Error deleting booking:', error);
+        alert('An error occurred while deleting the booking');
       }
     }
   };
@@ -414,6 +437,7 @@ export default function BookingsPage() {
                 key={booking.id}
                 booking={booking}
                 onCancel={cancelBooking}
+                onDelete={deleteBooking}
                 onRetryPayment={(b) => setRetryBooking(b)}
               />
             ))
@@ -441,10 +465,12 @@ export default function BookingsPage() {
 function BookingCard({
   booking,
   onCancel,
+  onDelete,
   onRetryPayment,
 }: {
   booking: Booking;
   onCancel: (id: number) => void;
+  onDelete: (id: number) => void;
   onRetryPayment: (booking: Booking) => void;
 }) {
   return (
@@ -560,6 +586,35 @@ function BookingCard({
                 className="w-full flex-1 py-3.5 px-6 rounded-2xl bg-white border-2 border-red-500 text-red-500 font-bold hover:bg-red-50 transition-all active:scale-95 shadow-sm"
               >
                 Cancel
+              </button>
+            )}
+            {booking.status === 'cancelled' && (
+              <button
+                onClick={() => onDelete(booking.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.875rem 1.5rem',
+                  borderRadius: '1rem',
+                  background: '#fff1f2',
+                  color: '#be123c',
+                  fontWeight: 700,
+                  border: '1px solid #fecdd3',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  width: '100%',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#ffe4e6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#fff1f2';
+                }}
+              >
+                <FaTrash style={{ width: '0.95rem', height: '0.95rem' }} />
+                Delete Booking
               </button>
             )}
             <Link

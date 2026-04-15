@@ -492,6 +492,24 @@ class BookingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        booking = self.get_object()
+
+        if booking.user != request.user:
+            return Response(
+                {"detail": "You do not have permission to perform this action."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if booking.status != 'cancelled':
+            return Response(
+                {"detail": "Only cancelled bookings can be deleted."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        self.perform_destroy(booking)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         booking = self.get_object()
