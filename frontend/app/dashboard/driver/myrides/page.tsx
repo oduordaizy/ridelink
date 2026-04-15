@@ -557,14 +557,14 @@ const Page = () => {
                   </div>
 
                   {/* Pending Payment Banner */}
-                  {ride.status === 'pending_payment' && (
+                  {/* {ride.status === 'pending_payment' && (
                     <div className="mt-3 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-2">
-                      {/* <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" /> */}
-                      {/* <p className="text-xs text-orange-700 font-medium">
+                      <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                      <p className="text-xs text-orange-700 font-medium">
                         Payment pending.
-                      </p> */}
+                      </p>
                     </div>
-                  )}
+                  )} */}
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 mt-4">
