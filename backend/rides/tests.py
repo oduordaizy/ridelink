@@ -104,3 +104,36 @@ class BookingDeletionTest(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Booking.objects.filter(id=booking.id).exists())
+
+
+class RideDeletionPermissionTest(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username='rideowner', password='pass', user_type='driver')
+        self.other_user = User.objects.create_user(username='otherdriver', password='pass', user_type='driver')
+        self.ride = Ride.objects.create(
+            departure_location='Nairobi',
+            destination='Naivasha',
+            departure_time=timezone.now() + timedelta(days=1),
+            driver=self.owner,
+            available_seats=2,
+            price=Decimal('300.00')
+        )
+        self.client = APIClient()
+
+    def test_owner_can_delete_ride_after_switching_to_passenger(self):
+        self.owner.user_type = 'passenger'
+        self.owner.save(update_fields=['user_type'])
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.delete(f'/api/rides/{self.ride.id}/')
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Ride.objects.filter(id=self.ride.id).exists())
+
+    def test_non_owner_cannot_delete_ride(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.delete(f'/api/rides/{self.ride.id}/')
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Ride.objects.filter(id=self.ride.id).exists())

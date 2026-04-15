@@ -47,6 +47,9 @@ class IsDriverOrReadOnly(permissions.BasePermission):
          # Allow all safe methods (GET, HEAD, OPTIONS) for authenticated users
         if request.method in permissions.SAFE_METHODS:
             return request.user and request.user.is_authenticated
+        # Allow ride owners to edit/delete their own rides even if they later switch roles.
+        if getattr(view, 'action', None) in ('update', 'partial_update', 'destroy'):
+            return request.user and request.user.is_authenticated
         # Only allow drivers to write
         return request.user.is_authenticated and request.user.user_type == 'driver'
 

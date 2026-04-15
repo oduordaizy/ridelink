@@ -253,7 +253,7 @@ const Page = () => {
         }
       } else {
         const data = await response.json();
-        toast.error(data.error || 'Failed to delete ride');
+        toast.error(data.detail || data.error || 'Failed to delete ride');
       }
     } catch (err) {
       console.error('Error deleting ride:', err);
