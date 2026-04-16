@@ -278,6 +278,32 @@ class RideViewSet(viewsets.ModelViewSet):
         self.perform_destroy(ride)
         cache.delete_pattern("rides_list_*")
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def partial_update(self, request, *args, **kwargs):
+        ride = self.get_object()
+
+        if ride.status != 'pending_payment':
+            return Response(
+                {"detail": "Only rides pending payment can be edited."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        response = super().partial_update(request, *args, **kwargs)
+        cache.delete_pattern("rides_list_*")
+        return response
+
+    def update(self, request, *args, **kwargs):
+        ride = self.get_object()
+
+        if ride.status != 'pending_payment':
+            return Response(
+                {"detail": "Only rides pending payment can be edited."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        response = super().update(request, *args, **kwargs)
+        cache.delete_pattern("rides_list_*")
+        return response
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def book(self, request, pk=None):

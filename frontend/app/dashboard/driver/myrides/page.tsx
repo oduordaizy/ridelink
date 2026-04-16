@@ -214,6 +214,11 @@ const Page = () => {
   };
 
   const handleEditRide = (ride: Ride) => {
+    if (ride.status !== 'pending_payment') {
+      toast.error('Posted rides can no longer be edited');
+      return;
+    }
+
     setSelectedRide(ride);
     const departureDate = ride.departure_time.split('T')[0];
     const departureTime = ride.departure_time.split('T')[1].substring(0, 5);
@@ -297,7 +302,7 @@ const Page = () => {
         setSelectedRide(null);
       } else {
         const data = await response.json();
-        toast.error(data.error || 'Failed to update ride');
+        toast.error(data.detail || data.error || 'Failed to update ride');
       }
     } catch (err) {
       console.error('Error updating ride:', err);
@@ -584,13 +589,15 @@ const Page = () => {
                         View Details
                       </button>
                     )}
-                    <button
-                      onClick={() => handleEditRide(ride)}
-                      className="p-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-[#08A6F6] hover:text-[#08A6F6] transition-all"
-                      title="Edit Ride"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
+                    {ride.status === 'pending_payment' && (
+                      <button
+                        onClick={() => handleEditRide(ride)}
+                        className="p-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-[#08A6F6] hover:text-[#08A6F6] transition-all"
+                        title="Edit Ride"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDeleteRide(ride.id)}
                       className="p-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-red-500 hover:text-red-500 transition-all"
@@ -816,15 +823,17 @@ const Page = () => {
                   <CheckCircle className="w-4 h-4" /> Mark as Completed
                 </button>
               )}
-              <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  handleEditRide(selectedRide);
-                }}
-                className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
-              >
-                <Edit className="w-4 h-4" /> Edit Ride
-              </button>
+              {selectedRide.status === 'pending_payment' && (
+                <button
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    handleEditRide(selectedRide);
+                  }}
+                  className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
+                >
+                  <Edit className="w-4 h-4" /> Edit Ride
+                </button>
+              )}
               <button
                 onClick={() => handleDeleteRide(selectedRide.id)}
                 className="py-3 px-6 border border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 transition-all flex items-center justify-center gap-2"

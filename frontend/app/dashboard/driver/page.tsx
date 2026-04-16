@@ -518,7 +518,7 @@ export default function CreateRidePage() {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <FaMoneyBill className="text-[#08A6F6]" />
-                  Price (KSh)
+                  Price Per Seat (KSh)
                 </label>
                 <input
                   type="number"

@@ -149,3 +149,45 @@ class RideDeletionPermissionTest(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Ride.objects.filter(id=self.ride.id).exists())
+
+
+class RideEditPermissionTest(TestCase):
+    def setUp(self):
+        self.driver = User.objects.create_user(username='editdriver', password='pass', user_type='driver')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.driver)
+        self.payload = {'destination': 'Updated Destination'}
+
+    def test_driver_can_edit_pending_payment_ride(self):
+        ride = Ride.objects.create(
+            departure_location='Nairobi',
+            destination='Nakuru',
+            departure_time=timezone.now() + timedelta(days=1),
+            driver=self.driver,
+            available_seats=3,
+            price=Decimal('250.00'),
+            status='pending_payment'
+        )
+
+        response = self.client.patch(f'/api/rides/{ride.id}/', self.payload, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        ride.refresh_from_db()
+        self.assertEqual(ride.destination, 'Updated Destination')
+
+    def test_driver_cannot_edit_successfully_posted_ride(self):
+        ride = Ride.objects.create(
+            departure_location='Nairobi',
+            destination='Kisii',
+            departure_time=timezone.now() + timedelta(days=1),
+            driver=self.driver,
+            available_seats=3,
+            price=Decimal('250.00'),
+            status='available'
+        )
+
+        response = self.client.patch(f'/api/rides/{ride.id}/', self.payload, format='json')
+
+        self.assertEqual(response.status_code, 400)
+        ride.refresh_from_db()
+        self.assertEqual(ride.destination, 'Kisii')
