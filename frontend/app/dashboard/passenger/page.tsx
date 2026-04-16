@@ -76,6 +76,7 @@ const Page = () => {
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [viewerImages, setViewerImages] = useState<{ id: number; image: string; }[]>([]);
   const [isDriverPhotoViewerOpen, setIsDriverPhotoViewerOpen] = useState(false);
+  const [driverPhotoPreview, setDriverPhotoPreview] = useState<{ src: string; name: string } | null>(null);
 
   // Fetch all rides (initial load and after clearing search)
   const fetchAllRides = useCallback(async () => {
@@ -366,10 +367,13 @@ const Page = () => {
         />
       )}
 
-      {isDriverPhotoViewerOpen && selectedRide?.driver && getMediaUrl(selectedRide.driver.profile_picture) && (
+      {isDriverPhotoViewerOpen && driverPhotoPreview && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
-          onClick={() => setIsDriverPhotoViewerOpen(false)}
+          onClick={() => {
+            setIsDriverPhotoViewerOpen(false);
+            setDriverPhotoPreview(null);
+          }}
         >
           <div
             className="relative flex w-full max-w-5xl flex-col items-center"
@@ -377,18 +381,21 @@ const Page = () => {
           >
             <button
               type="button"
-              onClick={() => setIsDriverPhotoViewerOpen(false)}
+              onClick={() => {
+                setIsDriverPhotoViewerOpen(false);
+                setDriverPhotoPreview(null);
+              }}
               className="absolute right-3 top-3 z-10 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg hover:bg-white"
             >
               <FaTimes className="h-4 w-4" />
             </button>
             <img
-              src={getMediaUrl(selectedRide.driver.profile_picture)}
-              alt={`${selectedRide.driver.first_name || selectedRide.driver.username}'s profile`}
+              src={driverPhotoPreview.src}
+              alt={`${driverPhotoPreview.name}'s profile`}
               className="max-h-[82vh] w-full rounded-3xl object-contain shadow-2xl"
             />
             <p className="mt-4 text-center text-sm font-medium text-white/85">
-              {selectedRide.driver.first_name || selectedRide.driver.username}
+              {driverPhotoPreview.name}
             </p>
           </div>
         </div>
@@ -419,7 +426,12 @@ const Page = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (getMediaUrl(selectedRide.driver.profile_picture)) {
+                    const photoSrc = getMediaUrl(selectedRide.driver.profile_picture);
+                    if (photoSrc) {
+                      setDriverPhotoPreview({
+                        src: photoSrc,
+                        name: selectedRide.driver.first_name || selectedRide.driver.username
+                      });
                       setIsDriverPhotoViewerOpen(true);
                     }
                   }}
@@ -785,12 +797,30 @@ const Page = () => {
                         <div className="flex items-center gap-4 mb-6">
                           <div className="relative">
                             {getMediaUrl(ride.driver.profile_picture) ? (
-                              <img
-                                src={getMediaUrl(ride.driver.profile_picture)}
-                                alt={ride.driver.username}
-                                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
-                                loading="lazy"
-                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const photoSrc = getMediaUrl(ride.driver.profile_picture);
+                                  if (photoSrc) {
+                                    setDriverPhotoPreview({
+                                      src: photoSrc,
+                                      name: ride.driver.first_name || ride.driver.username
+                                    });
+                                    setIsDriverPhotoViewerOpen(true);
+                                  }
+                                }}
+                                className="group/photo relative block cursor-zoom-in"
+                                aria-label={`Open ${ride.driver.first_name || ride.driver.username}'s photo`}
+                              >
+                                <img
+                                  src={getMediaUrl(ride.driver.profile_picture)}
+                                  alt={ride.driver.username}
+                                  className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
+                                  loading="lazy"
+                                />
+                                <span className="absolute inset-0 rounded-full bg-black/0 transition-colors group-hover/photo:bg-black/10" />
+                              </button>
                             ) : (
                               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#08A6F6] to-[#00204a] flex items-center justify-center text-white border-2 border-white shadow-md font-bold text-lg">
                                 {ride.driver.first_name ? ride.driver.first_name.charAt(0).toUpperCase() : ride.driver.username.charAt(0).toUpperCase()}
