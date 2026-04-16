@@ -374,8 +374,8 @@ export default function PassengerWallet() {
   const quickAmounts = [500, 1000, 2000, 5000];
 
   const getTransactionReferenceLabel = (tx: any) => {
-    if (tx.mpesa_receipt_number || tx.mpesa_transaction_reference) {
-      return tx.mpesa_receipt_number || tx.mpesa_transaction_reference;
+    if (tx.mpesa_receipt_number) {
+      return tx.mpesa_receipt_number;
     }
 
     if (tx.status === 'success') {

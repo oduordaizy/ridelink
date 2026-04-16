@@ -38,12 +38,15 @@ class STKResultProcessingTest(TestCase):
         self.assertEqual(self.tx.status, 'pending')
 
     def test_success_updates_transaction(self):
-        # simulate a callback with a TransactionID value
+        # simulate a callback with both receipt and transaction ids
         result = process_stk_result(
             self.tx,
             '0',
             'Success',
-            callback_metadata={'Item': [{'Name': 'TransactionID', 'Value': 'REF123'}]}
+            callback_metadata={'Item': [
+                {'Name': 'MpesaReceiptNumber', 'Value': 'QWE123XYZ'},
+                {'Name': 'TransactionID', 'Value': 'REF123'}
+            ]}
         )
         self.tx.refresh_from_db()
         self.assertTrue(result)
@@ -52,7 +55,8 @@ class STKResultProcessingTest(TestCase):
         # wallet balance updated
         self.wallet.refresh_from_db()
         self.assertEqual(self.wallet.balance, Decimal('100'))
-        # reference field populated
+        # receipt and reference fields populated separately
+        self.assertEqual(self.tx.mpesa_receipt_number, 'QWE123XYZ')
         self.assertEqual(self.tx.mpesa_transaction_reference, 'REF123')
 
     def test_wallet_topup_does_not_auto_confirm_pending_booking(self):

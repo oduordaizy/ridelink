@@ -491,19 +491,18 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
             
             if callback_metadata:
                 # Extract from callback metadata format.  older code only pulled
-                # the receipt number; we now look for any of the possible
-                # reference identifiers and store it in the new field.
+                # the receipt number; keep the official M-Pesa receipt separate
+                # from internal transaction/reference identifiers.
                 items = callback_metadata.get('Item', [])
                 logger.info(f"Processing callback metadata for {transaction_obj.checkout_request_id}: {json.dumps(items)}")
                 for item in items:
                     name = item.get('Name')
                     if name == 'Amount':
                         amount = Decimal(str(item.get('Value', amount)))
-                    elif name in ('MpesaReceiptNumber', 'TransactionID', 'MpesaTransactionID', 'TransactionReference'):
-                        # whichever identifier MPESA sends; these tend to be the
-                        # value customers refer to when making inquiries.
+                    elif name == 'MpesaReceiptNumber':
                         mpesa_receipt = item.get('Value', '')
-                        transaction_obj.mpesa_transaction_reference = mpesa_receipt
+                    elif name in ('TransactionID', 'MpesaTransactionID', 'TransactionReference'):
+                        transaction_obj.mpesa_transaction_reference = item.get('Value', '')
             
             transaction_obj.status = "success"
             if mpesa_receipt:
@@ -562,7 +561,7 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             title="Ride Activated!",
                             message=(
                                 f"Your ride from {ride.departure_location} to {ride.destination} is now active. "
-                                f"Paid via M-Pesa (Ref: {mpesa_receipt or 'N/A'}) at "
+                                f"Paid via M-Pesa (Receipt No: {transaction_obj.mpesa_receipt_number or 'N/A'}) at "
                                 f"{transaction_obj.completed_at.strftime('%H:%M on %d %b %Y') if transaction_obj.completed_at else 'N/A'}."
                             ),
                             notification_type="success"
@@ -639,7 +638,7 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             title="Ride Booking Confirmed",
                             message=(
                                 f"Your booking for ride from {ride.departure_location} to {ride.destination} has been confirmed. "
-                                f"Paid via M-Pesa (Ref: {mpesa_receipt or 'N/A'}) at "
+                                f"Paid via M-Pesa (Receipt No: {transaction_obj.mpesa_receipt_number or 'N/A'}) at "
                                 f"{transaction_obj.completed_at.strftime('%H:%M on %d %b %Y') if transaction_obj.completed_at else 'N/A'}. "
                                 # f"KES {expected_amount} deducted from wallet."
                             ),
@@ -652,7 +651,7 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             title="New Confirmed Booking",
                             message=(
                                 f"A booking for your ride from {ride.departure_location} to {ride.destination} has been paid via M-Pesa "
-                                f"(Ref: {mpesa_receipt or 'N/A'}) and confirmed at "
+                                f"(Receipt No: {transaction_obj.mpesa_receipt_number or 'N/A'}) and confirmed at "
                                 f"{transaction_obj.completed_at.strftime('%H:%M on %d %b %Y') if transaction_obj.completed_at else 'N/A'}."
                             ),
                             notification_type="success"
@@ -775,7 +774,7 @@ def mpesa_callback(request, secret=None):
                     Notification.objects.create(
                         user=transaction_obj.wallet.user,
                         title="Withdrawal Successful",
-                        message=f"Your withdrawal of KES {abs(transaction_obj.amount)} was successful. Ref: {ref_id or 'N/A'}",
+                        message=f"Your withdrawal of KES {abs(transaction_obj.amount)} was successful. Receipt No: {ref_id or 'N/A'}",
                         notification_type="success"
                     )
                 else:
