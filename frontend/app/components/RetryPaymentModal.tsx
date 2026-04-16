@@ -250,7 +250,7 @@ const RetryPaymentModal: React.FC<RetryPaymentModalProps> = ({
                         <STKPushQueryLoading number={phoneNumber} attempt={attempt} />
                     ) : success ? (
                         <PaymentSuccess
-                            title="Payment Successful! 🎉"
+                            title="Payment Successful!"
                             message={`Booking #${bookingId} is now confirmed. Thank you for your payment of KES ${amount.toLocaleString()}.`}
                             viewLink="/dashboard/passenger/bookings"
                             viewLabel="View My Bookings"

@@ -55,6 +55,38 @@ class STKResultProcessingTest(TestCase):
         # reference field populated
         self.assertEqual(self.tx.mpesa_transaction_reference, 'REF123')
 
+    def test_wallet_topup_does_not_auto_confirm_pending_booking(self):
+        driver = User.objects.create_user(username='driver_auto', password='pass', user_type='driver')
+        ride = Ride.objects.create(
+            departure_location='Nairobi',
+            destination='Eldoret',
+            departure_time=timezone.now() + timedelta(days=1),
+            driver=driver,
+            available_seats=2,
+            price=Decimal('100.00')
+        )
+        booking = Booking.objects.create(
+            ride=ride,
+            user=self.user,
+            no_of_seats=1,
+            status='pending',
+            is_paid=False
+        )
+
+        result = process_stk_result(
+            self.tx,
+            '0',
+            'Success',
+            callback_metadata={'Item': [{'Name': 'TransactionID', 'Value': 'TOPUPREF'}]}
+        )
+
+        self.assertTrue(result)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'pending')
+        self.assertFalse(booking.is_paid)
+        self.wallet.refresh_from_db()
+        self.assertEqual(self.wallet.balance, Decimal('100'))
+
     def test_list_transactions_api_includes_reference(self):
         from rest_framework.test import APIClient
         client = APIClient()
@@ -107,7 +139,8 @@ class BookingEarningsTest(TestCase):
             amount=Decimal('105.00'),
             status='pending',
             checkout_request_id='BOOKING123',
-            booking=self.booking
+            booking=self.booking,
+            transaction_type='booking'
         )
 
     def test_booking_payment_credits_driver_wallet(self):

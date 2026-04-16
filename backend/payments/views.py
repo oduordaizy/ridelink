@@ -100,6 +100,8 @@ def topup_wallet(request):
             # new 'mpesa_transaction_reference' field with the checkout id for
             # easier lookup/display later (this will be replaced by the actual
             # transaction reference when the callback arrives).
+            transaction_type = "booking" if booking_id else "topup"
+
             transaction_obj = Transaction.objects.create(
                 wallet=wallet,
                 amount=amount,
@@ -108,7 +110,7 @@ def topup_wallet(request):
                 merchant_request_id=response.get('MerchantRequestID'),
                 mpesa_transaction_reference=response.get('CheckoutRequestID'),
                 booking_id=booking_id,
-                transaction_type="topup"
+                transaction_type=transaction_type
             )
             
             return Response({
@@ -519,8 +521,8 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
             
             logger.info(f"Successfully processed payment for {wallet.user.username}: {mpesa_receipt or 'N/A'} for KES {amount}")
             
-            # Notification for top-up success (only if not a direct ride/booking payment)
-            if not (transaction_obj.ride or transaction_obj.booking):
+            # Notification for top-up success only for actual wallet top-ups.
+            if transaction_obj.transaction_type == "topup":
                 Notification.objects.create(
                     user=wallet.user,
                     title="Wallet Top-up Success",
@@ -572,14 +574,8 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
             try:
                 from rides.models import Booking
                 
-                # Check specific booking or fallback
-                pending_booking = transaction_obj.booking
-                if not pending_booking:
-                    pending_booking = Booking.objects.filter(
-                        user=wallet.user,
-                        status='pending',
-                        is_paid=False
-                    ).select_related('ride').first()
+                # Only explicit booking-payment transactions may confirm bookings.
+                pending_booking = transaction_obj.booking if transaction_obj.transaction_type == "booking" else None
                 
                 if pending_booking and pending_booking.status == 'pending':
                     subtotal = pending_booking.ride.price * Decimal(pending_booking.no_of_seats)
@@ -661,6 +657,11 @@ def process_stk_result(transaction_obj, result_code, result_desc, callback_metad
                             ),
                             notification_type="success"
                         )
+                elif transaction_obj.transaction_type == "booking" and not pending_booking:
+                    logger.warning(
+                        "Booking payment transaction %s completed without an attached booking.",
+                        transaction_obj.checkout_request_id
+                    )
             except Exception as e:
                 logger.error(f"Error in booking confirmation: {str(e)}", exc_info=True)
         else:

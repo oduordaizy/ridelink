@@ -173,7 +173,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ rideId, amount, token, onSucc
     if (success) {
         return (
             <PaymentSuccess
-                title="Booking Successful! 🎉"
+                title="Booking Successful!"
                 message={`Your ride booking for ${seats} seat(s) has been confirmed. You paid KES ${amount}.`}
                 viewLink="/dashboard/passenger/bookings"
                 viewLabel="View My Bookings"
