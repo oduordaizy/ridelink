@@ -373,6 +373,22 @@ export default function PassengerWallet() {
 
   const quickAmounts = [500, 1000, 2000, 5000];
 
+  const getTransactionReferenceLabel = (tx: any) => {
+    if (tx.mpesa_receipt_number || tx.mpesa_transaction_reference) {
+      return tx.mpesa_receipt_number || tx.mpesa_transaction_reference;
+    }
+
+    if (tx.status === 'success') {
+      return 'Completed';
+    }
+
+    if (tx.status === 'failed') {
+      return 'Failed';
+    }
+
+    return 'Pending';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       {/* Add styles */}
@@ -509,7 +525,7 @@ export default function PassengerWallet() {
                                 tx.amount >= 0 ? 'Mpesa top up' : 'Ride Payment')}
                       </p>
                       <p className="text-xs md:text-sm text-gray-500 truncate font-medium">
-                        {(tx.mpesa_receipt_number || tx.mpesa_transaction_reference) || 'Pending'} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
+                        {getTransactionReferenceLabel(tx)} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
