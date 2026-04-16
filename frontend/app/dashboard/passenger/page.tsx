@@ -75,6 +75,7 @@ const Page = () => {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [viewerImages, setViewerImages] = useState<{ id: number; image: string; }[]>([]);
+  const [isDriverPhotoViewerOpen, setIsDriverPhotoViewerOpen] = useState(false);
 
   // Fetch all rides (initial load and after clearing search)
   const fetchAllRides = useCallback(async () => {
@@ -365,6 +366,34 @@ const Page = () => {
         />
       )}
 
+      {isDriverPhotoViewerOpen && selectedRide?.driver && getMediaUrl(selectedRide.driver.profile_picture) && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setIsDriverPhotoViewerOpen(false)}
+        >
+          <div
+            className="relative flex w-full max-w-5xl flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setIsDriverPhotoViewerOpen(false)}
+              className="absolute right-3 top-3 z-10 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg hover:bg-white"
+            >
+              <FaTimes className="h-4 w-4" />
+            </button>
+            <img
+              src={getMediaUrl(selectedRide.driver.profile_picture)}
+              alt={`${selectedRide.driver.first_name || selectedRide.driver.username}'s profile`}
+              className="max-h-[82vh] w-full rounded-3xl object-contain shadow-2xl"
+            />
+            <p className="mt-4 text-center text-sm font-medium text-white/85">
+              {selectedRide.driver.first_name || selectedRide.driver.username}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Payment Modal */}
       {showPaymentModal && selectedRide && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
@@ -386,6 +415,53 @@ const Page = () => {
             </div>
 
             <div className="p-6">
+              <div className="mb-4 flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (getMediaUrl(selectedRide.driver.profile_picture)) {
+                      setIsDriverPhotoViewerOpen(true);
+                    }
+                  }}
+                  className={`relative shrink-0 overflow-hidden rounded-full border-2 border-white shadow-md ${getMediaUrl(selectedRide.driver.profile_picture) ? 'cursor-zoom-in' : 'cursor-default'}`}
+                  aria-label={getMediaUrl(selectedRide.driver.profile_picture) ? 'Open driver photo in wide view' : 'Driver profile photo unavailable'}
+                >
+                  {getMediaUrl(selectedRide.driver.profile_picture) ? (
+                    <img
+                      src={getMediaUrl(selectedRide.driver.profile_picture)}
+                      alt={selectedRide.driver.username}
+                      className="h-16 w-16 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center bg-gradient-to-br from-[#08A6F6] to-[#00204a] text-xl font-bold text-white">
+                      {(selectedRide.driver.first_name || selectedRide.driver.username).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  {getMediaUrl(selectedRide.driver.profile_picture) && (
+                    <span className="absolute inset-x-0 bottom-0 bg-black/55 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                      Tap to zoom
+                    </span>
+                  )}
+                </button>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Driver</p>
+                  <p className="truncate text-lg font-bold text-[#00204a]">
+                    {selectedRide.driver.first_name || selectedRide.driver.username}
+                  </p>
+                  <p className="truncate text-sm text-gray-500">@{selectedRide.driver.username}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDriverId(selectedRide.driver.id);
+                      setIsProfileModalOpen(true);
+                    }}
+                    className="mt-2 text-sm font-semibold text-[#08A6F6] hover:underline"
+                  >
+                    View driver profile
+                  </button>
+                </div>
+              </div>
+
               <div className="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-gray-500 text-sm">Ride Fare ({numberOfSeats} {numberOfSeats === 1 ? 'seat' : 'seats'})</span>
