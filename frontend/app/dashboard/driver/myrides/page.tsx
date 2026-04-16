@@ -881,6 +881,7 @@ const Page = () => {
       {retryRide && (
         <RetryPaymentModal
           bookingId={retryRide.id}
+          rideId={retryRide.id}
           amount={Number(retryRide.price)}
           token={localStorage.getItem('access_token') || ''}
           onSuccess={() => {

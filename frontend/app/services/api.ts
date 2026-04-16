@@ -501,7 +501,7 @@ export const getMyRides = async () => {
 // Payment API functions
 export const paymentAPI = {
   // Initiate M-Pesa payment
-  async initiateMpesaPayment(token: string, data: { phone_number: string; amount: number; booking_id?: number }) {
+  async initiateMpesaPayment(token: string, data: { phone_number: string; amount: number; booking_id?: number; ride_id?: number }) {
     const response = await fetch(`${API_BASE_URL}/payments/wallet/topup/`, {
       method: 'POST',
       headers: {
@@ -512,6 +512,7 @@ export const paymentAPI = {
         phone: data.phone_number,  // Changed from phone_number to phone
         amount: data.amount,
         booking_id: data.booking_id,
+        ride_id: data.ride_id,
       }),
     });
 

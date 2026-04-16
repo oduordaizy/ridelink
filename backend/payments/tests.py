@@ -2,6 +2,8 @@ from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
+from rest_framework.test import APIClient
 
 from payments.views import process_stk_result
 from payments.models import Transaction, Wallet
@@ -165,3 +167,52 @@ class BookingEarningsTest(TestCase):
         ).first()
         self.assertIsNotNone(driver_tx)
         self.assertEqual(driver_tx.amount, Decimal('100.00'))
+
+
+class RetryRidePaymentApiTest(TestCase):
+    def setUp(self):
+        self.driver = User.objects.create_user(username='retrydriver', password='pass', user_type='driver')
+        self.wallet = Wallet.objects.create(user=self.driver, balance=Decimal('0.00'))
+        self.ride = Ride.objects.create(
+            departure_location='Nairobi',
+            destination='Nakuru',
+            departure_time=timezone.now() + timedelta(days=1),
+            driver=self.driver,
+            available_seats=2,
+            price=Decimal('300.00'),
+            status='pending_payment'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.driver)
+
+    @patch('payments.views.lipa_na_mpesa')
+    def test_topup_endpoint_can_create_ride_fee_transaction_for_pending_ride(self, mock_lipa_na_mpesa):
+        mock_lipa_na_mpesa.return_value = {
+            'CheckoutRequestID': 'CHECKOUT123',
+            'MerchantRequestID': 'MERCHANT123',
+        }
+
+        response = self.client.post('/api/payments/wallet/topup/', {
+            'phone': '0712345678',
+            'amount': '30.00',
+            'ride_id': self.ride.id,
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+
+        tx = Transaction.objects.get(checkout_request_id='CHECKOUT123')
+        self.assertEqual(tx.ride, self.ride)
+        self.assertEqual(tx.transaction_type, 'ride_fee')
+        self.assertIsNone(tx.booking)
+
+    def test_topup_endpoint_rejects_non_pending_ride_retry(self):
+        self.ride.status = 'available'
+        self.ride.save(update_fields=['status'])
+
+        response = self.client.post('/api/payments/wallet/topup/', {
+            'phone': '0712345678',
+            'amount': '30.00',
+            'ride_id': self.ride.id,
+        }, format='json')
+
+        self.assertEqual(response.status_code, 400)

@@ -38,6 +38,7 @@ def topup_wallet(request):
             phone_number = data.get("phone")
             amount = data.get("amount")
             booking_id = data.get("booking_id")
+            ride_id = data.get("ride_id")
         except Exception as e:
             return Response(
                 {"error": "Invalid request data"}, 
@@ -60,6 +61,12 @@ def topup_wallet(request):
                 {"error": "Invalid amount. Must be a positive number."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        if booking_id and ride_id:
+            return Response(
+                {"error": "Provide either booking_id or ride_id, not both."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # Process the payment
         with db_transaction.atomic():
@@ -68,6 +75,40 @@ def topup_wallet(request):
                 user=user,
                 defaults={'balance': 0.00}
             )
+
+            booking = None
+            ride = None
+            transaction_type = "topup"
+
+            if booking_id:
+                from rides.models import Booking
+
+                try:
+                    booking = Booking.objects.select_related('user').get(id=booking_id, user=user)
+                except Booking.DoesNotExist:
+                    return Response(
+                        {"error": "Booking not found."},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                transaction_type = "booking"
+            elif ride_id:
+                from rides.models import Ride
+
+                try:
+                    ride = Ride.objects.select_related('driver').get(id=ride_id, driver=user)
+                except Ride.DoesNotExist:
+                    return Response(
+                        {"error": "Ride not found."},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+                if ride.status != 'pending_payment':
+                    return Response(
+                        {"error": "Only rides pending payment can be paid from this flow."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                transaction_type = "ride_fee"
             
             # Custom reference: iTra-First3phone..last3phone
             # Custom reference: User's phone number as requested
@@ -100,8 +141,6 @@ def topup_wallet(request):
             # new 'mpesa_transaction_reference' field with the checkout id for
             # easier lookup/display later (this will be replaced by the actual
             # transaction reference when the callback arrives).
-            transaction_type = "booking" if booking_id else "topup"
-
             transaction_obj = Transaction.objects.create(
                 wallet=wallet,
                 amount=amount,
@@ -109,7 +148,8 @@ def topup_wallet(request):
                 checkout_request_id=response.get('CheckoutRequestID'),
                 merchant_request_id=response.get('MerchantRequestID'),
                 mpesa_transaction_reference=response.get('CheckoutRequestID'),
-                booking_id=booking_id,
+                booking=booking,
+                ride=ride,
                 transaction_type=transaction_type
             )
             

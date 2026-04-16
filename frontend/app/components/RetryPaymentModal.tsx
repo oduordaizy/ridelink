@@ -12,6 +12,7 @@ interface RetryPaymentModalProps {
     bookingId: number;
     amount: number;
     token: string;
+    rideId?: number;
     onSuccess?: () => void;
     onClose: () => void;
 }
@@ -20,6 +21,7 @@ const RetryPaymentModal: React.FC<RetryPaymentModalProps> = ({
     bookingId,
     amount,
     token,
+    rideId,
     onSuccess,
     onClose,
 }) => {
@@ -138,7 +140,8 @@ const RetryPaymentModal: React.FC<RetryPaymentModalProps> = ({
             const res = await paymentAPI.initiateMpesaPayment(token, {
                 phone_number: phoneNumber,
                 amount: amount,
-                booking_id: bookingId,
+                booking_id: rideId ? undefined : bookingId,
+                ride_id: rideId,
             });
 
             if (res.checkout_request_id) {
@@ -251,9 +254,11 @@ const RetryPaymentModal: React.FC<RetryPaymentModalProps> = ({
                     ) : success ? (
                         <PaymentSuccess
                             title="Payment Successful!"
-                            message={`Booking #${bookingId} is now confirmed. Thank you for your payment of KES ${amount.toLocaleString()}.`}
-                            viewLink="/dashboard/passenger/bookings"
-                            viewLabel="View My Bookings"
+                            message={rideId
+                                ? `Ride #${rideId} is now active. Thank you for your payment of KES ${amount.toLocaleString()}.`
+                                : `Booking #${bookingId} is now confirmed. Thank you for your payment of KES ${amount.toLocaleString()}.`}
+                            viewLink={rideId ? "/dashboard/driver/myrides" : "/dashboard/passenger/bookings"}
+                            viewLabel={rideId ? "View My Rides" : "View My Bookings"}
                             onView={() => {
                                 if (onSuccess) onSuccess();
                                 onClose();
