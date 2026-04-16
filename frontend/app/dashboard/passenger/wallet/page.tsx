@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Smartphone, Wallet, ArrowUpCircle, History, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { CreditCard, Smartphone, Wallet, ArrowUpCircle, History, X, CheckCircle, AlertCircle, Loader2, Car, Banknote, Download } from 'lucide-react';
 import React from 'react';
 import { API_BASE_URL } from '@/app/services/api';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -21,6 +21,13 @@ const styles = `
   }
   .animate-slide-in {
     animation: slide-in 0.3s ease-out;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 `;
 
@@ -87,6 +94,9 @@ export default function PassengerWallet() {
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  const filteredTransactions = transactions.filter(tx => activeFilter === 'all' || tx.category === activeFilter);
 
   // Fetch wallet data on component mount
   useEffect(() => {
@@ -483,9 +493,28 @@ export default function PassengerWallet() {
 
         {/* Transaction History */}
         <div className="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <History className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
-            <h2 className="text-lg md:text-xl font-bold text-gray-800">Recent Transactions</h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
+              <h2 className="text-lg md:text-xl font-bold text-gray-800">Recent Transactions</h2>
+            </div>
+            
+            {/* Filters */}
+            <div className="flex overflow-x-auto pb-2 md:pb-0 hide-scrollbar gap-2">
+              {['all', 'topups', 'withdrawals', 'payments', 'earnings'].map(filter => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+                    activeFilter === filter 
+                    ? 'bg-[#00204a] text-white' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2 md:space-y-3">
@@ -494,37 +523,40 @@ export default function PassengerWallet() {
                 <Loader2 className="w-8 h-8 animate-spin mb-2" />
                 <p>Loading transactions...</p>
               </div>
-            ) : transactions.length === 0 ? (
+            ) : filteredTransactions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                 <History className="w-12 h-12 mb-2 opacity-20" />
                 <p>No transactions found</p>
               </div>
             ) : (
-              transactions.map((tx) => (
+              filteredTransactions.map((tx) => (
                 <div
                   key={tx.id}
                   className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100"
                 >
                   <div className="flex items-center gap-3 md:gap-4 min-w-0">
                     <div
-                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${tx.amount >= 0 ? 'bg-green-100' : 'bg-red-100'
-                        }`}
+                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        tx.category === 'topups' ? 'bg-[#e0f4ff]' :
+                        tx.category === 'payments' ? 'bg-purple-100' :
+                        tx.category === 'withdrawals' ? 'bg-red-100' :
+                        tx.category === 'earnings' ? 'bg-green-100' :
+                        tx.amount >= 0 ? 'bg-green-100' : 'bg-red-100'
+                      }`}
                     >
-                      {tx.tx_type === 'credit' || tx.amount >= 0 ? (
-                        <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-                      ) : (
-                        <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 rotate-180" />
-                      )}
+                      {tx.category === 'topups' ? <Wallet className="w-4 h-4 md:w-5 md:h-5 text-[#08A6F6]" /> :
+                       tx.category === 'payments' ? <Car className="w-4 h-4 md:w-5 md:h-5 text-purple-600" /> :
+                       tx.category === 'withdrawals' ? <Download className="w-4 h-4 md:w-5 md:h-5 text-red-600" /> :
+                       tx.category === 'earnings' ? <Banknote className="w-4 h-4 md:w-5 md:h-5 text-green-600" /> :
+                       tx.amount >= 0 ? <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" /> : 
+                       <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 rotate-180" />}
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-[#00204a] text-sm md:text-base truncate">
-                        {tx.details ||
-                          (tx.transaction_type === 'withdrawal' ? 'Wallet Withdrawal' :
-                            tx.transaction_type === 'topup' ? 'Mpesa top up' :
-                              tx.transaction_type === 'booking' ? 'Ride Payment' :
-                                tx.amount >= 0 ? 'Mpesa top up' : 'Ride Payment')}
+                        {tx.title || tx.details}
                       </p>
                       <p className="text-xs md:text-sm text-gray-500 truncate font-medium">
+                        {tx.description ? `${tx.description} • ` : ''}
                         {getTransactionReferenceLabel(tx)} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>

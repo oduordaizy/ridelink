@@ -418,54 +418,77 @@ def wallet_transactions(request):
                 except Exception as e:
                     logger.error(f"Error auto-syncing STK status for tx {tx.id}: {str(e)}")
         
-        def _transaction_details(tx):
+        def _get_transaction_info(tx):
+            title = tx.transaction_type.replace('_', ' ').title()
+            description = ""
+            category = "payments"
+            
             if tx.transaction_type == 'topup':
-                if tx.booking and tx.booking.user:
-                    passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
-                    return f"BOOKING FEE FROM {passenger_name}"
+                title = "Wallet Top-Up"
+                category = "topups"
                 if tx.mpesa_transaction_reference:
-                    return "MPESA TOP-UP"
-                return "WALLET TOP-UP"
-
-            if tx.transaction_type == 'earning':
+                    description = "via M-Pesa"
+                else:
+                    description = "Manual Top-Up"
+                if tx.booking and tx.booking.user:
+                    title = "Booking Top-Up"
+                    passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
+                    description = f"From {passenger_name}"
+            
+            elif tx.transaction_type == 'earning':
+                title = "Ride Earnings"
+                category = "earnings"
                 if tx.booking and tx.booking.user:
                     passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
-                    return f"BOOKING PAYMENT TOP-UP FROM {passenger_name}"
-                return "BOOKING PAYMENT TOP-UP"
-
-            if tx.transaction_type == 'booking':
-                if tx.booking and tx.booking.user:
+                    description = f"From {passenger_name}"
+                    
+            elif tx.transaction_type == 'booking':
+                title = "Booking Payment"
+                category = "payments"
+                if tx.booking and tx.booking.ride:
+                    description = f"Ride to {tx.booking.ride.destination}"
+                elif tx.booking and tx.booking.user:
                     passenger_name = tx.booking.user.get_full_name() or tx.booking.user.username
-                    return f"BOOKING PAYMENT BY {passenger_name}"
-                return "BOOKING PAYMENT"
-
-            if tx.transaction_type == 'ride_fee':
-                return "RIDE CREATION FEE"
-
-            if tx.transaction_type == 'withdrawal':
-                return "WALLET WITHDRAWAL"
-
-            if tx.result_desc:
-                return tx.result_desc.strip().upper()
-
-            return tx.transaction_type.replace('_', ' ').upper()
+                    description = f"By {passenger_name}"
+                    
+            elif tx.transaction_type == 'ride_fee':
+                title = "Platform Fee"
+                category = "payments"
+                description = "Ride Activation"
+                
+            elif tx.transaction_type == 'withdrawal':
+                title = "Wallet Withdrawal"
+                category = "withdrawals"
+                if tx.result_desc:
+                    description = tx.result_desc
+            else:
+                if tx.result_desc:
+                    description = tx.result_desc
+            
+            return {"title": title, "description": description, "category": category}
 
         # Prepare response data
-        transactions_data = [{
-            'id': str(tx.id),
-            'amount': float(tx.amount),
-            'status': tx.status,
-            'transaction_type': tx.transaction_type,
-            'details': _transaction_details(tx),
-            'mpesa_transaction_reference': tx.mpesa_transaction_reference or '',
-            # keep old field available for backward compatibility
-            'mpesa_receipt_number': tx.mpesa_receipt_number or '',
-            'created_at': tx.created_at.isoformat(),
-            'type': 'credit' if tx.amount >= 0 else 'debit',
-            'result_code': tx.result_code,
-            'result_desc': tx.result_desc,
-            'completed_at': tx.completed_at.isoformat() if tx.completed_at else None
-        } for tx in transactions]
+        transactions_data = []
+        for tx in transactions:
+            info = _get_transaction_info(tx)
+            transactions_data.append({
+                'id': str(tx.id),
+                'amount': float(tx.amount),
+                'status': tx.status,
+                'transaction_type': tx.transaction_type,
+                'title': info['title'],
+                'description': info['description'],
+                'category': info['category'],
+                'details': info['title'], # Fallback for backward compatibility
+                'mpesa_transaction_reference': tx.mpesa_transaction_reference or '',
+                # keep old field available for backward compatibility
+                'mpesa_receipt_number': tx.mpesa_receipt_number or '',
+                'created_at': tx.created_at.isoformat(),
+                'type': 'credit' if tx.amount >= 0 else 'debit',
+                'result_code': tx.result_code,
+                'result_desc': tx.result_desc,
+                'completed_at': tx.completed_at.isoformat() if tx.completed_at else None
+            })
         
         return Response({
             'success': True,
