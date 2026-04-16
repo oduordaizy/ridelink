@@ -248,10 +248,15 @@ export default function CreateRidePage() {
       return;
     }
 
+    const price = Number(formData.price);
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error('Price per seat must be greater than 0');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Calculate platform fee for local validation
-      const price = Number(formData.price) || 0;
       const seats = Number(formData.available_seats) || 1;
       const platformFee = Math.max(1, price * seats * 0.05);
 
@@ -523,7 +528,7 @@ export default function CreateRidePage() {
                 <input
                   type="number"
                   name="price"
-                  min="0"
+                  min="0.01"
                   step="any"
                   value={formData.price}
                   onChange={handleChange}

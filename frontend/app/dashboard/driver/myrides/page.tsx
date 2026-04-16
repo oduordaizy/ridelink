@@ -272,6 +272,12 @@ const Page = () => {
     e.preventDefault();
     if (!selectedRide) return;
 
+    const price = Number(editFormData.price);
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error('Price must be greater than 0');
+      return;
+    }
+
     setIsUpdating(true);
     try {
       const departureDateTime = `${editFormData.departure_date}T${editFormData.departure_time}:00`;
@@ -281,7 +287,7 @@ const Page = () => {
         destination: editFormData.destination,
         departure_time: departureDateTime,
         available_seats: editFormData.available_seats,
-        price: editFormData.price,
+        price,
         additional_info: editFormData.additional_info
       };
 
@@ -967,7 +973,6 @@ const Page = () => {
                       type="number"
                       required
                       min="0"
-                      step="50"
                       value={editFormData.price}
                       onChange={(e) => setEditFormData({ ...editFormData, price: parseFloat(e.target.value) })}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#08A6F6] outline-none transition-all"
