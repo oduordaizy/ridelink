@@ -11,6 +11,7 @@ import PaymentForm from '@/app/components/PaymentForm';
 import PaymentSuccess from '@/app/components/Success';
 import PublicProfileModal from '@/app/components/PublicProfileModal';
 import RideCountdown from '@/app/components/RideCountdown';
+import { motion } from 'framer-motion';
 
 interface Ride {
   id: number;
@@ -786,8 +787,8 @@ const Page = () => {
                   key={ride.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -4, shadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
-                  onClick={() => toggleRideExpand(ride.id)}
+                  whileHover={{ y: -4, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
+                  onClick={() => setExpandedRideId(isExpanded ? null : ride.id)}
                   className={`relative bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group ${isExpanded ? 'ring-2 ring-[#08A6F6] ring-offset-2' : ''
                     }`}
                 >
@@ -1028,7 +1029,7 @@ const Page = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
               );
             })}
           </div>
