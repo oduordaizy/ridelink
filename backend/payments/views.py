@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
 from django.db import transaction as db_transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@never_cache
 def topup_wallet(request):
     try:
         # Get the authenticated user
@@ -170,6 +172,7 @@ def topup_wallet(request):
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@never_cache
 def wallet_balance(request):
     """
     API endpoint to get the current wallet balance for the authenticated user
@@ -360,6 +363,7 @@ def query_mpesa_status(request):
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@never_cache
 def wallet_transactions(request):
     """
     API endpoint to get transaction history for the authenticated user's wallet

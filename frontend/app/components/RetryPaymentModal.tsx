@@ -162,7 +162,7 @@ const RetryPaymentModal: React.FC<RetryPaymentModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <div
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
                 style={{ animation: 'slideUp 0.25s ease' }}
             >
                 {/* Header */}
@@ -172,6 +172,7 @@ const RetryPaymentModal: React.FC<RetryPaymentModalProps> = ({
                         padding: '1.5rem',
                         color: '#fff',
                         position: 'relative',
+                        flexShrink: 0,
                     }}
                 >
                     <button
@@ -223,7 +224,7 @@ const RetryPaymentModal: React.FC<RetryPaymentModalProps> = ({
                 </div>
 
                 {/* Body */}
-                <div style={{ padding: '1.5rem' }}>
+                <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
                     {/* Amount pill */}
                     <div
                         style={{

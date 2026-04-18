@@ -60,9 +60,9 @@ export default function TransactionModal({ transaction, onClose }: TransactionMo
     return (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="bg-[#00204a] p-6 text-white flex justify-between items-center">
+                <div className="bg-[#00204a] p-6 text-white flex justify-between items-center flex-shrink-0">
                     <div>
                         <h2 className="text-xl font-bold">Transaction Details</h2>
                         <p className="text-blue-200 text-sm">#{transaction.id}</p>
@@ -76,7 +76,7 @@ export default function TransactionModal({ transaction, onClose }: TransactionMo
                 </div>
 
                 {/* Content */}
-                <div className="p-8 space-y-6">
+                <div className="p-8 space-y-6 overflow-y-auto">
                     {/* Status Banner */}
                     <div className={`p-4 rounded-2xl flex items-center space-x-3 ${transaction.status === 'success' ? 'bg-emerald-50 text-emerald-700' :
                         transaction.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
@@ -118,7 +118,7 @@ export default function TransactionModal({ transaction, onClose }: TransactionMo
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 pb-8 space-y-3">
+                <div className="px-8 pb-8 space-y-3 flex-shrink-0 pt-4">
                     <div className="flex space-x-3">
                         {transaction.status === 'pending' && (
                             <button

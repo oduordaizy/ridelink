@@ -11,7 +11,8 @@ from django.db.models import Q
 from django.utils import timezone
 from django.db import transaction as db_transaction
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import cache_page, never_cache
+from django.utils.cache import patch_vary_headers
 from django.core.cache import cache
 from decimal import Decimal
 
@@ -60,6 +61,7 @@ class IsDriverOrReadOnly(permissions.BasePermission):
         # Write permissions only for the driver who created the ride
         return obj.driver == request.user
     
+@method_decorator(never_cache, name='dispatch')
 class RideViewSet(viewsets.ModelViewSet):
     queryset = Ride.objects.all()
     serializer_class = RideListSerializer
@@ -512,6 +514,7 @@ class IsPaymentOwner(permissions.BasePermission):
 
 
 
+@method_decorator(never_cache, name='dispatch')
 class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -520,6 +523,12 @@ class BookingViewSet(viewsets.ModelViewSet):
     search_fields = ['ride__departure_location', 'ride__destination', 'ride__driver__username']
     ordering_fields = ['booked_at', 'updated_at']
     ordering = ['-booked_at']
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        if isinstance(response, Response):
+            patch_vary_headers(response, ['Authorization'])
+        return response
 
     def get_queryset(self):
         # Allow both the Passenger AND the Driver to see the booking
@@ -602,6 +611,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
 
 
+@method_decorator(never_cache, name='dispatch')
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -610,6 +620,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
     filterset_fields = ['booking', 'reviewer', 'reviewee']
     ordering_fields = ['created_at', 'rating']
     ordering = ['-created_at']
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        if isinstance(response, Response):
+            patch_vary_headers(response, ['Authorization'])
+        return response
 
     def get_queryset(self):
         # Users can see all reviews related to them (given or received)

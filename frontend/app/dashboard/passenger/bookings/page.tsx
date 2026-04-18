@@ -81,6 +81,7 @@ export default function BookingsPage() {
       }
 
       const response = await fetch(`${API_BASE_URL}/bookings/my-bookings/?${params.toString()}`, {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },

@@ -404,8 +404,8 @@ const Page = () => {
       {/* Payment Modal */}
       {showPaymentModal && selectedRide && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
-            <div className="bg-gradient-to-r from-[#00204a] to-[#08A6F6] p-6 text-white relative">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 flex flex-col max-h-[90vh]">
+            <div className="bg-gradient-to-r from-[#00204a] to-[#08A6F6] p-6 text-white relative shrink-0">
               <button
                 onClick={() => {
                   setShowPaymentModal(false);
@@ -421,7 +421,7 @@ const Page = () => {
               <p className="text-white/80 text-sm mt-1">Select a payment method to confirm your seat</p>
             </div>
 
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto">
               <div className="mb-4 flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-4">
                 <button
                   type="button"

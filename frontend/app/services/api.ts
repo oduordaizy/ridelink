@@ -76,6 +76,7 @@ export const authAPI = {
   // Login
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -99,6 +100,7 @@ export const authAPI = {
   // Register
   async register(data: RegisterData): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/register/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -129,6 +131,7 @@ export const authAPI = {
   // Get user profile
   async getProfile(token: string) {
     const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -145,6 +148,7 @@ export const authAPI = {
   // Logout
   async logout(refreshToken: string) {
     const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -158,6 +162,7 @@ export const authAPI = {
   // Send OTP
   async sendOtp(email: string) {
     const response = await fetch(`${API_BASE_URL}/auth/send-otp/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -175,6 +180,7 @@ export const authAPI = {
   // Verify OTP
   async verifyOtp(email: string, otp: string): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/verify-otp/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -193,6 +199,7 @@ export const authAPI = {
   // Forgot password
   async forgotPassword(email: string): Promise<{ message: string }> {
     const response = await fetch(`${API_BASE_URL}/auth/forgot-password/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -215,6 +222,7 @@ export const authAPI = {
   // Reset password
   async resetPassword(data: any): Promise<{ message: string }> {
     const response = await fetch(`${API_BASE_URL}/auth/reset-password/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -244,6 +252,7 @@ export const authAPI = {
   // Switch user role
   async switchRole(token: string): Promise<{ message: string, user: AuthResponse['user'] }> {
     const response = await fetch(`${API_BASE_URL}/auth/switch-role/`, {
+      cache: 'no-store',
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -262,6 +271,7 @@ export const authAPI = {
   // Get notifications
   async getNotifications(token: string) {
     const response = await fetch(`${API_BASE_URL}/auth/notifications/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -278,6 +288,7 @@ export const authAPI = {
   // Mark notification as read
   async markNotificationRead(token: string, notificationId: number) {
     const response = await fetch(`${API_BASE_URL}/auth/notifications/${notificationId}/read/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -291,6 +302,7 @@ export const authAPI = {
   // Delete notification
   async deleteNotification(token: string, notificationId: number) {
     const response = await fetch(`${API_BASE_URL}/auth/notifications/${notificationId}/delete/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -304,6 +316,7 @@ export const authAPI = {
   // Mark all notifications as read
   async markAllNotificationsRead(token: string) {
     const response = await fetch(`${API_BASE_URL}/auth/notifications/read-all/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -320,6 +333,7 @@ export const dashboardAPI = {
   // Get passenger ride history
   async getPassengerRides(token: string) {
     const response = await fetch(`${API_BASE_URL}/rides/passenger/history/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -336,6 +350,7 @@ export const dashboardAPI = {
   // Get driver ride requests
   async getDriverRideRequests(token: string) {
     const response = await fetch(`${API_BASE_URL}/rides/driver/requests/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -352,6 +367,7 @@ export const dashboardAPI = {
   // Get driver earnings
   async getDriverEarnings(token: string) {
     const response = await fetch(`${API_BASE_URL}/rides/driver/earnings/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -368,6 +384,7 @@ export const dashboardAPI = {
   // Accept ride request
   async acceptRideRequest(token: string, rideId: number) {
     const response = await fetch(`${API_BASE_URL}/rides/driver/accept/${rideId}/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -385,6 +402,7 @@ export const dashboardAPI = {
   // Decline ride request
   async declineRideRequest(token: string, rideId: number) {
     const response = await fetch(`${API_BASE_URL}/rides/driver/decline/${rideId}/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -410,6 +428,7 @@ export const rideBookingAPI = {
     notes?: string;
   }) {
     const response = await fetch(`${API_BASE_URL}/rides/estimate/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -434,6 +453,7 @@ export const rideBookingAPI = {
     estimated_fare: number;
   }) {
     const response = await fetch(`${API_BASE_URL}/rides/book/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -452,6 +472,7 @@ export const rideBookingAPI = {
   // Get active rides for passenger
   async getActiveRides(token: string) {
     const response = await fetch(`${API_BASE_URL}/rides/passenger/active/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -468,6 +489,7 @@ export const rideBookingAPI = {
   // Cancel a ride
   async cancelRide(token: string, rideId: number) {
     const response = await fetch(`${API_BASE_URL}/rides/passenger/cancel/${rideId}/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -491,6 +513,7 @@ export const getAllRides = async () => {
 
 export const getMyRides = async () => {
   const res = await fetch(`${API_BASE_URL}/rides/`, {
+    cache: 'no-store',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
     },
@@ -503,6 +526,7 @@ export const paymentAPI = {
   // Initiate M-Pesa payment
   async initiateMpesaPayment(token: string, data: { phone_number: string; amount: number; booking_id?: number; ride_id?: number }) {
     const response = await fetch(`${API_BASE_URL}/payments/wallet/topup/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -530,6 +554,7 @@ export const paymentAPI = {
   // Get wallet balance
   async getWalletBalance(token: string) {
     const response = await fetch(`${API_BASE_URL}/payments/wallet/balance/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -554,6 +579,7 @@ export const paymentAPI = {
     const response = await fetch(
       `${API_BASE_URL}/payments/wallet/transactions/?${params}`,
       {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -574,6 +600,7 @@ export const paymentAPI = {
 export const adminAPI = {
   async getStats(token: string) {
     const response = await fetch(`${API_BASE_URL}/admin/stats/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -588,6 +615,7 @@ export const adminAPI = {
     if (userType) url.searchParams.append('user_type', userType);
 
     const response = await fetch(url.toString(), {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -599,6 +627,7 @@ export const adminAPI = {
 
   async getTransactions(token: string) {
     const response = await fetch(`${API_BASE_URL}/admin/transactions/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -610,6 +639,7 @@ export const adminAPI = {
 
   async getMpesaStatus(token: string, transactionId: number) {
     const response = await fetch(`${API_BASE_URL}/admin/mpesa/status/${transactionId}/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -621,6 +651,7 @@ export const adminAPI = {
 
   async initiateReversal(token: string, transactionId: number, amount: number, reason: string) {
     const response = await fetch(`${API_BASE_URL}/admin/mpesa/reversal/${transactionId}/`, {
+      cache: 'no-store',
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -634,6 +665,7 @@ export const adminAPI = {
 
   async getMpesaBalance(token: string) {
     const response = await fetch(`${API_BASE_URL}/admin/mpesa/balance/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -645,6 +677,7 @@ export const adminAPI = {
 
   async getRides(token: string) {
     const response = await fetch(`${API_BASE_URL}/rides/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -658,6 +691,7 @@ export const adminAPI = {
 
   async getBookings(token: string) {
     const response = await fetch(`${API_BASE_URL}/bookings/`, {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
