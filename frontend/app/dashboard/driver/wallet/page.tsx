@@ -530,11 +530,11 @@ export default function DriverWallet() {
               filteredTransactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100"
+                  className="flex items-start md:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100 gap-3"
                 >
-                  <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                  <div className="flex items-start md:items-center gap-3 md:gap-4 min-w-0 flex-1">
                     <div
-                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
                         tx.category === 'topups' ? 'bg-[#e0f4ff]' :
                         tx.category === 'payments' ? 'bg-purple-100' :
                         tx.category === 'withdrawals' ? 'bg-red-100' :
@@ -542,31 +542,36 @@ export default function DriverWallet() {
                         tx.amount >= 0 ? 'bg-green-100' : 'bg-red-100'
                       }`}
                     >
-                      {tx.category === 'topups' ? <Wallet className="w-4 h-4 md:w-5 md:h-5 text-[#08A6F6]" /> :
-                       tx.category === 'payments' ? <Car className="w-4 h-4 md:w-5 md:h-5 text-purple-600" /> :
-                       tx.category === 'withdrawals' ? <Download className="w-4 h-4 md:w-5 md:h-5 text-red-600" /> :
-                       tx.category === 'earnings' ? <Banknote className="w-4 h-4 md:w-5 md:h-5 text-green-600" /> :
-                       tx.amount >= 0 ? <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" /> : 
-                       <ArrowUpCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 rotate-180" />}
+                      {tx.category === 'topups' ? <Wallet className="w-5 h-5 md:w-6 md:h-6 text-[#08A6F6]" /> :
+                       tx.category === 'payments' ? <Car className="w-5 h-5 md:w-6 md:h-6 text-purple-600" /> :
+                       tx.category === 'withdrawals' ? <Download className="w-5 h-5 md:w-6 md:h-6 text-red-600" /> :
+                       tx.category === 'earnings' ? <Banknote className="w-5 h-5 md:w-6 md:h-6 text-green-600" /> :
+                       tx.amount >= 0 ? <ArrowUpCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" /> : 
+                       <ArrowUpCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600 rotate-180" />}
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-[#00204a] text-sm md:text-base truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-[#00204a] text-sm md:text-base leading-tight mb-1">
                         {tx.title || tx.details}
                       </p>
-                      <p className="text-xs md:text-sm text-gray-500 truncate font-medium">
-                        {tx.description ? `${tx.description} • ` : ''}
-                        {getTransactionReferenceLabel(tx)} • {new Date(tx.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-[11px] md:text-sm text-gray-500 font-medium break-words">
+                          {tx.description && <span className="mr-1">{tx.description} •</span>}
+                          {getTransactionReferenceLabel(tx)}
+                        </p>
+                        <p className="text-[10px] md:text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                          {new Date(tx.created_at).toLocaleDateString('en-KE', { day: '2-digit', month: 'short' })} • {new Date(tx.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className={`font-bold text-base md:text-lg ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                  <div className="text-right flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <p className={`font-black text-sm md:text-lg ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {tx.amount >= 0 ? '+' : ''}KSh {Math.abs(tx.amount).toLocaleString()}
                     </p>
-                    <span className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${tx.status === 'success' ? 'bg-green-100 text-green-700' :
-                      tx.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
+                    <span className={`text-[9px] md:text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest border ${tx.status === 'success' ? 'bg-green-50 text-green-700 border-green-100' :
+                      tx.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                        'bg-red-50 text-red-700 border-red-100'
                       }`}>
                       {tx.status}
                     </span>
