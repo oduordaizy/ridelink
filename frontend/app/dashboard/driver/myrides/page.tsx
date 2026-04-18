@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { API_BASE_URL, getMediaUrl } from '@/app/services/api';
+import RideCountdown from '@/app/components/RideCountdown';
 import {
   Car,
   MapPin,
@@ -524,6 +525,10 @@ const Page = () => {
                     <span className="text-xl font-bold text-[#08A6F6]">
                       KSh {Number(ride.price).toLocaleString()}
                     </span>
+                  </div>
+
+                  <div className="mb-4">
+                    <RideCountdown departureTime={ride.departure_time} className="w-full justify-center" />
                   </div>
 
                   {/* Route */}

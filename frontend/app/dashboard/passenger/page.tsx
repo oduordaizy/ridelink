@@ -10,6 +10,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import PaymentForm from '@/app/components/PaymentForm';
 import PaymentSuccess from '@/app/components/Success';
 import PublicProfileModal from '@/app/components/PublicProfileModal';
+import RideCountdown from '@/app/components/RideCountdown';
 
 interface Ride {
   id: number;
@@ -878,6 +879,10 @@ const Page = () => {
                       <div className="text-left sm:text-right">
                         <p className="text-[10px] sm:text-xs text-gray-500 uppercase font-semibold tracking-wider">Price per seat</p>
                         <p className="text-xl sm:text-2xl font-black text-[#08A6F6]">KSh {ride.price}</p>
+                      </div>
+
+                      <div className="my-2 sm:my-3">
+                        <RideCountdown departureTime={ride.departure_time} />
                       </div>
 
                       <div className="flex flex-col items-end gap-2 sm:gap-3">
