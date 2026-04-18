@@ -2,14 +2,21 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaClock, FaExclamationTriangle } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface RideCountdownProps {
   departureTime: string;
   onExpire?: () => void;
   className?: string;
+  compact?: boolean;
 }
 
-const RideCountdown: React.FC<RideCountdownProps> = ({ departureTime, onExpire, className = '' }) => {
+const RideCountdown: React.FC<RideCountdownProps> = ({ 
+  departureTime, 
+  onExpire, 
+  className = '',
+  compact = false 
+}) => {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -56,7 +63,6 @@ const RideCountdown: React.FC<RideCountdownProps> = ({ departureTime, onExpire, 
   }, [departureTime]);
 
   useEffect(() => {
-    // Initial calculation
     const timerData = calculateTimeLeft();
     setTimeLeft(timerData);
 
@@ -65,7 +71,6 @@ const RideCountdown: React.FC<RideCountdownProps> = ({ departureTime, onExpire, 
       return;
     }
 
-    // Set interval to update every second
     const interval = setInterval(() => {
       const updatedData = calculateTimeLeft();
       setTimeLeft(updatedData);
@@ -81,41 +86,56 @@ const RideCountdown: React.FC<RideCountdownProps> = ({ departureTime, onExpire, 
 
   if (timeLeft.isExpired) {
     return (
-      <div className={`inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-bold border border-gray-200 ${className}`}>
-        <FaClock className="mr-1.5" />
+      <div className={`inline-flex items-center px-3 py-1 rounded-full bg-gray-100/80 backdrop-blur-sm text-gray-500 text-[10px] sm:text-xs font-bold border border-gray-200 shadow-sm ${className}`}>
+        <FaClock className="mr-1.5 opacity-70" />
         Departed
       </div>
     );
   }
 
   return (
-    <div 
-      className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 border shadow-sm
+    <motion.div 
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`inline-flex items-center px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all duration-300 border shadow-sm backdrop-blur-md
         ${timeLeft.isUrgent 
-          ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' 
-          : 'bg-blue-50 text-blue-700 border-blue-100'} 
+          ? 'bg-red-50/90 text-red-600 border-red-200' 
+          : 'bg-indigo-50/90 text-indigo-700 border-indigo-200'} 
         ${className}`}
     >
-      {timeLeft.isUrgent ? (
-        <FaExclamationTriangle className="mr-1.5 text-red-500" />
-      ) : (
-        <FaClock className="mr-1.5 text-blue-500" />
+      <AnimatePresence mode="wait">
+        {timeLeft.isUrgent ? (
+          <motion.div
+            key="urgent"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: [0.8, 1.1, 1] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <FaExclamationTriangle className="mr-1.5 text-red-500" />
+          </motion.div>
+        ) : (
+          <FaClock className="mr-1.5 text-indigo-500 opacity-80" />
+        )}
+      </AnimatePresence>
+
+      {!compact && (
+        <span className="opacity-70 mr-1.5 uppercase tracking-tighter sm:tracking-wider hidden sm:inline">Departs in:</span>
       )}
-      <span className="opacity-80 mr-1 text-[10px] uppercase tracking-wider">Departs in:</span>
+      
       <div className="flex items-center gap-0.5 font-mono">
         {timeLeft.days > 0 && (
           <>
-            <span>{timeLeft.days}d</span>
-            <span className="mx-0.5 opacity-50">:</span>
+            <span className="text-[#00204a]">{timeLeft.days}d</span>
+            <span className="mx-0.5 opacity-30">:</span>
           </>
         )}
-        <span>{timeLeft.hours.toString().padStart(2, '0')}h</span>
-        <span className="mx-0.5 opacity-50">:</span>
-        <span>{timeLeft.minutes.toString().padStart(2, '0')}m</span>
-        <span className="mx-0.5 opacity-50">:</span>
-        <span>{timeLeft.seconds.toString().padStart(2, '0')}s</span>
+        <span className="text-[#00204a]">{timeLeft.hours.toString().padStart(2, '0')}h</span>
+        <span className="mx-0.5 opacity-30">:</span>
+        <span className="text-[#00204a]">{timeLeft.minutes.toString().padStart(2, '0')}m</span>
+        <span className="mx-0.5 opacity-30">:</span>
+        <span className="text-[#00204a]">{timeLeft.seconds.toString().padStart(2, '0')}s</span>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -782,13 +782,26 @@ const Page = () => {
               const isFull = ride.available_seats === 0;
 
               return (
-                <div
+                <motion.div
                   key={ride.id}
-                  className={`bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group hover:translate-y-[-4px] ${isExpanded ? 'ring-2 ring-[#08A6F6]/10 shadow-lg' : ''}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ y: -4, shadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
+                  onClick={() => toggleRideExpand(ride.id)}
+                  className={`relative bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group ${isExpanded ? 'ring-2 ring-[#08A6F6] ring-offset-2' : ''
+                    }`}
                 >
-                  <div className="p-6 cursor-pointer relative" onClick={() => setExpandedRideId(isExpanded ? null : ride.id)}>
+                  {/* Premium Accent Line */}
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-[#08A6F6] to-[#00204a] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  {/* Floating Countdown Badge - Mobile Optimized */}
+                  <div className="absolute top-4 right-4 z-20 sm:hidden">
+                    <RideCountdown departureTime={ride.departure_time} compact={true} />
+                  </div>
+
+                  <div className="p-5 sm:p-8">
                     {/* Route Line Visual - Absolute */}
-                    <div className="absolute left-6 top-20 bottom-24 w-0.5 bg-gray-100 hidden sm:block"></div>
+                    <div className="absolute left-6 top-24 bottom-32 w-0.5 bg-gray-100 hidden sm:block"></div>
 
                     <div className="flex flex-col sm:flex-row gap-6">
 
@@ -881,7 +894,7 @@ const Page = () => {
                         <p className="text-xl sm:text-2xl font-black text-[#08A6F6]">KSh {ride.price}</p>
                       </div>
 
-                      <div className="my-2 sm:my-3">
+                      <div className="hidden sm:block my-3">
                         <RideCountdown departureTime={ride.departure_time} />
                       </div>
 

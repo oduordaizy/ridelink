@@ -33,6 +33,7 @@ import { toast } from 'react-toastify'
 import ReviewForm from '@/app/components/ReviewForm';
 import PublicProfileModal from '@/app/components/PublicProfileModal';
 import RetryPaymentModal from '@/app/components/RetryPaymentModal';
+import { motion } from 'framer-motion';
 
 interface Ride {
   id: number;
@@ -510,10 +511,18 @@ const Page = () => {
             const StatusIcon = statusConfig[status]?.icon || AlertCircle;
 
             return (
-              <div
+              <motion.div
                 key={ride.id}
-                className="bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden group"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ y: -4 }}
+                className="relative bg-white rounded-2xl border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden group"
               >
+                {/* Floating Timer Badge */}
+                <div className="absolute top-3 right-3 z-10 sm:hidden">
+                  <RideCountdown departureTime={ride.departure_time} compact={true} />
+                </div>
+
                 <div className="p-5">
                   {/* Status Badge */}
                   <div className="flex items-center justify-between mb-4">
@@ -527,7 +536,7 @@ const Page = () => {
                     </span>
                   </div>
 
-                  <div className="mb-4">
+                  <div className="hidden sm:block mb-4">
                     <RideCountdown departureTime={ride.departure_time} className="w-full justify-center" />
                   </div>
 
@@ -627,7 +636,7 @@ const Page = () => {
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
